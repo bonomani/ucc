@@ -1,0 +1,463 @@
+UCC-STATUS – Result Field Taxonomy
+Universal Convergence Contract (UCC/2.0)
+
+This document is NORMATIVE.
+It defines the complete semantics, decision tree, and consumer obligations
+for the three-field result model introduced in UCC/2.0.
+
+------------------------------------------------------------
+
+TIER
+-----
+Tier 1 – Core. Companion to UCC-EXECUTION.txt.
+
+------------------------------------------------------------
+
+NOTE: The three-field result model (observation/outcome/completion) is defined in UCC-EXECUTION.txt §2.
+This document focuses on consumer interpretation and response obligations. For authoritative field
+definitions, consult UCC-EXECUTION.txt.
+
+------------------------------------------------------------
+
+1. THE THREE-FIELD RESULT MODEL
+
+UCC/2.0 uses three orthogonal fields to express all possible results:
+
+  observation   — always present; describes whether observation succeeded
+  outcome       — present when observation = ok; describes what happened
+  completion    — present when outcome = changed; describes async status
+
+Additional qualifiers:
+
+  failure_class — present when outcome = failed; retryable or permanent
+  inhibitor     — present when outcome = unchanged; dry_run, whatif, or policy
+  partial       — present when outcome = changed; true when some sub-targets failed
+
+Field presence rules:
+  - observation   ALWAYS present
+  - outcome       REQUIRED when observation = ok; ABSENT otherwise
+  - completion    REQUIRED when outcome = changed; ABSENT otherwise
+  - failure_class REQUIRED when outcome = failed; ABSENT otherwise
+  - inhibitor     REQUIRED when outcome = unchanged; ABSENT otherwise
+  - partial       OPTIONAL when outcome = changed (defaults false); ABSENT otherwise
+  - partial_detail REQUIRED when partial = true; ABSENT otherwise
+
+------------------------------------------------------------
+
+2. RESULT DECISION TREE
+
+The following decision tree MUST be followed in order (first match wins):
+
+Step 1 — Did the observation infrastructure execute?
+  No  → observation = failed
+
+Step 2 — Did observation produce a determinate state?
+  No  → observation = indeterminate
+
+  NOTE: When the classification between observation=failed and
+  observation=indeterminate is ambiguous (e.g., a timeout where it is
+  unclear whether the request reached the target), the implementation
+  MUST classify as observation=failed. Defaulting to indeterminate in
+  ambiguous cases is forbidden. See Section 3 for the complete rule.
+
+Step 3 — Was the desired state reachable?
+  No, permanently  → observation=ok, outcome=failed, failure_class=permanent
+  No, transiently  → observation=ok, outcome=failed, failure_class=retryable
+
+Step 4 — Was the diff empty?
+  Yes → observation=ok, outcome=converged
+
+Step 5 — Was a transition attempted?
+  No  → observation=ok, outcome=unchanged, inhibitor=<dry_run|whatif|policy>
+
+Step 6 — Could the transition result be verified synchronously?
+  No  → observation=ok, outcome=changed, completion=pending (issue verification token)
+
+Step 7 — Did all sub-targets succeed?
+  Yes → observation=ok, outcome=changed, completion=complete
+  No  → observation=ok, outcome=changed, completion=complete, partial=true
+
+------------------------------------------------------------
+
+3. OBSERVATION=FAILED vs OBSERVATION=INDETERMINATE — CLASSIFICATION RULE
+------------------------------------------------------------
+
+These two outcomes both result in no transition being attempted, but
+they are not interchangeable. The distinction matters for alerting:
+
+  observation = failed
+    The observation mechanism COULD NOT execute.
+    The problem is with the INFRASTRUCTURE, not the target.
+    Fix: restore the observation infrastructure, then retry.
+
+  observation = indeterminate
+    The observation mechanism DID execute and reached the target,
+    but the target returned a result that cannot be classified as
+    a determinate state.
+    The problem is with the TARGET or its current state.
+    Fix: investigate the target directly.
+
+CLASSIFICATION TIEBREAKER
+  When it is impossible to determine whether the observation ran or not
+  (e.g., a network timeout with no response), the implementation MUST
+  classify as observation=failed.
+
+  Rationale: observation=failed signals an infrastructure problem, which
+  is safer to investigate than falsely suggesting the target is in an
+  ambiguous state. observation=indeterminate implies the infrastructure
+  worked and reached the target; using it for infrastructure failures
+  would send investigators to the wrong layer.
+
+EXAMPLES
+
+  observation = failed:
+    - Monitoring agent process is not running
+    - Authorization failure reading the target (cannot attempt observation)
+    - Network unreachable before any packet was sent
+    - Observation library threw an exception before executing
+    - Timeout with no indication that the request was received
+
+  observation = indeterminate:
+    - File system is reachable but file is corrupted and unreadable
+    - Service responded but reported contradictory state
+    - Registry key exists but its value is of an unrecognized type
+    - Observation returned partial data (connection closed mid-read)
+
+------------------------------------------------------------
+
+4. RESULT DEFINITIONS
+
+------------------------------------------------------------
+
+4.1 observation=ok, outcome=converged
+
+Condition:
+  Observation infrastructure ran. Observation produced a determinate state.
+  Diff is empty.
+
+Meaning:
+  The target already satisfies the desired state. No action taken.
+
+Producer MUST:
+  - include observed_before
+  - include diff = {}
+
+Consumer MUST:
+  - treat as success
+  - NOT retry
+
+Retry safe: YES
+
+------------------------------------------------------------
+
+4.2 observation=ok, outcome=changed, completion=complete
+
+Condition:
+  Observation succeeded. Diff non-empty. Transition applied.
+  All sub-targets reached desired state (or partial=false). Verifiable synchronously.
+
+Meaning:
+  The target has been successfully transitioned to the desired state.
+
+Producer MUST:
+  - include observed_before, observed_after, non-empty diff
+  - include non-empty proof (R10)
+
+Consumer MUST:
+  - treat as success
+  - record the change event
+
+Retry safe: YES (retry produces converged)
+
+------------------------------------------------------------
+
+4.3 observation=ok, outcome=changed, completion=pending
+
+Condition:
+  Transition applied. Result cannot yet be verified (async operation).
+
+Meaning:
+  The transition has been initiated. Convergence has not been confirmed.
+  The consumer MUST NOT assume the desired state has been reached.
+
+Producer MUST:
+  - include observed_before
+  - include verification block with token and expires_at
+  - NOT include observed_after
+  - include diff reflecting the observed gap that triggered the transition (observed_after is absent until verification completes)
+
+Consumer MUST:
+  - store the verification token
+  - initiate a verification cycle (mode=verify) before or at check_after if provided
+  - initiate a verification cycle before expires_at
+  - treat expiry without successful verification as outcome=failed, failure_class=permanent
+  - NOT treat as success
+
+Retry safe: SPECIAL — use mode=verify cycle, not a full re-declaration
+See UCC-EXT-ASYNC.txt for the complete two-phase lifecycle.
+
+------------------------------------------------------------
+
+4.4 observation=ok, outcome=changed, partial=true
+
+Condition:
+  Observation succeeded. Transition attempted. Multiple sub-targets.
+  At least one succeeded. At least one failed.
+  completion = complete.
+
+Meaning:
+  The target is in a partially converged state.
+
+Producer MUST:
+  - include partial_detail with exact counts
+  - include observed_after reflecting the mixed state
+
+Consumer MUST:
+  - NOT treat as full success or full failure
+  - retry ONLY against failed sub-targets if retryable
+
+Retry safe: PARTIAL (failed sub-targets only)
+
+------------------------------------------------------------
+
+4.5 observation=ok, outcome=unchanged
+
+Condition:
+  Observation succeeded. Diff non-empty. Transition deliberately NOT applied.
+
+Meaning:
+  A gap exists between current and desired state but no change was made.
+  This is intentional: WhatIf mode, policy constraint, dry-run mode, or hold.
+
+Producer MUST:
+  - include observed_before, non-empty diff
+  - include inhibitor field identifying the cause (R11)
+  Valid inhibitors: dry_run, whatif, policy
+  Note: unsatisfied preconditions always produce outcome=failed, failure_class=permanent
+  (not unchanged). See UCC-PRECONDITIONS.txt.
+
+Consumer MUST:
+  - record as deferred or inhibited (NOT success, NOT failure)
+  - NOT retry automatically (retrying produces unchanged again)
+
+Retry safe: CONDITIONAL (only if the inhibiting condition changes)
+
+------------------------------------------------------------
+
+4.6 observation=ok, outcome=failed, failure_class=retryable
+
+Condition:
+  A transient condition prevented transition completion.
+
+Meaning:
+  The failure is not inherent to the target or the declaration.
+  Retrying later is expected to succeed.
+
+Examples:
+  - network timeout
+  - locked resource
+  - service temporarily unavailable
+  - rate limit exceeded
+  - optimistic concurrency conflict (version mismatch)
+  - pessimistic lock acquisition timeout
+
+Producer MUST:
+  - include observed_before if observation succeeded
+  - include non-empty message describing the transient condition
+  - NOT include observed_after
+
+Consumer MUST:
+  - retry with backoff
+  - limit retry attempts
+  - escalate after max retries
+
+Retry safe: YES
+
+------------------------------------------------------------
+
+4.7 observation=ok, outcome=failed, failure_class=permanent
+
+Condition:
+  The desired state is structurally unreachable for this target.
+
+Meaning:
+  Retrying is futile. A revised declaration or human intervention is needed.
+
+Examples:
+  - target type not supported on this platform
+  - required dependency not present
+  - permission permanently denied
+  - declaration is self-inconsistent
+  - verification token expired
+  - pessimistic concurrency with unverifiable async transition
+
+Producer MUST:
+  - include observed_before if observation succeeded
+  - include non-empty message explaining the permanent cause
+  - NOT include observed_after
+
+Consumer MUST:
+  - NOT retry
+  - alert with high severity
+  - record for human review
+
+Retry safe: NO
+
+------------------------------------------------------------
+
+4.8 observation = failed
+
+Condition:
+  The observation infrastructure could not execute.
+  The observation function was never invoked or could not return.
+
+Meaning:
+  The target state is completely unknown because the observation
+  mechanism itself failed. This is an INFRASTRUCTURE problem.
+
+  See Section 3 for the classification rule and tiebreaker.
+
+Examples:
+  - monitoring agent is down
+  - read authorization failure (before observation executes)
+  - network unreachable (no indication request was received)
+  - observation process crashed before executing
+
+Producer MUST:
+  - include non-empty message describing the infrastructure failure
+  - NOT include observed_before, observed_after, or diff
+
+Consumer MUST:
+  - treat as an infrastructure problem, NOT a target problem
+  - alert the infrastructure team
+  - retry after infrastructure is confirmed restored
+
+Retry safe: YES (after infrastructure recovery)
+
+------------------------------------------------------------
+
+4.9 observation = indeterminate
+
+Condition:
+  The observation infrastructure executed and reached the target,
+  but the target returned a result that cannot be classified as a
+  determinate state.
+
+Meaning:
+  The observation ran but its result is indeterminate.
+  This is a TARGET problem (or a transient data problem).
+
+  See Section 3 for the classification rule and tiebreaker.
+
+Examples:
+  - service responded but with contradictory state
+  - file is present but corrupted and unreadable
+  - observation timed out after partial read (contact was made)
+  - environment partially initialized
+
+Producer MUST:
+  - include non-empty message describing why the state is indeterminate
+  - NOT include observed_before, observed_after, or diff
+
+Consumer MUST:
+  - NOT assume any state about the target
+  - retry observation to see if state resolves
+  - alert if indeterminate persists across retries
+  - investigate the target directly (NOT the infrastructure)
+
+Retry safe: YES (retry may yield a determinate state)
+
+------------------------------------------------------------
+
+5. RESULT TRANSITION TABLE
+
+Previous                                 → New                                  | Interpretation
+-----------------------------------------|---------------------------------------|------------------------------------------
+outcome=converged                        → outcome=converged                    | Stable. No action needed.
+outcome=converged                        → outcome=changed                      | External change occurred between runs.
+outcome=changed                          → outcome=converged                    | Normal. Target is now stable.
+outcome=changed, partial=true            → outcome=changed                      | Retry fixed remaining failures.
+outcome=changed, partial=true            → outcome=converged                    | Target fixed externally.
+outcome=failed                           → outcome=converged                    | External fix or environment changed.
+outcome=failed                           → outcome=changed                      | Retry succeeded.
+observation=failed                       → any                                  | Infrastructure recovered.
+observation=indeterminate                → any                                  | Target state resolved.
+any                                      → observation=failed                   | Infrastructure degraded.
+any                                      → observation=indeterminate            | Target state became indeterminate.
+outcome=changed, completion=pending      → outcome=converged                    | Verification confirmed convergence.
+outcome=changed, completion=pending      → outcome=changed, completion=complete | Verification confirmed transition.
+outcome=changed, completion=pending      → outcome=changed, completion=pending  | Operation still in progress (re-issue).
+outcome=changed, completion=pending      → outcome=failed                       | Transition failed or token expired.
+
+------------------------------------------------------------
+
+6. CONSUMER RESPONSE MATRIX
+
+Result                                         | Success?  | Retry?      | Alert?   | Record?
+-----------------------------------------------|-----------|-------------|----------|--------
+observation=ok, outcome=converged              | YES       | NO          | NO       | YES
+observation=ok, outcome=changed, partial=false | YES       | NO          | NO       | YES
+observation=ok, outcome=changed, partial=true  | PARTIAL   | PARTIAL     | YES      | YES
+observation=ok, outcome=unchanged              | DEFERRED  | COND        | OPTIONAL | YES
+observation=ok, outcome=changed, pending       | DEFERRED  | VERIFY      | NO       | YES
+observation=ok, outcome=failed, retryable      | NO        | YES         | OPTIONAL | YES
+observation=ok, outcome=failed, permanent      | NO        | NO          | YES      | YES
+observation=failed                             | NO        | YES (infra) | YES      | YES
+observation=indeterminate                      | NO        | YES (obs)   | YES      | YES
+
+Notes:
+  COND   = retry only if inhibiting condition changes
+  VERIFY = initiate mode=verify cycle, not a full re-declaration
+  PARTIAL = partial=true; only retry against failed sub-targets
+
+------------------------------------------------------------
+
+7. PROHIBITED PATTERNS
+
+- Using outcome=failed, failure_class=permanent for transient conditions.
+- Using outcome=failed, failure_class=retryable for permanent conditions.
+- Using outcome=converged without observed_before.
+- Using observation=failed when observation ran and produced a result.
+- Using observation=indeterminate when the observation infrastructure did not run.
+- Using observation=indeterminate in ambiguous timeout cases (MUST use observation=failed).
+- Using completion=pending without a verification token.
+- Using outcome=changed without a non-empty proof.
+- Using outcome=unchanged without an inhibitor field.
+- Returning partial=true for a single-target operation.
+- Omitting failure_class when outcome=failed.
+- Omitting completion when outcome=changed.
+
+------------------------------------------------------------
+
+8. NORMATIVE SUMMARY
+
+Three fields cover all possible observable outcomes:
+
+  observation = ok            — observation succeeded; see outcome
+  observation = indeterminate — observation ran but state unclear
+  observation = failed        — observation infrastructure did not run
+
+When observation = ok:
+
+  outcome = converged     — already correct
+  outcome = changed       — successfully corrected (see completion and partial)
+  outcome = unchanged     — intentionally deferred (see inhibitor)
+  outcome = failed        — could not converge (see failure_class)
+
+When outcome = changed:
+
+  completion = complete   — transition verified
+  completion = pending    — awaiting verification cycle
+
+observation=failed vs observation=indeterminate: when ambiguous, use observation=failed.
+outcome=failed always has failure_class=retryable or failure_class=permanent.
+completion=pending: use the mode=verify cycle, never a full re-declaration.
+
+No result is ambiguous. No outcome is unclassified.
+
+------------------------------------------------------------
+
+UCC-STATUS – Result Field Taxonomy, Decision Tree, and Consumer Obligations
+Normative document (UCC/2.0)
+
+END OF DOCUMENT

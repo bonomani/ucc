@@ -1,0 +1,9 @@
+UCC-SPEC.txt — SUPERSEDED
+==========================
+This file has been superseded by UCC-EXECUTION.txt (Tier 1 Core).
+
+UCC-SPEC.txt contained the UCC/1.2 flat specification.
+The UCC/2.0 framework uses a layered orthogonal structure.
+
+See UCC-EXECUTION.txt for the current normative core specification.
+See FRAMEWORK-MAP.txt for the full document index and reading order.

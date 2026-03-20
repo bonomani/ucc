@@ -1,0 +1,87 @@
+UCC-OBSERVATION – Observation Contract
+=======================================
+
+TIER
+-----
+Tier 0 – Primitive. No dependencies on other UCC specs.
+
+SCOPE
+-----
+This document defines the observation contract: the formal interface
+by which a component reads the current state of a target.
+
+------------------------------------------------------------
+
+1. FORMAL DEFINITION
+------------------------------------------------------------
+
+An observation is a projection of the real world into a state.
+
+O : World → State ∪ {?} ∪ {⊗}
+
+  State  — a finite, observable, serializable, and comparable structure
+  ?      — observation ran but could not produce a determinate state
+  ⊗      — observation infrastructure did not run
+
+------------------------------------------------------------
+
+2. OBSERVATION OUTCOMES
+------------------------------------------------------------
+
+ok
+  O(W) returned a determinate State.
+  The result field `observation` MUST be "ok".
+  Execution may proceed to declaration evaluation and diff computation.
+
+indeterminate
+  O(W) returned ?.
+  The result field `observation` MUST be "indeterminate".
+  No diff may be computed. No transition may be attempted.
+  The consumer MUST NOT assume any state about the target.
+
+failed
+  O(W) returned ⊗. The observation mechanism could not execute.
+  The result field `observation` MUST be "failed".
+  No diff may be computed. No transition may be attempted.
+  This is distinct from indeterminate: the observation did not run.
+
+------------------------------------------------------------
+
+3. AMBIGUITY RESOLUTION
+------------------------------------------------------------
+
+When classification between failed and indeterminate is ambiguous
+(e.g., a timeout where it is unclear whether the request reached
+the target), the implementation MUST use observation=failed.
+Defaulting to observation=indeterminate in ambiguous cases is forbidden.
+
+------------------------------------------------------------
+
+4. NORMATIVE RULES
+------------------------------------------------------------
+
+OBS-1 – Observation must be read-only
+  The observation function MUST NOT produce side effects.
+  It MUST be deterministic given the same world state.
+
+OBS-2 – Observation must be complete
+  The observation MUST capture all state relevant to the declaration.
+  Partial observations that hide relevant state are non-compliant.
+
+OBS-3 – Ambiguity resolution
+  When failed vs indeterminate is ambiguous, the result MUST be
+  observation=failed. See Section 3.
+
+------------------------------------------------------------
+
+5. MINIMAL INTERFACE
+------------------------------------------------------------
+
+observe() → State | ? | ⊗
+
+------------------------------------------------------------
+
+UCC-OBSERVATION – Tier 0 Primitive
+Part of the UCC/2.0 framework. See FRAMEWORK-MAP.txt for reading order.
+
+END OF DOCUMENT

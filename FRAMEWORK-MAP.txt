@@ -1,0 +1,292 @@
+FRAMEWORK MAP
+=============
+
+This document is the entry point for the UCC framework.
+Read this first. It shows the complete structure in one page.
+
+------------------------------------------------------------
+
+1. WHAT THIS FRAMEWORK IS
+------------------------------------------------------------
+
+A set of orthogonal concepts for building correct, observable,
+and auditable software interactions — independent of language,
+protocol, or domain.
+
+It does NOT define:
+- frameworks or libraries
+- execution engines
+- development processes
+
+------------------------------------------------------------
+
+2. THE TWO ORTHOGONAL AXES
+------------------------------------------------------------
+
+AXIS A — Interaction Type              (what kind of interaction is this?)
+----------------------------
+  GIC  Observable fact                 no obligation, no guarantee
+  GCC  Normative contract              explicit result, external responsibility
+  UCC  Convergence contract            idempotent, retry-safe, state-based
+
+  GIC → GCC → UCC is a strict hierarchy. Each level adds invariants.
+  Escalation must be explicit. (see BISS.txt, GIC.txt, GCC.txt)
+
+AXIS B — Internal Quality Grade        (how rigorous is the implementation?)
+----------------------------
+  Basic  Minimal structure             no formal invariants
+  RIG    Rigorous Interaction Grade    invariants, observability, tests
+                                       — NOT a contract, freely refactorable
+
+  These axes are INDEPENDENT.
+  Any interaction type can be implemented at any quality grade.
+  (see RIG.txt)
+
+------------------------------------------------------------
+
+3. NOTE ON ORTHOGONALITY
+------------------------------------------------------------
+The four-tier UCC spec structure (Tier 0–3) and the BISS two-axis model
+are orthogonal to each other and must not be conflated:
+
+  BISS Axis A (GIC → GCC → UCC) — describes the TYPE of interaction contract.
+  BISS Axis B (Basic / RIG)      — describes the QUALITY GRADE of an implementation.
+  UCC Tiers 0–3                 — describes the INTERNAL STRUCTURE of the UCC spec.
+
+The UCC tiers are a documentation architecture, not a runtime hierarchy.
+A component that uses UCC-EXT-ASYNC (Tier 2) is still a UCC component (Axis A),
+and may be either Basic or RIG grade (Axis B). The axes and the tiers
+vary independently.
+
+------------------------------------------------------------
+
+4. RECORD MODEL (CROSS-CUTTING)
+------------------------------------------------------------
+
+All interactions produce immutable records.
+Records describe facts — they never control execution.
+
+Mandatory fields:  event_id, type, correlation_id, timestamp_utc
+Optional:          parent_event_id (causality), payload (typed by record type)
+
+Record types: intent, execution, state-declaration, decision, policy, quality, view
+(See GLOSSARY.txt for the distinction between Intent and Declaration.)
+(see RECORD-MODEL-SPEC.txt)
+
+------------------------------------------------------------
+
+5. CORE CONCEPTS (VOCABULARY)
+------------------------------------------------------------
+
+All documents share these concepts. See GLOSSARY.txt for definitions.
+
+  Event             immutable fact that something happened
+  Intent            correlation group (NOT desired state — see GLOSSARY)
+  Declaration       desired state specification (UCC term)
+  Target            the object an interaction applies to
+  State Reference   declared read/write/assume access to system state
+  Decision          recorded choice among alternatives
+  Reasoning Artifact  versioned mechanism producing advice (AI model, ruleset)
+  Policy            declarative preference or constraint
+  Metric            quantitative observation with baseline
+  View              derived, read-only synthesis of events
+
+(see CORE-CONCEPTS.txt)
+
+------------------------------------------------------------
+
+6. UCC CONTRACT LIFECYCLE
+------------------------------------------------------------
+
+Every UCC interaction follows this exact sequence:
+
+  0. Evaluate preconditions (if declared)   → outcome=failed, failure_class=permanent if not satisfied
+  1. Observe current state                  → O(W) = S0, or ? if indeterminate, or ⊗ if failed
+  2. Evaluate declaration against S0        → S1 = desired state, or ⊥
+  3. Compute diff                           → D = Δ(S0, S1)
+  4. Decide and apply transition (if D ≠ ∅ and not inhibited)
+  5. Report result
+
+Result model (closed, UCC/2.0 — three-field model):
+
+  observation field (always present):
+    ok            — observation succeeded; see outcome
+    indeterminate — observation ran but state is unclear
+    failed        — observation infrastructure could not execute
+
+  outcome field (when observation = ok):
+    converged     — already correct, no action taken
+    changed       — successfully transitioned (see completion)
+    unchanged     — diff exists but transition deliberately not applied (see inhibitor)
+    failed        — could not converge (see failure_class)
+
+  completion field (when outcome = changed):
+    complete      — transition verified synchronously
+    pending       — transition initiated, awaiting verification cycle (mode=verify)
+
+  failure_class field (when outcome = failed):
+    retryable     — transient failure, retry may help
+    permanent     — structural impossibility, retry futile
+
+  inhibitor field (when outcome = unchanged):
+    dry_run | whatif | policy
+
+  partial field (optional, when outcome = changed):
+    true          — multi-target: some sub-targets succeeded, some failed
+
+(see UCC-EXECUTION.txt for normative spec, UCC-STATUS.txt for full result field semantics)
+
+------------------------------------------------------------
+
+7. DOCUMENT INDEX
+------------------------------------------------------------
+
+ARCHITECTURE
+  FRAMEWORK-MAP.txt              this document — entry point
+  GLOSSARY.txt                   canonical term definitions
+  BISS.txt                       two-axis model overview
+  CORE-CONCEPTS.txt              shared vocabulary
+  MODEL-GOVERNANCE-FRAMEWORK.txt model lifecycle, versioning and conformance checklist
+
+INTERACTION TYPES (Axis A)
+  GIC.txt                        L1 — observable fact
+  GCC.txt                        L2 — normative contract and specializations
+  UCC-EXECUTION.txt        ★     L3 — convergence contract (normative spec, v2.0)
+
+QUALITY GRADE (Axis B)
+  BASIC.txt                      default quality grade (no formal invariants)
+  RIG.txt                        rigorous quality grade (invariants, observability, tests)
+
+UCC NORMATIVE TIERS
+
+TIER 0 — PRIMITIVES (no dependencies)
+  UCC-OBSERVATION.txt    Observation contract (O: W → S ∪ {?} ∪ {⊗})
+  UCC-DECLARATION.txt    Declaration contract (D: S → S ∪ {⊥}), idempotence
+  UCC-DIFF.txt           Diff contract (Δ), default structural equality
+
+TIER 1 — CORE EXECUTION (depends on Tier 0)
+  UCC-EXECUTION.txt ★    Core execution model, Steps 0–6, result model (R1–R12)
+  UCC-STATUS.txt         Result field semantics, consumer obligations
+  UCC-PRECONDITIONS.txt  Precondition model (requires block, Step 0)
+  UCC-SCOPE.txt          Scope-aware execution: five scopes, cross-scope causality (RS-1–RS-12)
+
+TIER 2 — EXTENSIONS (depend on Tier 1, independent of each other)
+  UCC-EXT-EQUALITY.txt   Custom equality semantics (R13-C–R13-E)
+  UCC-EXT-CONCURRENCY.txt Concurrency control, optimistic/pessimistic (R14-A–R14-E)
+  UCC-EXT-ASYNC.txt      Async deferred completion, verification (R15-A–R15-H)
+  UCC-EXT-COMPENSATION.txt Compensation declarations, rollback (R16-A–R16-G)
+
+TIER 3 — COMPOSITION (depends on all Tier 2)
+  UCC-COMPOSITION.txt    Cross-extension interaction rules (COMP-1–COMP-11)
+
+HISTORICAL REFERENCE (archive/ folder — not normative)
+  See archive/README.txt for the supersession map.
+  UCC-DEPRECATIONS.txt   Complete superseded file registry
+
+UCC SUPPORTING DOCUMENTS
+  UCC-RATIONALE.txt              rationale and design decisions
+  UCC-FORMAL.txt                 formal mathematical model
+  UCC-COVERAGE.txt               universal coverage proof
+  UCC-ORCHESTRATOR-SEMANTICS.txt normative semantic requirements for UCC/GCC/GIC orchestrators
+
+SCHEMA AND IMPLEMENTATION
+  UCC-SCHEMA.txt           ★     JSON schema (machine-normative, UCC/2.0)
+  UCC-CHECKLIST.txt              compliance checklist
+  UCC-IMPL-GUIDE.txt             minimal implementation guide
+  UCC-TESTS.txt            ★     mandatory test contract for UCC-compliant components
+  UCC-RFC.txt                    RFC-style alternative reading format (non-authoritative)
+  UCC-SPEC-MODE-1.txt            simplified specification for UCC execution mode and wrapper pattern
+  UCC-PIPE-ICC_DESIGN-1.txt      pipe-ucc tool design document
+
+MAPPING EXAMPLES
+  UCC-MAPPINGS.txt               REST, CLI, and database mappings
+  UCC-AI-MAPPINGS.txt            agent and AI system mappings
+
+RECORD MODEL
+  RECORD-MODEL-SPEC.txt          immutable record structure
+
+IMPLEMENTATION GUIDES
+  UCC-GUIDE-FIT-1.txt            general fit assessment
+  UCC-GUIDE-AI-FIT-1.txt         AI systems
+  UCC-GUIDE-DISTRIBUTED-FIT-1.txt  distributed systems
+  UCC-GUIDE-SYSTEM-FIT-1.txt     system-level automation
+  GOVERNED-WRAPPER-IMPLEMENTATIONS.txt  concrete patterns
+  UCC-EXAMPLE.txt                end-to-end example
+  TEST-ENFORCED-DEVELOPMENT.txt  test-enforced development discipline (language-agnostic)
+
+BISS SUPPORTING DOCUMENTS
+  BISS-IRS.txt                   Implementation & Reuse Specification
+  BISS-NCTIS.txt                 Non-Conventional Tool Interaction Specification
+
+BISS-RIG SUPPORTING DOCUMENTS
+  BISS-RIG-GUIDE.txt             entry point for all BISS-RIG documents (read first)
+  BISS-RIG-AS.txt                Agent Specification
+  BISS-RIG-CA.txt                Compliance Assessment template
+  BISS-RIG-CS.txt                Compliance Statement Specification
+  BISS-RIG-IO.txt                Input/Output Specification
+  BISS-RIG-LS.txt                Logging Specification
+  BISS-RIG-OPCM.txt              Operations & Control Model
+  BISS-RIG-OS.txt                Orchestrator Specification
+  BISS-RIG-PSG.txt               Project Structure Guide
+  BISS-RIG-RMS.txt               Roles & Responsibilities Specification
+  BISS-RIG-WHY.txt               Rationale for RIG compliance
+
+SYSTEMIC PROBLEMS AND RESOLUTIONS
+  SYSTEMIC-GOVERNANCE-PROBLEMS.txt        eight problems, importance scores
+  SYSTEMIC-GOVERNANCE-SOLUTIONS.txt  ★    all eight resolutions (merged, normative)
+  BISS-AXIOMS.txt                    ★    canonical BISS architectural rules
+
+PRODUCT
+  UCC-MVP-1.txt
+  UCC-PRODUCT-PLAN-1.txt
+  BFO-CLI-MVP.txt
+
+★ = normative or machine-normative
+
+------------------------------------------------------------
+
+8. READING ORDER
+------------------------------------------------------------
+
+To understand the framework:
+  1. CORE-CONCEPTS.txt      (canonical vocabulary for all concepts used across the framework)
+  2. GLOSSARY.txt           (canonical terms)
+  3. BISS.txt               (two axes)
+  4. UCC-EXECUTION.txt      (normative spec)
+  5. UCC-STATUS.txt         (status semantics)
+
+To implement a UCC component:
+  1. UCC-EXECUTION.txt      (normative spec + execution model in §4)
+  2. UCC-CHECKLIST.txt      (compliance checklist)
+  3. UCC-TESTS.txt          (test requirements)
+  4. GOVERNED-WRAPPER-IMPLEMENTATIONS.txt
+  5. UCC-FORMAL.txt         (mathematical foundations; read after UCC-EXECUTION.txt if formal proof is needed)
+
+To use UCC/2.0 extensions:
+  1. UCC-DIFF.txt             (diff equality contract — if customizing equality)
+  2. UCC-EXT-CONCURRENCY.txt  (concurrency control — if concurrent writes exist)
+  3. UCC-EXT-ASYNC.txt        (async convergence — if transitions are deferred)
+  4. UCC-EXT-COMPENSATION.txt (compensation — if rollback semantics are needed)
+  5. UCC-COMPOSITION.txt      (combination rules — if using more than one extension)
+
+To apply UCC across multiple scopes (governance stack):
+  1. UCC-SCOPE.txt            (scope taxonomy, caused_by, per-scope semantics)
+  2. RECORD-MODEL-SPEC.txt    (record types produced at each scope)
+  3. SYSTEMIC-GOVERNANCE-PROBLEMS.txt  (problem-to-scope mapping)
+
+To evaluate fit:
+  1. UCC-GUIDE-FIT-1.txt
+  2. UCC-EXAMPLE.txt
+
+------------------------------------------------------------
+
+NOTE ON TERMINAL MARKERS
+------------------------
+Each document ends with a terminal marker. Accepted variants:
+  END OF DOCUMENT        — standard for all documents
+  END OF GLOSSARY        — GLOSSARY.txt only
+  END OF FRAMEWORK MAP   — this document only
+  END OF SPECIFICATION   — RECORD-MODEL-SPEC.txt only
+  END OF FILE            — GOVERNED-WRAPPER-IMPLEMENTATIONS.txt only
+
+END OF FRAMEWORK MAP

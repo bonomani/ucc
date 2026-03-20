@@ -1,0 +1,7 @@
+UCC-LEGACY.txt
+==============
+This document has been removed.
+UCC/2.0 does not maintain backward compatibility with UCC/1.2.
+See UCC-EXECUTION.txt for the current specification.
+
+END OF DOCUMENT

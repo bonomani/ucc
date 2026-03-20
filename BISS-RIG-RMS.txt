@@ -1,0 +1,227 @@
+BISS–RIG — ROLES, NOT COMPONENTS
+===============================
+
+STATUS
+------
+Canonical clarification document
+
+AUDIENCE
+--------
+- Architects
+- Engineers
+- DevOps / Automation
+- Anyone evaluating BISS–RIG complexity
+
+This document clarifies a frequent misunderstanding:
+BISS–RIG does NOT require adding multiple tools or layers.
+It defines ROLES (responsibilities), which may be merged or separated
+depending on system size and maturity.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Roles & Responsibilities Specification
+
+------------------------------------------------------------
+1. THE COMMON CONFUSION
+------------------------------------------------------------
+
+A frequent conclusion is:
+
+    “So we always need:
+     - an orchestrator
+     - a wrapper
+     - a JSON contract
+     - the business functions themselves”
+
+This is incorrect.
+
+BISS–RIG does NOT mandate components.
+It names responsibilities that already exist implicitly.
+
+------------------------------------------------------------
+2. BISS–RIG DEFINES ROLES, NOT OBJECTS
+------------------------------------------------------------
+
+BISS–RIG identifies four conceptual roles:
+
+1. Orchestration
+2. Boundary semantics (wrapper)
+3. Contract description
+4. Business logic (RIG)
+
+These are NOT required to be separate artifacts.
+
+They can be:
+- merged
+- implicit
+- informal
+- or fully explicit
+
+------------------------------------------------------------
+3. ROLE 1 — ORCHESTRATOR
+------------------------------------------------------------
+
+ROLE:
+- decides when something is called
+- decides what happens on success or failure
+- decides whether to retry or stop
+
+WHAT IT CAN BE:
+- a human
+- a shell script
+- a cron job
+- a CI pipeline
+- a workflow engine
+
+IS IT REQUIRED?
+- NO, if the flow is trivial
+- YES, when decisions are automated
+
+------------------------------------------------------------
+4. ROLE 2 — WRAPPER (BOUNDARY)
+------------------------------------------------------------
+
+ROLE:
+- defines the semantic promise of an interaction
+- fixes whether it is GIC, GCC, or UCC
+- prevents ambiguity
+
+WHAT IT CAN BE:
+- a CLI command
+- an HTTP endpoint
+- a function entry point
+- a small conditional around code
+
+IMPORTANT:
+- the wrapper is often invisible
+- it is not a framework
+- it is simply “where semantics live”
+
+IS IT REQUIRED?
+- YES, whenever an interaction crosses a boundary
+
+------------------------------------------------------------
+5. ROLE 3 — CONTRACT DESCRIPTION
+------------------------------------------------------------
+
+ROLE:
+- declares what interactions exist
+- declares their semantic type (GIC/GCC/UCC)
+- allows humans and tools to know what is exposed
+
+WHAT IT CAN BE:
+- a JSON file
+- a YAML file
+- CLI help output
+- Markdown documentation
+- naming conventions
+
+IS IT REQUIRED?
+- NO, for single-user or ad-hoc usage
+- YES, when multiple callers, teams, or automation exist
+
+------------------------------------------------------------
+6. ROLE 4 — BUSINESS LOGIC (RIG)
+------------------------------------------------------------
+
+ROLE:
+- performs the real work
+- enforces internal invariants
+- handles errors and edge cases
+
+WHAT IT CAN BE:
+- functions
+- modules
+- libraries
+- services
+
+IMPORTANT:
+- RIG code is completely independent of BISS
+- it does not know GIC/GCC/UCC
+- it does not know orchestration
+
+IS IT REQUIRED?
+- YES, always
+
+------------------------------------------------------------
+7. HOW THESE ROLES COLLAPSE IN SMALL SYSTEMS
+------------------------------------------------------------
+
+Example: simple CLI usage
+
+    $ file-sync sync a b
+
+- orchestrator = human
+- wrapper = CLI command `sync`
+- contract = `--help`
+- RIG = internal code
+
+All roles are present, but merged.
+
+------------------------------------------------------------
+8. HOW THEY SEPARATE AS SYSTEMS GROW
+------------------------------------------------------------
+
+Example: CI pipeline
+
+- orchestrator = CI engine
+- wrapper = CLI command
+- contract = documented interface
+- RIG = shared library
+
+Example: distributed platform
+
+- orchestrator = workflow engine
+- wrapper = API gateway / CLI
+- contract = versioned JSON spec
+- RIG = services
+
+------------------------------------------------------------
+9. KEY INSIGHT (MOST IMPORTANT)
+------------------------------------------------------------
+
+BISS–RIG does NOT add complexity.
+
+It makes existing responsibilities explicit
+only when they start to matter.
+
+You already had:
+- decisions
+- boundaries
+- assumptions
+- promises
+
+BISS–RIG simply forces you to name them.
+
+------------------------------------------------------------
+10. PRACTICAL RULE OF THUMB
+------------------------------------------------------------
+
+- Small system → roles merged
+- Growing system → roles become visible
+- Large system → roles must be explicit
+
+Never introduce a role before it is needed.
+Never leave a role implicit once it becomes critical.
+
+------------------------------------------------------------
+11. CANONICAL STATEMENT
+------------------------------------------------------------
+
+BISS–RIG defines semantic responsibilities, not mandatory components.
+Roles may be merged or separated depending on scale,
+but semantic clarity is always required at boundaries.
+
+------------------------------------------------------------
+12. FINAL SYNTHESIS
+------------------------------------------------------------
+
+You do not “add BISS–RIG” to a system.
+
+You recognize which responsibilities already exist,
+and you make them explicit only when ambiguity becomes dangerous.
+
+This is why BISS–RIG scales from a shell script
+to a distributed platform without changing its principles.
+
+END OF DOCUMENT

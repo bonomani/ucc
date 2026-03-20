@@ -1,0 +1,614 @@
+UCC-SCHEMA – JSON Schema Specification
+Universal Convergence Contract (UCC/2.0)
+
+This document defines the STRICT JSON Schema for UCC/2.0.
+It is MACHINE-NORMATIVE.
+Any message not validating against this schema is NON-COMPLIANT.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Machine-Normative – JSON Schema (Draft 2020-12)
+
+------------------------------------------------------------
+
+VERSION
+-------
+2.0 (versioned with UCC/2.0)
+
+------------------------------------------------------------
+
+NOTE: This schema formalizes the message types and field constraints defined in UCC-EXECUTION.txt.
+Where this schema and UCC-EXECUTION.txt appear to conflict, the schema is machine-authoritative for
+structure; UCC-EXECUTION.txt provides semantic justification. The semantic_basis structure formalizes
+UCC-EXT-EQUALITY.txt §5.
+
+------------------------------------------------------------
+
+1. PURPOSE
+
+This document provides:
+- a strict JSON Schema for UCC/2.0
+- machine-checkable validation
+- unambiguous structural constraints
+- enforcement of closed-world assumptions
+
+This schema is derived directly from UCC/2.0 and its normative extensions.
+It introduces no new semantics.
+
+------------------------------------------------------------
+
+2. GENERAL CONSTRAINTS
+
+- All objects are CLOSED (no additional properties allowed)
+- All required fields are mandatory
+- All enums are finite and closed
+- All timestamps MUST be ISO-8601 strings (format: date-time)
+- Version MUST be "2.0"
+
+------------------------------------------------------------
+
+3. UCC/2.0 JSON SCHEMA (DRAFT 2020-12)
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ucc.example/spec/ucc-2.0.schema.json",
+  "title": "UCC/2.0 – Universal Convergence Contract",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/DeclarationMessage" },
+    { "$ref": "#/$defs/CompensationDeclarationMessage" },
+    { "$ref": "#/$defs/ResultMessage" }
+  ],
+  "$defs": {
+
+    "MetaIn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "version", "id", "timestamp"],
+      "properties": {
+        "contract":  { "type": "string", "minLength": 1 },
+        "version":   { "type": "string", "const": "2.0" },
+        "id":        { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "MetaOut": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "version", "id", "timestamp", "duration_ms"],
+      "properties": {
+        "contract":    { "type": "string", "minLength": 1 },
+        "version":     { "type": "string", "const": "2.0" },
+        "id":          { "type": "string", "minLength": 1 },
+        "timestamp":   { "type": "string", "format": "date-time" },
+        "duration_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "Precondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration_id", "target", "desired_state"],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "target":         { "type": "string", "minLength": 1 },
+        "desired_state":  { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "EqualityBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["structural", "semantic"],
+          "default": "structural"
+        },
+        "volatile_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "array_order": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["significant", "insignificant"]
+          }
+        }
+      }
+    },
+
+    "ConcurrencyBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["none", "optimistic", "pessimistic"]
+        },
+        "expected_version": { "type": "string" },
+        "lock_timeout_ms":  { "type": "integer", "minimum": 1 },
+        "conflict": {
+          "type": "string",
+          "enum": ["fail", "retry", "skip"],
+          "default": "fail"
+        }
+      },
+      "if": {
+        "properties": { "strategy": { "const": "optimistic" } },
+        "required": ["strategy"]
+      },
+      "then": { "required": ["expected_version"] },
+      "else": {
+        "if": {
+          "properties": { "strategy": { "const": "pessimistic" } },
+          "required": ["strategy"]
+        },
+        "then": { "required": ["lock_timeout_ms"] }
+      }
+    },
+
+    "CompensationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original_interaction_id", "compensates_for"],
+      "properties": {
+        "original_interaction_id": { "type": "string", "minLength": 1 },
+        "compensates_for":         { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "Declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "desired_state"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["apply", "verify", "dry_run"],
+          "default": "apply"
+        },
+        "verification_token": { "type": "string", "minLength": 1 },
+        "target":        { "type": "string", "minLength": 1 },
+        "desired_state": { "type": "object", "additionalProperties": true },
+        "requires": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Precondition" }
+        },
+        "equality":    { "$ref": "#/$defs/EqualityBlock" },
+        "concurrency": { "$ref": "#/$defs/ConcurrencyBlock" }
+      }
+    },
+
+    "CompensationDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compensates", "target", "desired_state", "trigger"],
+      "properties": {
+        "compensates":  { "type": "string", "minLength": 1 },
+        "target":       { "type": "string", "minLength": 1 },
+        "desired_state": { "type": "object", "additionalProperties": true },
+        "trigger": {
+          "type": "string",
+          "enum": ["on_failure", "on_partial", "manual"]
+        },
+        "compensation_context": { "$ref": "#/$defs/CompensationContext" }
+      }
+    },
+
+    "PartialDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "converged", "changed", "failed"],
+      "properties": {
+        "total":     { "type": "integer", "minimum": 0 },
+        "converged": { "type": "integer", "minimum": 0 },
+        "changed":   { "type": "integer", "minimum": 0 },
+        "failed":    { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "Observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observed_before": { "type": "object", "additionalProperties": true },
+        "observed_after":  { "type": "object", "additionalProperties": true },
+        "diff":            { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "VerificationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_verifications": { "type": "integer", "minimum": 1 },
+        "backoff": {
+          "type": "string",
+          "enum": ["linear", "exponential", "fixed"]
+        },
+        "backoff_base_ms":  { "type": "integer", "minimum": 1 },
+        "max_lifetime_ms":  { "type": "integer", "minimum": 1 }
+      },
+      "if": { "required": ["backoff"] },
+      "then": { "required": ["backoff_base_ms"] }
+    },
+
+    "VerificationWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "lifetime_threshold_exceeded",
+            "resource_utilization_high",
+            "operation_duration_exceeded",
+            "external_dependency_degraded",
+            "retry_in_progress"
+          ]
+        },
+        "message":  { "type": "string", "minLength": 1 },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "degraded", "critical"]
+        }
+      }
+    },
+
+    "VerificationBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "expires_at"],
+      "properties": {
+        "token":       { "type": "string", "minLength": 1 },
+        "expires_at":  { "type": "string", "format": "date-time" },
+        "check_after": { "type": "string", "format": "date-time" },
+        "warnings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/VerificationWarning" }
+        },
+        "policy":      { "$ref": "#/$defs/VerificationPolicy" }
+      }
+    },
+
+    "SemanticBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "rule_version", "description", "applied_at"],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9-]+\\.[a-zA-Z0-9._-]+$"
+        },
+        "rule_version": { "type": "string", "minLength": 1 },
+        "description":  { "type": "string", "minLength": 1 },
+        "fields_considered_equivalent": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "applied_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "CompensationBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["converged", "changed", "failed"]
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": ["retryable", "permanent"]
+        },
+        "observed_after_compensation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "CompensationAvailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration_id", "desired_state", "expires_at"],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "desired_state":  { "type": "object", "additionalProperties": true },
+        "expires_at":     { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "Result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation"],
+      "properties": {
+        "observation": {
+          "type": "string",
+          "enum": ["ok", "indeterminate", "failed"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["converged", "changed", "unchanged", "failed"]
+        },
+        "completion": {
+          "type": "string",
+          "enum": ["complete", "pending"]
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": ["retryable", "permanent"]
+        },
+        "inhibitor": {
+          "type": "string",
+          "enum": ["dry_run", "whatif", "policy"]
+        },
+        "partial":        { "type": "boolean" },
+        "partial_detail": { "$ref": "#/$defs/PartialDetail" },
+        "verification":   { "$ref": "#/$defs/VerificationBlock" },
+        "compensation":   { "$ref": "#/$defs/CompensationBlock" },
+        "compensation_available": { "$ref": "#/$defs/CompensationAvailable" },
+        "proof":   { "type": "object", "additionalProperties": true },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "DeclarationMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "declaration"],
+      "properties": {
+        "meta":        { "$ref": "#/$defs/MetaIn" },
+        "declaration": { "$ref": "#/$defs/Declaration" }
+      }
+    },
+
+    "CompensationDeclarationMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "declaration"],
+      "properties": {
+        "meta":        { "$ref": "#/$defs/MetaIn" },
+        "declaration": { "$ref": "#/$defs/CompensationDeclaration" }
+      }
+    },
+
+    "ResultMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "observe", "result"],
+      "properties": {
+        "meta":    { "$ref": "#/$defs/MetaOut" },
+        "observe": { "$ref": "#/$defs/Observation" },
+        "result":  { "$ref": "#/$defs/Result" }
+      },
+      "allOf": [
+        {
+          "comment": "When observation=failed or observation=indeterminate: observed_before, observed_after, diff MUST be absent",
+          "if": {
+            "properties": { "result": { "properties": { "observation": { "enum": ["failed", "indeterminate"] } }, "required": ["observation"] } },
+            "required": ["result"]
+          },
+          "then": {
+            "properties": {
+              "observe": {
+                "properties": {
+                  "observed_before": false,
+                  "observed_after":  false,
+                  "diff":            false
+                }
+              }
+            }
+          }
+        },
+        {
+          "comment": "When completion=pending: observed_after MUST be absent",
+          "if": {
+            "properties": { "result": { "properties": { "completion": { "const": "pending" } }, "required": ["completion"] } },
+            "required": ["result"]
+          },
+          "then": {
+            "properties": {
+              "observe": {
+                "properties": {
+                  "observed_after": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "comment": "When observation=ok: observed_before and diff MUST be present",
+          "if": {
+            "properties": { "result": { "properties": { "observation": { "const": "ok" } }, "required": ["observation"] } },
+            "required": ["result"]
+          },
+          "then": {
+            "properties": {
+              "observe": { "required": ["observed_before", "diff"] }
+            }
+          }
+        }
+      ]
+    }
+
+  }
+}
+
+------------------------------------------------------------
+
+4. CONDITIONAL FIELD RULES (NORMATIVE)
+
+These rules apply IN ADDITION to the schema above. A message that
+validates structurally but violates these rules is NON-COMPLIANT.
+
+observation
+  MUST always be present.
+  When observation = failed or indeterminate:
+    outcome, completion, failure_class, inhibitor MUST be absent.
+    observed_before, observed_after, diff MUST be absent.
+  When observation = ok:
+    outcome MUST be present.
+    observed_before and diff MUST be present.
+
+outcome (when observation = ok)
+  When outcome = converged: diff MUST be empty ({}). No transition occurred.
+  When outcome = changed:
+    completion MUST be present.
+    failure_class and inhibitor MUST be absent.
+  When outcome = unchanged:
+    inhibitor MUST be present.
+    completion and failure_class MUST be absent.
+  When outcome = failed:
+    failure_class MUST be present.
+    completion and inhibitor MUST be absent.
+
+completion (when outcome = changed)
+  When completion = complete:
+    observed_after MUST be present.
+    verification MUST be absent.
+  When completion = pending:
+    observed_after MUST be absent.
+    verification MUST be present with token and expires_at.
+
+failure_class
+  MUST be present when outcome = failed.
+  MUST be absent otherwise.
+
+inhibitor
+  MUST be present when outcome = unchanged (R11).
+  MUST be absent otherwise.
+  Valid values: dry_run, whatif, policy.
+
+partial
+  OPTIONAL when outcome = changed; defaults to false.
+  MUST be absent when outcome ≠ changed.
+
+partial_detail
+  MUST be present when partial = true.
+  MUST be absent when partial = false or absent.
+
+observed_before and diff (within observe)
+  MUST be present when observation = ok.
+  MUST be absent when observation = failed or indeterminate.
+
+observed_after (within observe)
+  MUST be present when outcome = changed AND completion = complete.
+  MUST be absent when observation ≠ ok, outcome ≠ changed, or completion = pending.
+
+proof
+  MUST be present and non-empty when outcome = changed (R10).
+  MUST contain a SemanticBasis-conformant `semantic_basis` entry when
+    equality.mode = semantic and outcome = converged or changed (R13-D).
+  MAY be present otherwise.
+
+message
+  MUST be present when outcome = failed.
+  MUST be present when observation = failed or indeterminate.
+  MUST be present when outcome = unchanged (R11).
+
+verification
+  MUST be present when outcome = changed AND completion = pending.
+  MUST be absent otherwise.
+  expires_at MUST NOT exceed Phase-1 timestamp + 86400000 ms
+    when verification.policy.max_lifetime_ms is absent (R15-G).
+
+compensation
+  OPTIONAL; present when automatic compensation was attempted.
+  MUST be absent when trigger = manual.
+  When present: status MUST be present.
+  When compensation.status = failed: failure_class MUST be present; message MUST be present.
+  When compensation.status = converged or changed: observed_after_compensation MUST be present.
+
+compensation_available
+  MUST be present when trigger = manual AND
+    (outcome = failed OR partial = true).
+  MUST include expires_at.
+  MUST be absent when trigger ≠ manual.
+
+expected_version (within concurrency)
+  MUST be present when concurrency.strategy = optimistic.
+  MUST be absent when concurrency.strategy ≠ optimistic.
+
+lock_timeout_ms (within concurrency)
+  MUST be present when concurrency.strategy = pessimistic.
+  MUST be absent when concurrency.strategy ≠ pessimistic.
+
+------------------------------------------------------------
+
+5. DIFF ENTRY SCHEMA
+
+Each entry in the `diff` object MUST conform to:
+
+"DiffEntry": {
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["before", "after"],
+  "properties": {
+    "before": {},
+    "after":  {}
+  }
+}
+
+The string `"absent"` is a reserved sentinel indicating a field did not
+exist in the observed state. null and `"absent"` are distinct values.
+
+------------------------------------------------------------
+
+6. SEMANTIC BASIS SCHEMA (NORMATIVE)
+
+When equality.mode = semantic and outcome = converged or changed, the
+`proof` object MUST contain a `semantic_basis` entry conforming to:
+
+SemanticBasis — defined in §3 ($defs). See UCC-EXT-EQUALITY.txt §6 for field semantics and R13-C through R13-E for application rules.
+
+------------------------------------------------------------
+
+7. VALIDATION RULES
+
+- A message MUST validate against exactly one of:
+  DeclarationMessage, CompensationDeclarationMessage, or ResultMessage.
+  Mixed messages are forbidden.
+
+- Any unknown field causes validation failure (additionalProperties: false
+  is enforced at every level).
+
+- observation values outside the defined enum are invalid.
+- outcome values outside the defined enum are invalid.
+
+- Version MUST be exactly "2.0".
+
+- rule_id in SemanticBasis MUST match the pattern
+  ^[a-zA-Z0-9-]+\.[a-zA-Z0-9._-]+$ (reverse-DNS format, R13-E).
+
+- Warning codes in VerificationWarning MUST be from the closed
+  vocabulary: lifetime_threshold_exceeded, resource_utilization_high,
+  operation_duration_exceeded, external_dependency_degraded,
+  retry_in_progress.
+
+------------------------------------------------------------
+
+8. CONFORMANCE
+
+If a component emits or consumes messages that do not validate against
+this schema, it is NOT UCC/2.0 compliant, even if its behavior appears
+correct.
+
+------------------------------------------------------------
+
+UCC-SCHEMA – JSON Schema Specification
+Machine-normative (UCC/2.0)

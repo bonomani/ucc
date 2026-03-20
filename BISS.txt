@@ -1,0 +1,405 @@
+Boundary Interaction Semantic Standard (BISS/1.1)
+================================================
+
+STATUS
+------
+Authoritative architectural standard
+
+AUDIENCE
+--------
+- Architects
+- Platform engineers
+- Tech leads
+- Reviewers
+- Automation / DevOps engineers
+- AI-system designers
+
+This document is NOT intended for day-to-day application developers.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Normative – BISS Two-Axis Architecture Model
+
+------------------------------------------------------------
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+This document defines a unified semantic standard for modeling software
+interactions at system boundaries.
+
+It introduces a layered interaction model that separates:
+- observability,
+- internal rigor,
+- contractual normativity,
+- deterministic state convergence.
+
+The goal is to eliminate implicit semantics at boundaries while preserving
+freedom of internal implementation.
+
+This is an architectural and semantic standard, not a coding guideline.
+
+------------------------------------------------------------
+2. WHAT THIS STANDARD IS (AND IS NOT)
+------------------------------------------------------------
+
+This standard IS:
+- a classification model for software interactions
+- a correctness and safety framework for boundaries
+- a foundation for deterministic automation and AI-driven systems
+- a way to make retries, failures, and responsibilities explicit
+
+This standard IS NOT:
+- a framework
+- a methodology
+- a development process
+- a requirement for all code
+- a mandate for developers to write contracts everywhere
+
+------------------------------------------------------------
+3. SCOPE OF APPLICATION
+------------------------------------------------------------
+
+This standard applies ONLY to interactions that:
+
+- cross a system, service, process, trust, or ownership boundary
+AND
+- produce observable effects
+
+Examples:
+- API calls
+- CLI invocations
+- workflow steps
+- scheduled jobs
+- distributed messages
+- user actions
+- agent decisions
+
+This standard does NOT apply to:
+- internal function calls
+- in-memory computations
+- private implementation details
+
+------------------------------------------------------------
+4. CORE PRINCIPLE
+------------------------------------------------------------
+
+Every boundary interaction MUST be explicitly classified as one of:
+
+- GIC (interaction)
+- GCC (contract)
+- UCC (convergence contract)
+
+Internal interactions MAY adopt strong rigor and observability
+without becoming contractual.
+
+Implicit semantics are forbidden at boundaries.
+
+------------------------------------------------------------
+5. TWO ORTHOGONAL AXES
+------------------------------------------------------------
+
+BISS is defined along two independent axes.
+These axes MUST NOT be confused or merged.
+
+------------------------------------------------------------
+
+AXIS A — Interaction Type (applies to boundary interactions only)
+------------------------------------------------------------
+
+This axis classifies WHAT KIND of interaction crosses a boundary.
+
+L1 — GIC (Generic Interaction Core)
+- observable fact
+- no obligation, no correctness semantics
+- examples: logs, events, telemetry
+
+L2 — GCC (Generic Contract Core)
+- normative exchange
+- explicit, opposable result
+- examples: APIs, CLI commands
+
+L3 — UCC (Universal Convergence Contract)
+- deterministic state convergence
+- idempotent and retry-safe by construction
+- examples: provisioning, reconciliation, configuration enforcement
+
+Each level strictly adds constraints to the previous.
+Escalation from L1 to L2 or L3 MUST be explicit.
+
+L0 — Computation (out of scope)
+- internal execution, non-observable, no classification required
+
+------------------------------------------------------------
+
+AXIS B — Internal Quality Grade (applies to any code, not just boundaries)
+------------------------------------------------------------
+
+This axis classifies HOW RIGOROUS internal code is.
+It is orthogonal to Axis A: any interaction type can have any quality grade.
+
+Basic
+- minimal structure
+- no formal invariants
+- ad-hoc observability
+
+RIG (Rigorous Interaction Grade)
+- explicit invariants and assertions
+- structured observability (logs, traces, metrics)
+- deterministic behavior (best effort)
+- stable test coverage
+- NOT a contract — freely refactorable, no compatibility guarantees
+
+------------------------------------------------------------
+
+COMBINING THE TWO AXES
+------------------------------------------------------------
+
+Any interaction is classified on both axes independently:
+
+  Boundary GIC    + Basic   → observable event, minimal structure
+  Boundary GIC    + RIG     → observable event, high internal rigor
+  Boundary GCC    + RIG     → normative contract, rigorously implemented
+  Boundary UCC    + RIG     → convergence contract, rigorously implemented
+  Internal code   + RIG     → high-quality internal logic, no contract
+
+A developer adds RIG rigor to internal code without creating a contract.
+An architect escalates a boundary interaction from GIC to GCC or UCC.
+These are independent decisions.
+
+------------------------------------------------------------
+6. GIC — GENERIC INTERACTION CORE
+------------------------------------------------------------
+
+Definition:
+A GIC interaction is an observable fact.
+
+Characteristics:
+- something occurred
+- it can be identified
+- it can be observed
+- it can be classified
+- it is temporally bounded
+
+GIC provides:
+- visibility
+- traceability
+- classification
+
+GIC provides NO guarantees:
+- no correctness
+- no success/failure semantics
+- no retry safety
+- no obligations
+
+Typical uses:
+- events
+- signals
+- telemetry
+- logs
+- notifications
+- measurements
+
+------------------------------------------------------------
+7. RIG — RIGOROUS INTERACTION GRADE (INTERNAL)
+------------------------------------------------------------
+
+Definition:
+RIG describes internal interactions that follow strong rigor and
+observability rules without introducing contractual normativity.
+
+RIG is NOT a contract.
+
+Characteristics:
+- explicit invariants and assertions
+- structured observability
+- deterministic behavior (best-effort)
+- stable and meaningful tests
+
+RIG explicitly does NOT include:
+- opposable results
+- compatibility guarantees
+- retry commitments
+- external responsibility
+
+RIG enables:
+- high internal quality
+- reliable testing
+- safe refactoring
+- uniform observability
+
+------------------------------------------------------------
+8. GCC — GENERIC CONTRACT CORE
+------------------------------------------------------------
+
+Definition:
+A GCC interaction is a normative exchange with an explicit outcome.
+
+Additional properties over GIC / RIG:
+- explicit input
+- observable outcome
+- closed result set
+- explicit completion semantics
+- non-ambiguity
+- external responsibility
+
+GCC provides:
+- authoritative success/failure
+- auditability
+- compatibility expectations
+
+Typical uses:
+- API operations
+- CLI commands
+- business actions
+- user-triggered operations
+
+------------------------------------------------------------
+9. UCC — UNIVERSAL CONVERGENCE CONTRACT
+------------------------------------------------------------
+
+Definition:
+A UCC interaction is a contract whose purpose is deterministic state
+convergence.
+
+Additional properties over GCC:
+- observable current state
+- explicit desired target state
+- computable diff
+- idempotent execution
+- deterministic retries
+
+UCC guarantees:
+- safe retries
+- replayability
+- convergence correctness
+- deterministic outcomes
+
+Typical uses:
+- configuration enforcement
+- infrastructure state
+- provisioning
+- compliance
+- reconciliation loops
+- AI-driven execution
+
+------------------------------------------------------------
+10. CLASSIFICATION RULE (MANDATORY)
+------------------------------------------------------------
+
+For every boundary interaction, the following decision MUST be made:
+
+1. Is it only an observable fact?
+   → GIC
+
+2. Does it promise an outcome?
+   → GCC
+
+3. Does it converge state deterministically?
+   → UCC
+
+If none apply, the interaction MUST be declared non-contractual.
+
+Internal interactions MAY use RIG without changing classification.
+
+------------------------------------------------------------
+11. ARCHITECTURAL RULES
+------------------------------------------------------------
+
+Rule A:
+Boundary interactions MUST NOT rely on implicit semantics.
+
+Rule B:
+Normativity applies only at boundaries.
+
+Rule C:
+Observability and rigor MAY be applied everywhere.
+
+Rule D:
+Retry behavior MUST be defined ONLY for GCC and UCC.
+
+Rule E:
+Only UCC interactions may be retried automatically.
+
+Rule F:
+Events (GIC) MUST NOT be retried as if they were contracts.
+
+Rule G:
+Escalation from GIC or RIG to GCC or UCC MUST be explicit.
+
+------------------------------------------------------------
+12. WHAT DEVELOPERS SEE
+------------------------------------------------------------
+
+Developers are NOT required to understand the full BISS theory.
+
+They interact with:
+- clear APIs
+- explicit schemas
+- closed result enums
+- documented retry behavior
+- consistent observability
+
+Examples:
+- "This event is GIC: do not retry"
+- "This CLI is GCC: exit codes are authoritative"
+- "This operation is UCC: retries are safe"
+
+------------------------------------------------------------
+13. ADOPTION STRATEGY
+------------------------------------------------------------
+
+Phase 1 — Vocabulary
+- interaction
+- rigor
+- contract
+- convergence
+
+Phase 2 — Boundary tagging
+- Tag interactions as [GIC], [GCC], or [UCC]
+
+Phase 3 — Internal rigor
+- Adopt RIG where useful
+
+Phase 4 — Selective enforcement
+- Enforce schemas, validation, and retries only on GCC and UCC
+
+Phase 5 — Tooling (optional)
+- Validators
+- Auditors
+- Convergence engines
+
+------------------------------------------------------------
+14. WHAT THIS STANDARD ENABLES
+------------------------------------------------------------
+
+- Deterministic automation
+- Safe retries
+- Reduced failure ambiguity
+- AI-safe execution boundaries
+- Strong observability without rigidity
+- Progressive legacy integration
+- Vendor independence
+
+------------------------------------------------------------
+15. CANONICAL STATEMENT
+------------------------------------------------------------
+
+BISS defines a layered semantic standard for software interactions
+at system boundaries.
+
+Rigor and observability can be applied everywhere.
+Normativity and contractual guarantees apply only at boundaries.
+
+GIC observes.
+RIG enforces internal rigor.
+GCC governs responsibility.
+UCC guarantees convergence.
+
+Correct systems do not force contracts everywhere.
+They apply normativity exactly where it becomes necessary.
+
+END OF DOCUMENT

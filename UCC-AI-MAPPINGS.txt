@@ -1,0 +1,213 @@
+UCC-AI-MAPPINGS – Agent and AI System Mappings
+Universal Convergence Contract (UCC)
+
+This document is NON-NORMATIVE and EXPLANATORY.
+It provides concrete mappings from agent and AI system patterns
+to the UCC/2.0 model, without adding new semantics.
+
+This document complements UCC-MAPPINGS (REST, CLI, Database mappings).
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Guidance – AI and Agent Mapping Reference
+
+------------------------------------------------------------
+
+1. PURPOSE OF THIS DOCUMENT
+
+This document shows:
+
+- how AI agent loops map to UCC
+- how language model calls map to UCC
+- how autonomous systems can adopt UCC for governance
+- how non-determinism is handled within the deterministic contract
+
+The mappings are illustrative and minimal.
+
+------------------------------------------------------------
+
+2. GENERAL PRINCIPLE FOR AI SYSTEMS
+
+AI and agent systems add one complication: non-determinism in the
+declaration (what desired state to target) does not break UCC.
+
+Non-determinism affects WHICH declaration is selected.
+It does NOT affect HOW the contract is evaluated.
+
+Once a declaration is selected:
+- observation is deterministic
+- diff is deterministic
+- result is deterministic
+
+UCC governs the execution. It does not govern the reasoning.
+
+------------------------------------------------------------
+
+3. AGENT DECISION-ACT LOOP MAPPING
+
+3.1 Classic Observe-Decide-Act Loop
+
+Agent pattern:
+while true:
+  state = observe()
+  action = decide(state)
+  execute(action)
+
+UCC Mapping:
+- observe()    → O(W) = S0
+- decide(state) → D(S0) = S1   (declaration derived from observation)
+- diff(S0, S1) → convergence gap
+- execute()    → transition to S1
+- result       → outcome=changed / outcome=converged / outcome=failed (with failure_class)
+
+The agent loop is a sequence of UCC transactions.
+
+------------------------------------------------------------
+
+3.2 Goal-Directed Agent
+
+Agent pattern:
+goal = "ensure service X is running"
+while not satisfied:
+  observe, plan, act
+
+UCC Mapping:
+- declaration: { "target": "service-x", "desired_state": { "running": true } }
+- observe(): current service state
+- diff: running=false vs running=true
+- result:
+  - outcome=changed if started
+  - outcome=converged if already running
+  - outcome=failed, failure_class=retryable if start attempt failed transiently
+  - outcome=failed, failure_class=permanent if service cannot start on this system
+
+------------------------------------------------------------
+
+4. LANGUAGE MODEL (LLM) CALL MAPPING
+
+4.1 Prompt → Response
+
+Pattern:
+response = llm.complete(prompt)
+
+UCC Mapping:
+- observe(): current conversation state and context
+- declaration: desired_state = { "response_generated": true, "topic": "..." }
+- diff: no response exists vs response exists
+- result:
+  - outcome=changed if response generated
+  - outcome=failed, failure_class=retryable if API timeout or rate limit
+  - outcome=failed, failure_class=permanent if model unavailable or context invalid
+
+NOTE: LLM calls are non-deterministic by nature.
+The UCC contract governs the observable result (was a response produced?),
+not the content of the response.
+
+------------------------------------------------------------
+
+4.2 Structured Output Enforcement
+
+Pattern:
+response = llm.complete(prompt, schema=MySchema)
+
+UCC Mapping:
+- observe(): no structured output exists yet
+- declaration: desired_state = { "output": MySchema, "valid": true }
+- diff: unstructured vs structured
+- result:
+  - outcome=changed if valid structured output produced
+  - outcome=failed, failure_class=retryable if output invalid, retry with reprompt
+  - outcome=failed, failure_class=permanent if model cannot produce valid output after max retries
+
+------------------------------------------------------------
+
+5. MULTI-AGENT ORCHESTRATION MAPPING
+
+5.1 Sequential Agent Pipeline
+
+Pattern:
+agent_A output → agent_B input → agent_C input
+
+UCC Mapping:
+- Each agent is a UCC component
+- Output state of agent_A is the observed state for agent_B
+- Each agent declares its own preconditions (see UCC-PRECONDITIONS.txt)
+- Pipeline halts if any agent returns outcome=failed, failure_class=permanent
+
+------------------------------------------------------------
+
+5.2 Parallel Agent Execution
+
+Pattern:
+[agent_A, agent_B, agent_C] run concurrently on sub-targets
+
+UCC Mapping:
+- The orchestrating declaration targets a composite system
+- Each agent handles a sub-target
+- If all succeed → outcome=changed, completion=complete
+- If some fail → outcome=changed, partial=true (see UCC-STATUS.txt section 4.4)
+- partial_detail reports per-agent outcomes
+
+------------------------------------------------------------
+
+6. REASONING ARTIFACT GOVERNANCE
+
+A Reasoning Artifact (AI model, ruleset, heuristic) produces advice.
+It MUST NOT execute transitions.
+
+Correct pattern:
+- Reasoning Artifact: "desired_state should be X"  → Declaration
+- UCC component:       observe → diff → apply        → Execution
+
+This separation ensures:
+- the reasoning artifact is replaceable without changing contract semantics
+- the execution is observable and auditable
+- the decision is recorded separately from the action
+
+------------------------------------------------------------
+
+7. AI-DRIVEN POLICY EVALUATION
+
+Pattern:
+policy = ai.evaluate(context)
+if policy.allows: apply(action)
+
+UCC Mapping:
+- Policy evaluation is NOT part of the UCC contract
+- Policy result feeds into the declaration (desired_state)
+- If policy blocks action: outcome=unchanged, inhibitor=policy (transition inhibited by policy)
+- If policy allows action: normal UCC lifecycle applies
+
+------------------------------------------------------------
+
+8. KEY INSIGHT FOR AI SYSTEMS
+
+AI systems do not escape UCC's model.
+They add non-determinism in the SELECTION of a declaration.
+The evaluation and execution of that declaration remain deterministic.
+
+This means:
+- AI decisions can be audited (declaration is recorded)
+- AI actions can be retried safely (idempotence holds)
+- AI failures are classified (result set is closed)
+- AI systems compose safely with non-AI systems
+
+------------------------------------------------------------
+
+9. CONCLUSION
+
+Agent and AI system mappings demonstrate that:
+
+- non-determinism in reasoning does not break the contract
+- all observable outcomes remain within the closed three-field result model
+- AI systems can be governed with the same contract as deterministic systems
+- UCC provides a natural boundary between reasoning and execution
+
+------------------------------------------------------------
+
+UCC-AI-MAPPINGS – Agent and AI System Mappings
+Non-normative explanatory document — UCC/2.0
+
+END OF DOCUMENT

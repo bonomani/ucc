@@ -1,0 +1,45 @@
+UCC-DEPRECATIONS.txt – Superseded File Index
+=============================================
+
+CLASSIFICATION
+--------------
+Supporting – Deprecation Registry
+
+This file lists all UCC framework files that have been superseded.
+The original files are preserved as tombstones for backward reference.
+
+------------------------------------------------------------
+
+SUPERSEDED FILES
+------------------------------------------------------------
+
+UCC-SPEC.txt
+  Superseded by: UCC-EXECUTION.txt (Tier 1 Core)
+  Reason: UCC/2.0 restructured the framework into four orthogonal tiers.
+
+UCC-CONCURRENCY.txt
+  Superseded by: UCC-EXT-CONCURRENCY.txt (Tier 2 Extension)
+  Reason: Extension specs separated from core per four-tier design.
+
+UCC-ASYNC.txt
+  Superseded by: UCC-EXT-ASYNC.txt (Tier 2 Extension)
+  Reason: Extension specs separated from core per four-tier design.
+
+UCC-COMPENSATION.txt
+  Superseded by: UCC-EXT-COMPENSATION.txt (Tier 2 Extension)
+  Reason: Extension specs separated from core per four-tier design.
+
+UCC-INTERACTIONS.txt
+  Superseded by: UCC-COMPOSITION.txt (Tier 3 Composition)
+  Reason: Interaction rules renamed and consolidated into Tier 3.
+
+UCC-LEGACY.txt
+  Superseded by: (no replacement)
+  Reason: UCC/2.0 does not maintain backward compatibility with UCC/1.2.
+
+------------------------------------------------------------
+
+UCC-DEPRECATIONS.txt – Part of UCC/2.0 framework.
+See FRAMEWORK-MAP.txt for the current document index.
+
+END OF DOCUMENT

@@ -1,0 +1,281 @@
+WHY APPLY BISS–RIG
+=================
+
+STATUS
+------
+Rationale and architectural justification
+
+AUDIENCE
+--------
+- Architects
+- Tech leads
+- Platform / DevOps engineers
+- AI / Agent system designers
+- Reviewers and decision-makers
+
+PURPOSE
+-------
+This document explains WHY BISS–RIG is applied across
+agents, tools, input/output, logging, tests, and project structure.
+
+It answers a single question:
+
+Why is BISS–RIG used as a unifying principle instead of being
+“just another spec”?
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Rationale Document
+
+------------------------------------------------------------
+1. THE CORE PROBLEM
+------------------------------------------------------------
+
+Most software systems fail at scale not because of algorithms,
+but because of ambiguity.
+
+Typical ambiguities:
+- What does “success” mean?
+- Is retry safe?
+- Who decides the truth?
+- Are logs authoritative?
+- Is this an action or a state guarantee?
+- Can an agent assume convergence?
+
+When these questions are implicit:
+- automation becomes fragile
+- agents hallucinate success
+- retries cause damage
+- orchestration logic explodes
+- audits are manual and unreliable
+
+------------------------------------------------------------
+2. WHAT BISS–RIG SOLVES
+------------------------------------------------------------
+
+BISS–RIG solves exactly one problem:
+
+Making responsibility and truth explicit at system boundaries.
+
+It does this by forcing every boundary interaction to declare
+its semantic nature.
+
+------------------------------------------------------------
+3. THE THREE SEMANTICS
+------------------------------------------------------------
+
+BISS–RIG classifies interactions as:
+
+- GIC: observable facts
+- GCC: one-shot actions
+- UCC: state convergence guarantees
+
+This classification answers, explicitly and mechanically:
+- what happened
+- what is promised
+- what is safe to retry
+- what can be automated
+
+No interpretation is required.
+
+ARCHITECTURAL NOTE: RIG is a quality grade (Axis B in the BISS two-axis model),
+not a level in the interaction type hierarchy (Axis A: GIC → GCC → UCC).
+A GIC interaction, a GCC interaction, or a UCC interaction can each be
+implemented at Basic quality or at RIG quality. The quality grade is
+independent of the interaction type. See BISS.txt and BISS-AXIOMS.txt for the
+authoritative two-axis model.
+
+------------------------------------------------------------
+4. WHY THIS AFFECTS THE WHOLE SYSTEM
+------------------------------------------------------------
+
+Once boundary semantics are explicit, every other concern
+must align with them.
+
+This is not optional. It is a logical consequence.
+
+------------------------------------------------------------
+5. WHY AGENTS ARE GOVERNED THIS WAY
+------------------------------------------------------------
+
+Agents reason internally and freely.
+
+But when an agent touches the external world:
+- it must not guess semantics
+- it must not infer retry safety
+- it must not invent success
+
+BISS–RIG ensures:
+- agents act only through declared tools
+- tools declare truth
+- agents consume results, not narratives
+
+This makes AI systems controllable without constraining intelligence.
+
+------------------------------------------------------------
+6. WHY TOOLS MUST DECLARE SEMANTICS
+------------------------------------------------------------
+
+Tools are where responsibility lives.
+
+If a tool does not declare whether it is:
+- an observation
+- an action
+- a convergence operation
+
+Then:
+- orchestrators must guess
+- agents must guess
+- humans must guess
+
+BISS–RIG removes guessing by making semantics explicit.
+
+------------------------------------------------------------
+7. WHY OUTPUT MUST BE STRUCTURED
+------------------------------------------------------------
+
+Automation cannot rely on text.
+
+Logs are:
+- unordered
+- human-oriented
+- non-deterministic
+
+BISS–RIG requires:
+- a single authoritative output
+- machine-readable structure
+- explicit status fields
+
+This allows:
+- trivial orchestration
+- safe retries
+- reliable audits
+
+------------------------------------------------------------
+8. WHY LOGS ARE DEMOTED
+------------------------------------------------------------
+
+Logs explain execution.
+They do not define truth.
+
+If logs are used to decide behavior:
+- systems become brittle
+- semantics drift
+- automation breaks silently
+
+BISS–RIG explicitly removes logs from decision-making.
+
+------------------------------------------------------------
+9. WHY TESTS ARE STRUCTURED THIS WAY
+------------------------------------------------------------
+
+BISS–RIG introduces promises:
+- retry safety
+- convergence
+- semantic guarantees
+
+Promises must be proven.
+
+That is why:
+- unit tests validate mechanics
+- integration tests validate behavior
+- contract tests validate semantic promises
+
+Without contract tests, BISS–RIG would be theoretical.
+
+------------------------------------------------------------
+10. WHY PROJECT STRUCTURE MATTERS
+------------------------------------------------------------
+
+Humans are the weakest link.
+
+If:
+- specs mix with code
+- knowledge mixes with rules
+- helpers hide decisions
+
+Then semantics erode.
+
+Folder structure enforces:
+- separation of responsibility
+- inspectability
+- long-term correctness
+
+It prevents accidental semantic drift.
+
+------------------------------------------------------------
+11. WHAT BISS–RIG IS NOT
+------------------------------------------------------------
+
+BISS–RIG is NOT:
+- a framework
+- a coding style
+- extra ceremony
+- bureaucracy
+
+It does not force contracts everywhere.
+
+It applies only where:
+- interactions cross boundaries
+- effects are observable
+- automation depends on correctness
+
+------------------------------------------------------------
+12. THE CORE BENEFITS
+------------------------------------------------------------
+
+Applying BISS–RIG yields:
+
+- deterministic automation
+- trivial orchestration loops
+- safe retries
+- agent safety
+- auditability
+- interchangeable implementations
+- long-term maintainability
+
+Most importantly:
+
+Implementation can change
+without changing meaning.
+
+------------------------------------------------------------
+13. THE FUNDAMENTAL SHIFT
+------------------------------------------------------------
+
+Before BISS–RIG:
+“Did it work?”
+
+After BISS–RIG:
+“What is the declared state of the world?”
+
+That single shift explains:
+- UCC
+- simple orchestrators
+- structured output
+- safe AI agents
+
+------------------------------------------------------------
+14. CANONICAL STATEMENT
+------------------------------------------------------------
+
+BISS–RIG exists to make the truth of interactions explicit,
+so that humans, machines, and agents do not have to guess.
+
+Everything else follows from this choice.
+
+------------------------------------------------------------
+15. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS–RIG is applied across the system because
+ambiguity propagates.
+
+Once truth and responsibility are explicit at boundaries,
+the entire system becomes simpler, safer, and scalable.
+
+This is not over-engineering.
+
+It is removing implicit assumptions.
+
+END OF DOCUMENT

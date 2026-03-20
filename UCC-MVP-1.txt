@@ -1,0 +1,96 @@
+UCC-MVP-1: Minimum Viable Product Specification
+Universal Convergence Contract – Minimal Executable Proof
+
+This document defines the Minimum Viable Product (MVP) for UCC.
+Its purpose is to validate the UCC model with the smallest
+possible implementation that produces real, measurable value.
+
+This is a BUILD document.
+Not a vision, not a framework, not a platform.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Product/Planning – Minimum Viable Product Specification
+
+------------------------------------------------------------
+
+STATUS
+------
+DRAFT — sections 4 onwards deferred to a future revision
+
+------------------------------------------------------------
+
+============================================================
+1. PURPOSE
+============================================================
+
+The UCC MVP exists to answer one question only:
+
+"Can we declare intent once, execute it repeatedly,
+and always reach the correct state safely and deterministically?"
+
+If the answer is yes, UCC is validated.
+
+Everything else is explicitly out of scope.
+
+============================================================
+2. MVP SCOPE (STRICT)
+============================================================
+
+------------------------------------------------------------
+2.1 In Scope
+------------------------------------------------------------
+
+The MVP MUST:
+
+- support exactly one type of operation
+- run locally (single process)
+- expose a CLI
+- support safe retries
+- support the UCC execution mode:
+  - ucc=full
+
+------------------------------------------------------------
+2.2 Out of Scope
+------------------------------------------------------------
+
+The MVP MUST NOT include:
+
+- distributed execution
+- parallelism
+- workflows or composition
+- middleware or queues
+- UI or dashboards
+- AI agents
+- performance optimizations
+
+============================================================
+3. SELECTED MVP USE CASE
+============================================================
+
+The MVP implements exactly ONE target:
+
+Target: file
+
+Desired capability:
+- ensure a file exists at a given path
+- ensure the file content matches the declared content
+
+This use case is chosen because:
+- state is observable
+- convergence is clear
+- retries are meaningful
+- failure modes are simple
+
+============================================================
+4. MVP ARCHITECTURE
+============================================================
+
+The entire MVP consists of four artifacts:
+
+NOTE: Sections 4 onwards are deferred to a future revision.
+This document is intentionally incomplete pending the MVP artifact definitions.
+
+END OF DOCUMENT

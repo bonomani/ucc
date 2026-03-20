@@ -1,0 +1,336 @@
+BISS–RIG PROJECT STRUCTURE GUIDE
+================================
+
+STATUS
+------
+Operational guide
+
+AUDIENCE
+--------
+- Architects
+- Tech leads
+- DevOps / Platform engineers
+- AI / Agent designers
+
+OBJECTIVE
+---------
+This document explains CONCRETELY:
+- which documents must be created
+- which are mandatory vs optional
+- where each document must live
+- what each document is for
+- how all documents interact
+
+This is a practical guide, not theory.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Project Structure Specification
+
+------------------------------------------------------------
+1. CORE PRINCIPLE (READ FIRST)
+------------------------------------------------------------
+
+Each document type has ONE responsibility.
+
+A document placed in the wrong location or with the wrong role:
+- will be misused by the agent
+- will be misinterpreted by orchestrators
+- will introduce dangerous ambiguity
+
+Folder structure is NOT cosmetic.
+It is semantic.
+
+------------------------------------------------------------
+2. CANONICAL RECOMMENDED STRUCTURE
+------------------------------------------------------------
+
+A minimal, sufficient, realistic layout:
+
+/project-root
+|
+|-- agent/
+|   |-- agent.md
+|   |-- memory.md            (optional)
+|
+|-- spec/
+|   |-- BISS-RIG-AS.txt
+|   |-- BISS-RIG-IO.txt
+|   |-- BISS-RIG-LS.txt
+|   |-- BISS-RIG-CA.txt
+|
+|-- tools/
+|   |-- tools.md
+|   |-- schemas/
+|       |-- gcc.schema.json
+|       |-- ucc.schema.json
+|
+|-- rag/
+|   |-- docs/
+|   |-- runbooks/
+|
+|-- app/
+|   |-- lib/
+|   |   |-- io_helpers.*
+|   |   |-- logging_helpers.*
+|   |   |-- schema_validation.*
+|   |
+|   |-- scripts/             (or binaries/)
+|   |
+|   |-- tests/
+|       |-- unit/
+|       |-- integration/
+|       |-- contract/
+|
+|-- logs/
+|   |-- executions.log
+
+------------------------------------------------------------
+3. THE /agent DIRECTORY
+------------------------------------------------------------
+
+### agent/agent.md  (MANDATORY)
+
+Purpose:
+- defines WHO the agent is
+- what it is allowed to do
+- what it is forbidden to do
+
+Typical content:
+- agent mission
+- boundaries and limits
+- decision principles
+- explicit rule: “act only through declared tools”
+
+agent.md MUST NOT:
+- describe tool internals
+- contain step-by-step procedures
+- contain BISS–RIG rules
+
+agent.md = IDENTITY + LIMITS
+
+---
+
+### agent/memory.md  (OPTIONAL)
+
+Purpose:
+- summarized memory
+- past decisions
+- perceived state
+
+Important:
+- NON-contractual
+- NON-authoritative
+- cognitive aid only
+
+------------------------------------------------------------
+4. THE /spec DIRECTORY
+------------------------------------------------------------
+
+This directory contains ONLY normative documents.
+
+Anything in /spec is:
+- mandatory
+- authoritative
+- non-negotiable
+- not context-dependent
+
+---
+
+### spec/BISS-RIG-AS.txt
+
+Purpose:
+- defines what an agent is in this system
+- fixes the cognition / action boundary
+
+Audience:
+- architects
+- reviewers
+- agent designers
+
+---
+
+### spec/BISS-RIG-IO.txt
+
+Purpose:
+- defines input/output rules
+- separates stdout (contract) from stderr (logs)
+- forbids log parsing
+
+Audience:
+- tool authors
+- orchestrator authors
+
+---
+
+### spec/BISS-RIG-LS.txt
+
+Purpose:
+- defines what must be logged
+- defines what must never be logged
+- explains the role of logs
+
+Audience:
+- DevOps
+- SRE
+- auditors
+
+---
+
+### spec/BISS-RIG-CA.txt
+
+Purpose:
+- compliance and audit rules
+- validation checklist
+
+Used for:
+- reviews
+- CI
+- audits
+
+------------------------------------------------------------
+5. THE /tools DIRECTORY
+------------------------------------------------------------
+
+### tools/tools.md  (MANDATORY)
+
+This is the MOST IMPORTANT document for agents.
+
+It lists ALL available tools.
+
+For each tool, it MUST specify:
+- name
+- description
+- semantic type (GIC / GCC / UCC)
+- retry safety
+- output schema
+- target state (for UCC)
+
+Conceptual example:
+
+Tool: remove_app
+Semantic: UCC
+Retry: SAFE
+TargetState: ABSENT
+OutputSchema: ucc.schema.json
+
+---
+
+### tools/schemas/*.json  (MANDATORY)
+
+Purpose:
+- define machine truth
+- prevent hallucinations
+- validate outputs
+
+Used by:
+- tools
+- orchestrators
+- CI pipelines
+
+------------------------------------------------------------
+6. THE /rag DIRECTORY
+------------------------------------------------------------
+
+Contains KNOWLEDGE only.
+
+### rag/docs/
+
+- technical documentation
+- references
+- explanations
+
+### rag/runbooks/
+
+- human procedures
+- operational guidance
+- step-by-step instructions
+
+IMPORTANT:
+- these documents MAY be ignored by the agent
+- they contain NO rules
+- they contain NO guarantees
+- they contain NO prohibitions
+
+rag = KNOWLEDGE, NOT GOVERNANCE
+
+------------------------------------------------------------
+7. THE /app DIRECTORY
+------------------------------------------------------------
+
+Contains:
+- scripts
+- binaries
+- services
+
+These components:
+- implement tools
+- respect specs
+- do NOT define governance
+
+------------------------------------------------------------
+8. THE /logs DIRECTORY
+------------------------------------------------------------
+
+Contains:
+- execution logs
+- traces
+
+Logs are NEVER used by:
+- orchestrators
+- automated decisions
+
+------------------------------------------------------------
+9. GOLDEN RULE #1
+------------------------------------------------------------
+
+If a document:
+- defines a rule
+- forbids an action
+- guarantees a behavior
+
+THEN it belongs in /spec
+
+If a document:
+- explains
+- gives context
+- provides guidance
+- can be ignored
+
+THEN it belongs in /rag
+
+------------------------------------------------------------
+10. GOLDEN RULE #2
+------------------------------------------------------------
+
+An agent:
+- reads agent.md
+- reads tools.md
+- obeys /spec documents
+- may use RAG content
+
+An agent:
+- must never infer rules from RAG
+- must never infer rules from logs
+
+------------------------------------------------------------
+11. SIMPLE CHECKLIST
+------------------------------------------------------------
+
+- [ ] agent.md exists and is clear
+- [ ] tools.md documents every tool
+- [ ] every tool declares its semantic type
+- [ ] outputs are structured and schema-validatable
+- [ ] specs are separated from RAG
+- [ ] orchestrator never parses logs
+
+If all boxes are checked → architecture is sound.
+
+------------------------------------------------------------
+12. SENTENCE TO REMEMBER
+------------------------------------------------------------
+
+Folders are not a convenience.
+They are a separation of responsibilities.
+
+END OF DOCUMENT

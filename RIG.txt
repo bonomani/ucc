@@ -1,0 +1,234 @@
+Rigorous Interaction Grade (RIG/1.0)
+===================================
+
+STATUS
+------
+Authoritative internal semantic standard
+
+AUDIENCE
+--------
+- Software architects
+- Platform and core engineers
+- Library and runtime maintainers
+- Test and observability engineers
+
+This document is NOT a boundary contract.
+This document is NOT a public API specification.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Normative – Rigorous Interaction Grade Definition
+
+------------------------------------------------------------
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+RIG defines a semantic grade for INTERNAL software interactions that
+require high rigor, observability, and testability without introducing
+contractual normativity.
+
+RIG exists to:
+- raise internal code quality
+- make behavior observable and testable
+- preserve refactoring freedom
+- avoid accidental contracts
+
+RIG is intentionally non-normative.
+
+------------------------------------------------------------
+2. POSITION IN THE BISS MODEL
+------------------------------------------------------------
+
+RIG is part of the BISS layered semantic model:
+
+- GIC — Generic Interaction Core (observable fact)
+- RIG — Rigorous Interaction Grade (internal rigor)
+- GCC — Generic Contract Core (normative exchange)
+- UCC — Universal Convergence Contract (deterministic convergence)
+
+RIG is an independent quality grade (Axis B) that may be applied to any interaction type on Axis A (GIC, GCC, or UCC). RIG is NOT positioned between GIC and GCC — it is orthogonal to all interaction types. See BISS.txt §5 and BISS-AXIOMS.txt for the authoritative two-axis model.
+
+RIG adds rigor and observability.
+RIG does NOT add obligation, compatibility, or responsibility.
+
+------------------------------------------------------------
+3. SCOPE OF APPLICATION
+------------------------------------------------------------
+
+RIG applies to:
+- internal module interactions
+- internal service calls
+- library APIs not exposed externally
+- internal workflows and pipelines
+- internal agents and helpers
+
+RIG does NOT apply to:
+- public APIs
+- external-facing CLIs
+- third-party integrations
+- boundary interactions (these require GCC or UCC)
+
+------------------------------------------------------------
+4. CORE PRINCIPLE
+------------------------------------------------------------
+
+RIG enforces rigor WITHOUT creating contracts.
+
+An interaction may be:
+- observable
+- validated
+- invariant-checked
+- test-covered
+
+and still remain:
+- non-opposable
+- non-stable
+- non-versioned
+- freely refactorable
+
+------------------------------------------------------------
+5. RIG INVARIANTS
+------------------------------------------------------------
+
+RIG defines OPTIONAL BUT RECOMMENDED invariants.
+None of them are normative or opposable.
+
+------------------------------------------------------------
+
+R1 — Identifiable Interaction
+Internal interactions SHOULD be identifiable
+(trace id, span id, correlation id).
+
+Purpose:
+- debugging
+- traceability
+- test correlation
+
+------------------------------------------------------------
+
+R2 — Structured Observability
+Interactions SHOULD emit structured observables:
+- logs
+- traces
+- metrics
+- state snapshots
+
+Observability is descriptive, not authoritative.
+
+------------------------------------------------------------
+
+R3 — Explicit Invariants
+Internal assumptions SHOULD be made explicit via:
+- assertions
+- preconditions
+- postconditions
+- invariant checks
+
+Violations indicate bugs, not contract breaches.
+
+------------------------------------------------------------
+
+R4 — Deterministic Behavior (Best Effort)
+Given identical inputs and environment,
+behavior SHOULD be deterministic.
+
+Determinism is encouraged but not guaranteed.
+
+------------------------------------------------------------
+
+R5 — Stable Tests
+Interactions SHOULD be covered by:
+- unit tests
+- integration tests
+- property-based tests
+
+Tests validate intent, not public obligations.
+
+------------------------------------------------------------
+
+R6 — Explicit Failure Signaling
+Failures SHOULD be explicit:
+- typed errors
+- structured exceptions
+- clear failure modes
+
+Failure signaling is informational, not normative.
+
+------------------------------------------------------------
+6. WHAT RIG EXPLICITLY DOES NOT REQUIRE
+------------------------------------------------------------
+
+RIG does NOT require:
+- closed result enums
+- backward compatibility guarantees
+- versioning
+- retry semantics
+- idempotence guarantees
+- audit-grade logging
+- external documentation
+
+All of the above belong to GCC or UCC.
+
+------------------------------------------------------------
+7. RELATION TO TESTS
+------------------------------------------------------------
+
+RIG strongly complements testing.
+
+- Tests validate expected behavior.
+- RIG ensures that behavior is observable,
+  diagnosable, and invariant-checked.
+
+RIG does NOT replace tests.
+RIG makes tests more reliable and meaningful.
+
+------------------------------------------------------------
+8. ESCALATION RULE
+------------------------------------------------------------
+
+An interaction MAY be escalated from RIG to GCC or UCC
+ONLY by explicitly introducing normative invariants.
+
+Implicit escalation is forbidden.
+
+Indicators that escalation is required:
+- external systems depend on the behavior
+- retries are automated
+- failures become externally visible
+- compatibility across versions matters
+
+------------------------------------------------------------
+9. DESIGN GUIDELINES (NON-NORMATIVE)
+------------------------------------------------------------
+
+Good RIG usage:
+- assert aggressively
+- log structurally
+- test deeply
+- refactor freely
+
+Bad RIG usage:
+- pretending RIG failures are contractual
+- adding versioning or compatibility promises
+- treating internal errors as public API
+
+------------------------------------------------------------
+10. CANONICAL STATEMENT
+------------------------------------------------------------
+
+RIG defines a rigor grade for internal interactions.
+
+RIG improves quality, observability, and testability
+without introducing contractual obligations.
+
+RIG is how internal code becomes reliable
+without becoming rigid.
+
+RIG prepares interactions for possible future
+escalation to GCC or UCC — but never implies it.
+
+END OF DOCUMENT

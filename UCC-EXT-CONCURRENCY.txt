@@ -1,0 +1,255 @@
+UCC-EXT-CONCURRENCY – Concurrency Extension
+============================================
+
+TIER
+-----
+Tier 2 – Extension. Depends on: UCC-EXECUTION.
+Independent of: UCC-EXT-EQUALITY, UCC-EXT-ASYNC, UCC-EXT-COMPENSATION.
+
+PREREQUISITE READING
+--------------------
+UCC-EXECUTION.txt   (core execution model — mandatory)
+UCC-STATUS.txt      (result field semantics)
+GLOSSARY.txt        (canonical vocabulary)
+
+STATUS
+------
+Normative extension to UCC/2.0 (R14-A through R14-E).
+
+VERSION
+-------
+2.0
+
+SCOPE
+-----
+This document specifies:
+- the `concurrency` declaration block
+- optimistic and pessimistic concurrency strategies
+- conflict detection and resolution behavior
+- version token semantics
+- lock timeout contract
+
+The interaction between pessimistic concurrency and async deferred
+completion is governed by UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+1. PROBLEM STATEMENT
+------------------------------------------------------------
+
+UCC interactions are atomic evaluation cycles, but multiple independent
+cycles may execute concurrently against the same target.
+
+Without explicit concurrency declarations, two concurrent writers may
+both observe an identical S0, produce identical diffs, and both attempt
+to apply a transition — resulting in a last-write-wins outcome with no
+record of the conflict.
+
+This document provides explicit, contractual concurrency control to
+prevent silent data loss and undefined behavior under concurrent writes.
+
+------------------------------------------------------------
+
+2. CONCURRENCY DECLARATION BLOCK
+------------------------------------------------------------
+
+{
+  "declaration": {
+    "target": "string",
+    "desired_state": {},
+    "concurrency": {
+      "strategy": "none | optimistic | pessimistic",
+      "expected_version": "string",
+      "lock_timeout_ms": "integer",
+      "conflict": "fail | retry | skip"
+    }
+  }
+}
+
+Field definitions:
+
+`strategy`
+  REQUIRED.
+
+  none (default)
+    No concurrency control. Concurrent writes may overwrite each other.
+    No version check. No lock.
+    When strategy = none, the `conflict` and `expected_version` fields
+    MUST NOT be present in the declaration. A declaration with
+    strategy = none and a `conflict` or `expected_version` field is a
+    validation error and the result MUST be outcome=failed, failure_class=permanent.
+
+  optimistic
+    A version token is checked immediately before Step 5.
+    If the current version ≠ `expected_version`, a conflict is detected.
+    No lock is acquired. Suitable for low-contention scenarios.
+
+  pessimistic
+    A lock is acquired before Step 1 and released after Step 6.
+    No other writer may observe or modify the target while the lock is held.
+    Suitable for high-contention or high-stakes scenarios.
+
+`expected_version`
+  REQUIRED when strategy = optimistic.
+  MUST be omitted when strategy ≠ optimistic.
+  An opaque string token representing the version of the target state the
+  declaration was formulated against. Obtained from a prior observation.
+
+`lock_timeout_ms`
+  REQUIRED when strategy = pessimistic.
+  MUST be omitted when strategy ≠ pessimistic.
+  The maximum duration the implementation will wait to acquire the lock.
+  If the lock is not acquired within this duration, the result MUST be
+  outcome=failed, failure_class=retryable. The implementation MUST NOT
+  exceed this value and eventually succeed — exceeding the timeout and
+  proceeding is non-compliant.
+
+`conflict`
+  Defines the behavior when a conflict is detected (optimistic only).
+  Ignored when strategy = pessimistic (no conflict is possible once the lock
+  is held).
+
+  fail (default)
+    The interaction terminates with outcome=failed, failure_class=retryable.
+    The consumer is expected to re-observe and re-declare.
+
+  retry
+    The implementation automatically re-executes the full cycle
+    (Steps 0–6) with a fresh observation.
+    The implementation MUST define a maximum retry count.
+    If retries are exhausted, outcome=failed, failure_class=retryable.
+
+  skip
+    The transition is not applied. outcome=unchanged, inhibitor=policy.
+    The consumer is NOT notified of the conflict as a failure.
+    Use only when convergence is not required on every attempt.
+
+------------------------------------------------------------
+
+3. VERSION TOKEN SEMANTICS
+------------------------------------------------------------
+
+A version token is an opaque string that uniquely identifies a specific
+observed state of a target.
+
+Rules:
+- Version tokens MUST be included in `observed_before` and `observed_after`
+  as a field named `_version` when strategy = optimistic.
+- Version tokens MUST be opaque: consumers MUST NOT parse or construct them.
+- A new version token MUST be generated whenever the target state changes.
+- If the target has never been written, a well-known sentinel value
+  (e.g., `"0"` or `""`) MUST be used as the initial version.
+
+The `expected_version` in the declaration is compared to the live version
+immediately before Step 5 (transition application), after diff computation.
+If they differ, a conflict is detected and the `conflict` strategy applies.
+
+------------------------------------------------------------
+
+4. LOCKING SEMANTICS (PESSIMISTIC STRATEGY)
+------------------------------------------------------------
+
+When strategy = pessimistic:
+
+- The lock MUST be acquired before Step 1.
+  If the lock cannot be acquired within `lock_timeout_ms`,
+  the result MUST be outcome=failed, failure_class=retryable.
+
+- The lock MUST be released after Step 6, regardless of outcome.
+  Lock release is non-negotiable — it MUST occur even on
+  outcome=failed failure_class=permanent, observation=failed, or
+  observation=indeterminate outcomes.
+
+- The lock scope is the `target` value from the declaration.
+
+- Nested locks on the same target within the same execution cycle
+  are an implementation error and MUST NOT occur.
+
+------------------------------------------------------------
+
+5. INTERACTION WITH RESULT MODEL
+------------------------------------------------------------
+
+  Conflict detected, conflict = fail            → outcome=failed, failure_class=retryable
+  Lock acquisition timeout (> lock_timeout_ms)  → outcome=failed, failure_class=retryable
+  Conflict detected, conflict = skip            → outcome=unchanged, inhibitor=policy
+  Conflict detected, conflict = retry, exhausted → outcome=failed, failure_class=retryable
+  Lock acquired, transition applied              → outcome=changed, completion=complete (normal flow)
+
+------------------------------------------------------------
+
+6. RESULT REPORTING
+------------------------------------------------------------
+
+When strategy = optimistic or pessimistic, the `proof` field MUST include
+a `concurrency` entry:
+
+{
+  "proof": {
+    "concurrency": {
+      "strategy": "optimistic | pessimistic",
+      "version_before": "string",
+      "version_after": "string",
+      "conflict_detected": false
+    }
+  }
+}
+
+When a conflict was detected and conflict = fail or retry (exhausted):
+- `conflict_detected` MUST be true.
+- `version_after` MUST be omitted.
+
+------------------------------------------------------------
+
+7. NORMATIVE RULES
+------------------------------------------------------------
+
+R14-A – Explicit strategy
+  When a `concurrency` block is declared, the strategy MUST be one of
+  {none, optimistic, pessimistic}. No other value is valid.
+
+R14-B – Optimistic version check timing
+  When strategy = optimistic, the version check MUST occur immediately
+  before Step 5, after diff computation. Version checks before Step 3
+  are insufficient and non-compliant.
+
+R14-C – Pessimistic lock scope
+  When strategy = pessimistic, the lock MUST cover Steps 1 through 5
+  inclusive. Observation (Step 1) outside the lock is non-compliant.
+
+R14-D – Conflict outcome obligation
+  When a conflict is detected, the outcome MUST be one of:
+  {outcome=failed failure_class=retryable, outcome=unchanged inhibitor=policy}
+  per the declared `conflict` value.
+  Silent application of a conflicting transition is forbidden.
+
+R14-E – Lock timeout is a hard contract
+  When strategy = pessimistic, the implementation MUST NOT acquire the
+  lock after `lock_timeout_ms` has elapsed. Acquiring after timeout
+  and proceeding is a contract violation.
+
+NOTE: R14-F (pessimistic strategy and async deferred completion) has been
+moved to UCC-COMPOSITION. It is not part of this Tier 2 extension.
+
+------------------------------------------------------------
+
+8. COMPLIANCE
+------------------------------------------------------------
+
+An implementation is compliant with UCC-EXT-CONCURRENCY if:
+- It applies no concurrency control when `concurrency` is absent.
+- It performs the version check at the correct point for optimistic strategy.
+- It acquires and releases locks correctly for pessimistic strategy.
+- It enforces lock_timeout_ms as a hard deadline.
+- It complies with R14-A through R14-E.
+
+------------------------------------------------------------
+
+The interaction between pessimistic concurrency and async deferred
+completion is governed by UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+UCC-EXT-CONCURRENCY – Tier 2 Extension. Part of UCC/2.0 framework.
+
+END OF DOCUMENT

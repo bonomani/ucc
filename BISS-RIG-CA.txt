@@ -1,0 +1,286 @@
+BISS–RIG COMPLIANCE ASSESSMENT
+=============================
+
+STATUS
+------
+Normative guidance and audit reference
+
+AUDIENCE
+--------
+- Architects
+- Tech leads
+- Platform / DevOps engineers
+- Reviewers performing design or code audits
+
+This document explains HOW to determine whether a function,
+component, or interface is BISS–RIG compliant, and provides
+a reusable audit template to assess compliance consistently.
+
+PREREQUISITE READING
+--------------------
+BISS.txt         (two-axis model — read this first)
+GLOSSARY.txt     (canonical vocabulary)
+CORE-CONCEPTS.txt (9 canonical concepts)
+BISS-AXIOMS.txt  (canonical architectural rules — normative reference)
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Compliance Assessment Specification
+
+TWO-AXIS REMINDER
+-----------------
+BISS defines two INDEPENDENT axes:
+  Axis A (interaction type): GIC → GCC → UCC  — what kind of boundary contract
+  Axis B (quality grade):    Basic or RIG       — how rigorous the implementation
+
+RIG is NOT a step between GIC and GCC. It is NOT an interaction type.
+A RIG component may implement GIC, GCC, or UCC — or no contract at all (internal only).
+“BISS-RIG compliant” means: correct quality grade applied to the correct boundary.
+
+See BISS-AXIOMS.txt §3.1 for the normative statement on RIG's position in the two-axis model.
+See FRAMEWORK-MAP.txt §NOTE ON ORTHOGONALITY for the full separation explanation.
+
+------------------------------------------------------------
+1. WHAT “BISS–RIG COMPLIANT” MEANS (PRECISELY)
+------------------------------------------------------------
+
+BISS–RIG compliance does NOT mean:
+- using a specific framework
+- writing more code
+- exposing GIC/GCC/UCC everywhere
+
+BISS–RIG compliance means:
+- responsibilities are correctly separated
+- semantics are explicit at boundaries
+- internal logic (RIG) is isolated from orchestration concerns
+
+A function is compliant if it does NOT take decisions
+that belong to the boundary or the orchestrator.
+
+See BISS-AXIOMS.txt §1.2 for the separation of BISS (boundary) vs RIG (internal).
+See BISS-AXIOMS.txt §2.1 for the prohibition on implicit semantics at boundaries.
+
+------------------------------------------------------------
+2. THE FOUR DISTINCT RESPONSIBILITIES
+------------------------------------------------------------
+
+For compliance, the following responsibilities must be clearly separated:
+
+1. RIG (business logic)
+2. Boundary semantics (GIC / GCC / UCC)
+3. Orchestration (retry, sequencing, escalation)
+4. Contract description (documentation / spec)
+
+A violation occurs when one responsibility domain assumes another’s role.
+
+See BISS-AXIOMS.txt §2.4 for why semantic layers must not wrap one another.
+
+------------------------------------------------------------
+3. COMPLIANCE RULES (NORMATIVE)
+------------------------------------------------------------
+
+Rule R1 — RIG Purity
+See BISS-AXIOMS.txt §3.4 for the full normative definition.
+
+Applied to assessment: a function fails R1 if it contains retry logic,
+branches on execution “mode”, or references GIC/GCC/UCC classification
+internally.
+
+The function MAY:
+- validate inputs
+- enforce technical invariants
+- fail on real-world constraints
+- return factual error states
+
+------------------------------------------------------------
+
+Rule R2 — Explicit Boundary Semantics
+See BISS-AXIOMS.txt §4.3 for the normative rule.
+
+Applied to assessment: the semantic type must be determinable from the
+interface declaration alone — command name, endpoint, or interface name —
+without reading flags, options, or implementation.
+
+------------------------------------------------------------
+
+Rule R3 — No Semantic Inference
+See BISS-AXIOMS.txt §4.2 for the normative rule.
+
+Applied to assessment: if the reviewer cannot determine idempotence,
+retry safety, or convergence from the interface declaration alone —
+without reading the implementation — the boundary fails R3.
+
+------------------------------------------------------------
+
+Rule R4 — Honest UCC Declaration
+See BISS-AXIOMS.txt §4.4 for the four eligibility conditions.
+
+Applied to assessment: each condition must be verifiable from observable
+evidence, not asserted from intent. If any condition cannot be mechanically
+verified, UCC is forbidden.
+
+------------------------------------------------------------
+
+Rule R5 — Generic Orchestration Compatibility
+See BISS-AXIOMS.txt §4.6 for the normative rule.
+
+Applied to assessment: test whether a notional orchestrator — one that knows
+only the interaction type and returned status — could drive the full lifecycle.
+If it could not, the boundary is non-compliant.
+
+------------------------------------------------------------
+4. WHAT IS EXPLICITLY ALLOWED
+------------------------------------------------------------
+
+- One internal function exposed via multiple boundaries
+- One wrapper reused for many functions
+- Roles merged in small systems
+- Documentation as text, JSON, or CLI help
+
+------------------------------------------------------------
+5. WHAT IS EXPLICITLY FORBIDDEN
+------------------------------------------------------------
+
+- “run --mode=ucc”
+- retry logic inside business functions
+- functions rejecting calls based on intent
+- automatic detection of contract capabilities
+- hidden semantic upgrades
+
+See BISS-AXIOMS.txt §4.2 and §4.3.
+
+------------------------------------------------------------
+6. QUICK SELF-CHECK (HUMAN TEST)
+------------------------------------------------------------
+
+For any exposed interaction, ask:
+
+“If this fails, am I allowed to retry automatically?”
+
+- YES → must be UCC
+- NO  → Is the result normatively expected by an external consumer with defined
+        success/failure semantics? YES → consider GCC; NO → consider GIC
+- Question makes no sense → must be GIC
+
+If the answer is unclear, the boundary is invalid.
+
+See BISS-AXIOMS.txt §4.5 for the retry authorization axiom.
+
+------------------------------------------------------------
+7. BISS–RIG AUDIT TEMPLATE
+------------------------------------------------------------
+
+Use this template to assess a function or component.
+
+------------------------------------------------------------
+AUDIT: BISS–RIG COMPLIANCE
+------------------------------------------------------------
+
+Component / Function name:
+--------------------------------
+<name>
+
+Version / Commit:
+--------------------------------
+<id>
+
+Reviewer:
+--------------------------------
+<name>
+
+Date:
+--------------------------------
+<date>
+
+------------------------------------------------------------
+A. RIG PURITY CHECK
+------------------------------------------------------------
+
+Does the function know about:
+- GIC / GCC / UCC ?            YES / NO
+- retry logic ?               YES / NO
+- orchestration context ?     YES / NO
+- execution “mode” ?          YES / NO
+
+If any YES → ❌ NON-COMPLIANT
+
+Notes:
+--------------------------------
+<free text>
+
+------------------------------------------------------------
+B. BOUNDARY SEMANTICS
+------------------------------------------------------------
+
+Exposed interactions:
+- Name: <interaction name>
+- Declared type: GIC / GCC / UCC
+
+Is the semantic type:
+- explicit ?                 YES / NO
+- stable ?                   YES / NO
+- independent of parameters? YES / NO
+
+If any NO → ❌ NON-COMPLIANT
+
+Notes:
+--------------------------------
+<free text>
+
+------------------------------------------------------------
+C. UCC ELIGIBILITY (ONLY IF UCC)
+------------------------------------------------------------
+
+Is current state observable?        YES / NO
+Is target state explicit?           YES / NO
+Is retry safe?                      YES / NO
+Is convergence verified?            YES / NO
+
+If any NO → ❌ UCC INVALID
+
+Notes:
+--------------------------------
+<free text>
+
+------------------------------------------------------------
+D. ORCHESTRATOR COMPATIBILITY
+------------------------------------------------------------
+
+Can a generic orchestrator decide behavior using only:
+- interaction type ?          YES / NO
+- returned status ?           YES / NO
+
+If any NO → ❌ NON-COMPLIANT
+
+Notes:
+--------------------------------
+<free text>
+
+------------------------------------------------------------
+E. FINAL VERDICT
+------------------------------------------------------------
+
+Overall compliance:
+☐ COMPLIANT
+☐ NON-COMPLIANT
+
+Required actions:
+--------------------------------
+<list>
+
+------------------------------------------------------------
+8. CANONICAL STATEMENT
+------------------------------------------------------------
+
+A function is BISS–RIG compliant not because of what it does,
+but because of what it deliberately refuses to decide.
+
+------------------------------------------------------------
+9. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS–RIG compliance is auditable, explicit, and human-verifiable.
+It replaces implicit assumptions with declared responsibilities,
+making systems safer as they scale.
+
+END OF DOCUMENT

@@ -1,0 +1,252 @@
+BISS–RIG AGENT SPECIFICATION
+===========================
+
+STATUS
+------
+Normative specification
+
+AUDIENCE
+--------
+- AI system architects
+- Platform engineers
+- Agent framework designers
+- Governance, safety, and compliance reviewers
+- Tool and orchestrator authors
+
+This document defines what an AI Agent is in a BISS–RIG governed system,
+what it is allowed to do, what it must not do, and how it integrates
+cleanly with BISS–RIG interactions (GIC, GCC, UCC).
+
+This is NOT a cognitive or ML specification.
+This is an architectural and responsibility specification.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Agent Specification
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+The purpose of this document is to:
+
+- define the role of an Agent in a BISS–RIG system
+- establish clear boundaries between cognition and interaction
+- prevent unsafe or implicit side effects
+- enable reliable orchestration and automation
+
+------------------------------------------------------------
+2. CORE DEFINITION
+------------------------------------------------------------
+
+An Agent is a decision-making component.
+
+An Agent:
+- reasons
+- plans
+- evaluates
+- chooses actions
+
+An Agent is NOT:
+- a contract
+- an orchestrator
+- a source of truth
+- a boundary authority
+
+------------------------------------------------------------
+3. THE FUNDAMENTAL RULE
+------------------------------------------------------------
+
+An Agent MUST NOT directly modify external state.
+
+All effects on the external world MUST occur through
+explicit, declared, contract-governed interactions.
+
+This rule is non-negotiable.
+
+------------------------------------------------------------
+4. SEMANTIC DOMAINS
+------------------------------------------------------------
+
+BISS–RIG distinguishes three semantic domains:
+
+------------------------------------------------------------
+
+4.1 Cognitive Domain (Agent Internal)
+
+Includes:
+- reasoning loops
+- memory updates
+- planning
+- heuristics
+- learning
+- uncertainty handling
+
+Properties:
+- non-deterministic
+- non-contractual
+- not externally verifiable
+
+This domain is free by design.
+
+------------------------------------------------------------
+
+4.2 Interaction Domain (BISS–RIG)
+
+Includes:
+- tool invocations
+- API calls
+- system commands
+- infrastructure changes
+- emitted signals
+
+Properties:
+- observable
+- explicit
+- contract-governed
+- auditable
+
+This domain is strictly governed.
+
+------------------------------------------------------------
+
+4.3 Orchestration Domain
+
+Includes:
+- retries
+- scheduling
+- looping
+- coordination
+
+Properties:
+- deterministic
+- mechanical
+- policy-driven
+
+------------------------------------------------------------
+5. AGENT → WORLD INTERACTION MODEL
+------------------------------------------------------------
+
+Correct flow:
+
+1. Agent reasons internally
+2. Agent selects a tool
+3. Tool invocation crosses a boundary
+4. Boundary is governed by GIC, GCC, or UCC
+5. Tool returns authoritative output
+6. Agent updates memory based on output
+
+At no point does the Agent invent semantics.
+
+------------------------------------------------------------
+6. AGENT RESPONSIBILITIES
+------------------------------------------------------------
+
+An Agent MUST:
+
+- use only declared tools to affect the world
+- accept authoritative tool output as truth
+- respect declared semantics (GIC/GCC/UCC)
+- avoid inferring retry safety
+- avoid inferring convergence
+- treat logs as non-authoritative
+
+------------------------------------------------------------
+7. AGENT PROHIBITIONS
+------------------------------------------------------------
+
+An Agent MUST NOT:
+
+- directly modify files, systems, or APIs
+- bypass tool interfaces
+- assume idempotence
+- upgrade GCC behavior to UCC mentally
+- parse logs as truth
+- infer success from text
+- fabricate outcomes
+
+------------------------------------------------------------
+8. TOOL CONTRACT REQUIREMENTS
+------------------------------------------------------------
+
+Every tool exposed to an Agent MUST declare:
+
+- supported semantic type(s)
+- retry safety
+- output schema
+- target model (for UCC)
+
+This documentation belongs to the tool,
+not to the Agent.
+
+------------------------------------------------------------
+9. MEMORY AND REASONING CLARIFICATION
+------------------------------------------------------------
+
+Memory updates and reasoning loops:
+
+- are real and important
+- are internal to the Agent
+- are not interactions
+- are not contracts
+- are not governed by BISS–RIG
+
+They become visible only when they emit
+an interaction across a boundary.
+
+------------------------------------------------------------
+10. ERROR HANDLING
+------------------------------------------------------------
+
+Agents MUST handle errors by:
+
+- consuming authoritative output
+- reacting according to declared semantics
+- escalating or retrying only when allowed
+
+Agents MUST NOT invent recovery strategies
+that violate tool semantics.
+
+------------------------------------------------------------
+11. AUDITABILITY AND SAFETY
+------------------------------------------------------------
+
+Auditability is achieved by:
+
+- strict boundary control
+- explicit contracts
+- authoritative outputs
+- deterministic orchestration
+
+Agent cognition is not audited.
+Agent interactions are.
+
+------------------------------------------------------------
+12. CANONICAL STATEMENTS
+------------------------------------------------------------
+
+- Agents reason; contracts guarantee.
+- Cognition is free; interaction is strict.
+- Agents do not decide truth; tools do.
+- Logs explain; contracts define.
+- Boundaries are where control exists.
+
+------------------------------------------------------------
+13. FINAL SYNTHESIS
+------------------------------------------------------------
+
+An Agent in a BISS–RIG system is powerful
+precisely because it is constrained.
+
+By enforcing strict boundaries between
+thinking and acting, BISS–RIG enables:
+
+- safe automation
+- reliable orchestration
+- controllable AI behavior
+- scalable systems
+
+BISS–RIG does not limit intelligence.
+It limits side effects.
+
+END OF DOCUMENT

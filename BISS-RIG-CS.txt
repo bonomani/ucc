@@ -1,0 +1,154 @@
+BISS + RIG COMPLIANCE STATEMENT
+==============================
+
+This document defines the correct and auditable way to claim
+both BISS and RIG in a software system.
+
+It merges the two positions into a single, coherent declaration,
+with clear scope, meaning, and limitations.
+
+PREREQUISITE READING
+--------------------
+BISS.txt        (two-axis model)
+GLOSSARY.txt    (canonical vocabulary)
+BISS-AXIOMS.txt (canonical architectural rules — normative reference)
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Compliance Statement Specification
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+This statement clarifies what it means for a software system to:
+
+- comply with the Boundary Interaction Semantic Standard (BISS)
+- apply the Rigorous Interaction Grade (RIG)
+
+It prevents ambiguous, incorrect, or overreaching claims such as:
+- “the whole software is BISS”
+- “everything is a contract”
+- “RIG guarantees correctness”
+
+------------------------------------------------------------
+2. ROLE SEPARATION (FUNDAMENTAL)
+------------------------------------------------------------
+
+See BISS-AXIOMS.txt §1.2 for the normative statement of this separation.
+
+BISS and RIG apply to different parts of a system and are complementary
+and non-overlapping. Any claim that applies them to the same scope is incorrect.
+
+------------------------------------------------------------
+3. WHAT IT MEANS TO BE BISS-COMPLIANT
+------------------------------------------------------------
+
+A software system is considered BISS-compliant if and only if:
+
+1. All boundary interactions are explicitly identified
+2. Each boundary interaction is classified as:
+   - GIC (observable interaction), or
+   - GCC (normative contract), or
+   - UCC (deterministic convergence contract)
+3. No boundary interaction relies on implicit semantics
+4. All guarantees announced match the chosen classification
+5. Retry behavior and authority are explicit and correct
+6. Internal implementation details remain unconstrained by BISS
+
+See BISS-AXIOMS.txt §1.4 for what BISS does not govern.
+
+BISS does NOT:
+- apply to internal functions
+- prescribe internal architecture
+- define algorithms or data structures
+
+------------------------------------------------------------
+4. WHAT IT MEANS TO APPLY RIG
+------------------------------------------------------------
+
+A software system applies RIG if:
+
+1. Internal interactions are observable and traceable
+2. Internal assumptions are made explicit via invariants
+3. Failures are explicit, diagnosable, and treated as bugs
+4. Tests are stable, meaningful, and aligned with intent
+5. Internal behavior remains freely refactorable
+6. No internal behavior is presented as externally stable or normative
+
+See BISS-AXIOMS.txt §3.3 for what RIG does not provide.
+
+RIG does NOT:
+- define contracts
+- provide guarantees to external consumers
+- imply compatibility or versioning promises
+- authorize retries or automation
+
+------------------------------------------------------------
+5. COMBINED MODEL (CANONICAL)
+------------------------------------------------------------
+
+See BISS-AXIOMS.txt §1.5 for the canonical roles and §5.5 for the
+non-leakage and declaration requirements.
+
+In a correct architecture:
+
+- Internal interactions follow RIG
+- Boundary interactions follow BISS
+- Semantics never leak from internal to boundary layers
+- Contracts are declared, never inferred
+
+------------------------------------------------------------
+6. CORRECT COMBINED CLAIM (CANONICAL FORM)
+------------------------------------------------------------
+
+The following statement is correct, precise, and auditable:
+
+“This software applies the Rigorous Interaction Grade (RIG) to its
+internal interactions to ensure strong observability and invariant
+enforcement, while all boundary interactions are explicitly classified
+and governed according to the Boundary Interaction Semantic Standard
+(BISS).”
+
+------------------------------------------------------------
+7. INCORRECT OR MISLEADING CLAIMS (TO AVOID)
+------------------------------------------------------------
+
+The following statements are incorrect and must not be used:
+
+- “The software is fully BISS”
+- “All functions follow BISS”
+- “Everything is a contract”
+- “RIG guarantees correctness”
+- “RIG replaces contracts”
+
+------------------------------------------------------------
+8. PRACTICAL INTERPRETATION
+------------------------------------------------------------
+
+In practice, this combined claim means:
+
+- Engineers are free to refactor internal code
+- Internal rigor is high and observable
+- External behavior is explicit and trustworthy
+- Automation and AI can rely on boundary semantics
+- No accidental contracts are created
+
+------------------------------------------------------------
+9. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS and RIG together provide:
+
+- Freedom internally
+- Clarity externally
+- Rigor without rigidity
+- Contracts without overreach
+
+RIG makes internal execution reliable.
+BISS makes external interaction dependable.
+
+This separation is deliberate, structural,
+and essential to scalable system design.
+
+END OF DOCUMENT

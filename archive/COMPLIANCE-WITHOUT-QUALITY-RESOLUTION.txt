@@ -1,0 +1,208 @@
+COMPLIANCE-WITHOUT-QUALITY-RESOLUTION.txt
+======================================
+
+ADDRESSES
+---------
+Compliance Without Quality (see SYSTEMIC-GOVERNANCE-PROBLEMS.txt)
+
+PURPOSE
+-------
+This document defines a minimal, concrete, and technology-agnostic method
+to resolve **Problem #5: Compliance Without Quality** in distributed,
+automated, or AI-augmented systems.
+
+This approach complements BISS-RIG.
+It does NOT modify BISS-RIG.
+It measures quality without affecting execution.
+
+
+PROBLEM STATEMENT
+-----------------
+A system can be fully compliant while still being functionally bad.
+
+Examples:
+- actions succeed but are too slow
+- retries increase but stay within limits
+- outputs are correct but less relevant
+- AI decisions degrade without violating rules
+
+BISS-RIG validates correctness and final state.
+It does NOT evaluate usefulness, performance, or long-term effectiveness.
+
+
+CORE PRINCIPLE
+--------------
+Quality is **orthogonal** to correctness.
+
+Quality must be:
+- observed
+- measured
+- compared over time
+
+It must never:
+- block execution
+- redefine success
+- override correctness
+
+
+MINIMAL SOLUTION
+----------------
+Introduce a **Quality Observation Envelope** attached to executions
+or derived from executions.
+
+This envelope is observational metadata only.
+
+
+QUALITY OBSERVATION MODEL (MINIMAL)
+----------------------------------
+
+Each quality observation declares:
+
+quality:
+  metric_id
+  value
+  baseline
+  status
+
+
+QUALITY METRIC IDENTIFIER
+-------------------------
+A quality metric is a stable, named indicator.
+
+Examples:
+- execution_latency_ms
+- retry_count
+- ai_confidence_score
+- result_accuracy_ratio
+- resource_cost_units
+
+Metric identifiers must be:
+- stable
+- comparable over time
+- technology-agnostic
+
+
+REQUIRED FIELDS
+---------------
+
+metric_id
+- Logical name of the metric
+
+value
+- Observed value
+
+baseline
+- Reference value or range
+
+status
+- normal | degraded | critical
+
+
+OPTIONAL BUT RECOMMENDED
+-----------------------
+
+trend
+window
+confidence
+notes
+
+
+EVENT EXAMPLE
+-------------
+
+Execution with quality observation:
+
+event_id: EVT-120
+correlation_id: CORR-33
+parent_event_id: EVT-119
+event_type: execution
+
+quality:
+  metric_id: execution_latency_ms
+  value: 1840
+  baseline: "< 500"
+  status: degraded
+
+
+Multiple metrics may be attached to the same execution.
+
+
+QUALITY DECLARATION RULES
+-------------------------
+
+Rule 1: Quality never redefines success
+- An execution can succeed and still be degraded
+
+Rule 2: Quality is comparative
+- Every metric must reference a baseline
+
+Rule 3: Quality is time-aware
+- Trends matter more than single values
+
+Rule 4: Quality never blocks execution
+- Alerts are informational only
+
+
+WHAT THIS ENABLES
+-----------------
+With explicit quality observation, the system can:
+
+- Detect silent degradation
+- Compare behavior over time
+- Identify early warning signals
+- Separate correctness from usefulness
+
+Example questions now answerable:
+- When did performance start degrading?
+- Which executions are technically correct but inefficient?
+- Did quality change after a reasoning update?
+
+
+WHAT THIS DOES NOT DO
+--------------------
+This mechanism does NOT:
+- enforce SLAs
+- block executions
+- redefine failure
+- optimize behavior
+- judge business value
+
+Those concerns belong to strategy and arbitration layers.
+
+
+MENTAL MODEL
+------------
+Execution answers:
+- Did it work?
+
+Quality answers:
+- Was it still good?
+
+Both must coexist without interference.
+
+
+RELATION TO BISS-RIG
+-------------------
+- BISS-RIG defines success or failure
+- Quality observation evaluates health and usefulness
+
+They must remain strictly independent.
+
+
+SUCCESS CRITERIA
+----------------
+Problem #5 is resolved if and only if:
+
+- Quality metrics are recorded for executions
+- Each metric has a baseline
+- Degradation can be detected over time
+- Execution correctness remains untouched
+
+
+FINAL NOTE
+----------
+Systems rarely fail suddenly.
+They degrade silently.
+
+Quality observability is the only way to see it coming
+without corrupting execution guarantees.

@@ -1,0 +1,171 @@
+SYSTEMIC PROBLEMS IN DISTRIBUTED, AUTOMATED, AND AI-AUGMENTED SYSTEMS
+===================================================================
+
+This document lists the major structural problems that arise in distributed,
+automated, or AI-augmented systems. Each problem is assigned an importance
+value between 0 and 100, representing its systemic risk and impact at scale.
+
+The problems are technology-agnostic and concern system structure, governance,
+and long-term operability.
+
+
+1. GOVERNANCE OF EXECUTION
+-------------------------
+Importance: 100 / 100
+
+Definition:
+Inability to deterministically prove what was executed, with which outcome,
+under which authority, and with which final state.
+
+Consequences:
+- Actions cannot be audited or proven
+- Legal and compliance exposure
+- Impossible post-mortem analysis
+
+Notes:
+This is the foundational problem.
+It is fully addressed by BISS-RIG and must not be weakened.
+
+
+2. LOSS OF EXPLICIT CAUSALITY
+----------------------------
+Importance: 90 / 100
+
+Definition:
+The system cannot explain why an action occurred or what triggered it,
+especially in concurrent or distributed environments.
+
+Consequences:
+- Root-cause analysis becomes speculative
+- Debugging relies on guesswork
+- Fragile behavior under concurrency
+
+Notes:
+This concerns ordering, triggering, and dependency chains.
+Execution contracts alone do not solve this.
+
+
+3. IMPLICIT STATE AND HIDDEN SIDE EFFECTS
+----------------------------------------
+Importance: 85 / 100
+
+Definition:
+The system reads or mutates state that is not explicitly declared or governed.
+
+Consequences:
+- Hidden coupling between components
+- Non-local and cascading failures
+- Unpredictable behavior
+
+Notes:
+Common with shared databases, caches, and global context.
+Breaks reasoning and composability.
+
+
+4. UNGOVERNED REASONING (AI / HEURISTICS)
+----------------------------------------
+Importance: 85 / 100
+
+Definition:
+Decisions are influenced by reasoning artifacts (models, prompts, rules)
+that are not versioned, reproducible, or reviewable.
+
+Consequences:
+- Non-reproducible outcomes
+- Drift without accountability
+- Impossible rollback or comparison
+
+Notes:
+Critical in AI-augmented systems.
+Reasoning must be treated as a governed artifact.
+
+
+5. COMPLIANCE WITHOUT QUALITY
+-----------------------------
+Importance: 80 / 100
+
+Definition:
+The system remains formally correct while becoming functionally bad.
+
+Consequences:
+- Silent degradation
+- Operational inefficiency
+- Long-term value erosion
+
+Notes:
+Quality is outside execution correctness.
+Requires separate measurement and monitoring.
+
+
+6. ABSENCE OF SYSTEMIC VISIBILITY
+--------------------------------
+Importance: 75 / 100
+
+Definition:
+The system is understandable locally but opaque globally.
+
+Consequences:
+- Human operators overwhelmed
+- Inability to assess global impact
+- Strategic blindness
+
+Notes:
+Emerges from scale, not from bugs.
+Requires synthesis, not more logs.
+
+
+7. LACK OF GLOBAL ARBITRATION
+----------------------------
+Importance: 70 / 100
+
+Definition:
+The system has no mechanism to decide what is better when multiple valid
+outcomes or objectives conflict.
+
+Consequences:
+- Conflicting local optimizations
+- Suboptimal global behavior
+- Organizational deadlocks
+
+Notes:
+Optimization and arbitration are not execution concerns.
+They must remain separate from action.
+
+
+8. SCALABILITY OF HUMAN SUPERVISION
+----------------------------------
+Importance: 65 / 100
+
+Definition:
+Even when everything is observable, humans cannot keep up with the volume
+and complexity of signals.
+
+Consequences:
+- Alert fatigue
+- Ignored warnings
+- Loss of effective control
+
+Notes:
+This is a synthesis and tooling problem.
+More data makes it worse, not better.
+
+
+CONSOLIDATED IMPORTANCE SUMMARY
+-------------------------------
+- Governance of execution:        100
+- Explicit causality:              90
+- Implicit state:                 85
+- Ungoverned reasoning (AI):       85
+- Compliance without quality:      80
+- Systemic visibility:             75
+- Global arbitration:              70
+- Human supervision scalability:   65
+
+
+FINAL NOTE
+----------
+These are structural problems, not implementation defects.
+
+NOTE: This list was written before UCC-SCOPE.txt was introduced. UCC-SCOPE.txt (Tier 1) now addresses Problems 2, 4, 5, 6, and 7 through the five-scope taxonomy and cross-scope causality rules. See SYSTEMIC-GOVERNANCE-SOLUTIONS.txt for the full resolution of all eight problems.
+
+END OF DOCUMENT

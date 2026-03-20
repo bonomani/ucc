@@ -1,0 +1,266 @@
+GCC/1.0 — Generic Contract Core
+==============================
+
+STATUS
+------
+Normative
+
+PURPOSE
+-------
+This document defines the Generic Contract Core (GCC), a canonical and minimal
+foundation for all valid software contracts.
+
+GCC defines what it means for a software interaction to be:
+- explicit
+- observable
+- verifiable
+- non-ambiguous
+- formally closed
+
+Any contract that does not satisfy GCC invariants is considered invalid by
+construction.
+
+GCC is not an execution model.
+GCC is not a workflow engine.
+GCC is a semantic contract foundation.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Normative – Generic Contract Core Definition
+
+------------------------------------------------------------
+
+------------------------------------------------------------
+1. DEFINITIONS
+------------------------------------------------------------
+
+Contract
+A finite, explicit, observable interaction between at least one actor and a
+system, producing a closed and typed result.
+
+Contract Instance
+A single occurrence of a contract, uniquely identifiable and auditable.
+
+------------------------------------------------------------
+2. CORE INVARIANTS (MANDATORY)
+------------------------------------------------------------
+
+I1 — Identity
+Every contract instance MUST have:
+- a unique identifier
+- a defined scope
+
+Without identity, replay, audit, and reasoning are impossible.
+
+------------------------------------------------------------
+
+I2 — Explicit Input
+Every contract MUST define a formal input.
+
+Input MAY be:
+- a signal
+- an intent
+- a command
+- a user action
+- a message
+
+Implicit input is forbidden.
+
+------------------------------------------------------------
+
+I3 — Observable Fact
+Every contract MUST produce at least one observable fact.
+
+Observable facts MAY include:
+- a state snapshot
+- a received signal
+- a session state
+- an execution outcome
+
+If nothing is observable, the contract is unverifiable.
+
+------------------------------------------------------------
+
+I4 — Closed Result Set
+Every contract MUST terminate with a result belonging to a finite, closed set.
+
+Open-ended or free-form result values are forbidden.
+
+------------------------------------------------------------
+
+I5 — Explicit Closure
+Every contract MUST define when it is complete.
+
+Contracts MUST NOT:
+- remain semantically open
+- rely on implicit timeouts
+- leak indefinitely
+
+------------------------------------------------------------
+
+I6 — Non-Ambiguity
+At any observable point:
+- exactly one interpretation is valid
+- no inference is required
+- no hidden semantics exist
+
+------------------------------------------------------------
+3. CANONICAL GCC STRUCTURE
+------------------------------------------------------------
+
+A Generic Contract Core instance has the following structure:
+
+meta:
+- contract        : string
+- type            : string
+- version         : string
+- id              : string
+- timestamp       : ISO-8601
+- scope           : string
+
+input:
+- formal input payload (type depends on specialization)
+
+observe:
+- observable facts produced by the contract
+
+result:
+- status          : enum (closed set)
+- details         : optional structured data
+
+All fields are explicit.
+All enums are closed.
+No implicit coupling is allowed.
+
+------------------------------------------------------------
+4. DERIVATION PRINCIPLE
+------------------------------------------------------------
+
+A specialized contract is derived from GCC by ADDING invariants.
+
+No specialization may:
+- remove GCC invariants
+- weaken GCC guarantees
+- introduce implicit semantics
+
+------------------------------------------------------------
+5. CONTRACT SPECIALIZATIONS
+------------------------------------------------------------
+
+------------------------------------------------------------
+5.1 UCC — State Convergence Contract
+------------------------------------------------------------
+
+Additional invariants:
+- an observable state exists
+- a desired target state exists
+- a diff between states is computable
+- execution is idempotent
+- retries are deterministic and safe
+
+Result model (closed three-field model — UCC/2.0):
+
+observation: ok | indeterminate | failed
+outcome (when observation=ok): converged | changed | unchanged | failed
+completion (when outcome=changed): complete | pending
+failure_class (when outcome=failed): retryable | permanent
+inhibitor (when outcome=unchanged): dry_run | whatif | policy
+partial (optional, when outcome=changed): true | false
+
+See UCC-EXECUTION.txt and UCC-STATUS.txt for normative definitions.
+
+Interpretation:
+UCC = GCC + state convergence invariants
+
+------------------------------------------------------------
+5.2 Signal Contract — Event Semantics
+------------------------------------------------------------
+
+Additional invariants:
+- input represents a temporal signal
+- no target state exists
+- no convergence is defined
+- semantic replay is forbidden
+
+Example result status set:
+- received
+- dropped
+- duplicated
+
+Interpretation:
+Signal Contract = GCC + temporal delivery invariants
+
+------------------------------------------------------------
+5.3 Dialogue Contract — Human Interaction
+------------------------------------------------------------
+
+Additional invariants:
+- input may be partial
+- interaction is iterative
+- intermediate states are valid
+- closure is conditional
+
+Example result status set:
+- validated
+- cancelled
+- expired
+
+Interpretation:
+Dialogue Contract = GCC + session invariants
+
+------------------------------------------------------------
+5.4 Execution Contract — One-Shot Task
+------------------------------------------------------------
+
+Additional invariants:
+- execution is linear
+- semantic replay is not expected
+- outcome is final and disposable
+
+Example result status set:
+- completed
+- failed
+- aborted
+
+Interpretation:
+Execution Contract = GCC + execution invariants
+
+------------------------------------------------------------
+6. COMPOSITION RULE
+------------------------------------------------------------
+
+Contracts MAY be composed only by explicit handoff:
+
+Contract A.result
+→ Contract B.input
+
+Implicit chaining is forbidden.
+
+------------------------------------------------------------
+7. INVALID DESIGNS (FORBIDDEN)
+------------------------------------------------------------
+
+The following designs are non-compliant:
+- mixing event and convergence semantics
+- open or extensible result sets
+- implicit mode detection
+- missing closure conditions
+- non-observable contracts
+
+------------------------------------------------------------
+8. CANONICAL STATEMENT
+------------------------------------------------------------
+
+GCC defines what it means for a software interaction to be a contract.
+
+UCC is the specialization of GCC for state convergence.
+
+Signal, Dialogue, and Execution contracts are equally valid specializations
+for other classes of reality.
+
+A correct system does not choose one contract.
+It composes multiple explicit contracts without ambiguity.
+
+END OF DOCUMENT

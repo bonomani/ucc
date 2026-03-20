@@ -1,0 +1,221 @@
+GOVERNED-WRAPPER-IMPLEMENTATIONS.txt
+==================================
+
+NOTE: These wrappers emit events from the RECORD-MODEL-SPEC (intent and
+execution events). They do NOT emit UCC result messages. For UCC result
+message structure, see UCC-EXAMPLE.txt. For the event structure, see
+RECORD-MODEL-SPEC.txt.
+
+This document contains minimal, correct implementations of the `governed()`
+wrapper in four languages:
+- PowerShell
+- Perl
+- Go
+- JavaScript (Node.js)
+
+In all cases:
+- The action does the real work
+- The wrapper only records facts
+- Removing the wrapper does not change behavior
+
+
+====================================================================
+1. POWERSHELL
+====================================================================
+
+function Invoke-Governed {
+    param(
+        [ScriptBlock]$Action,
+        [string]$Intent
+    )
+
+    $correlationId = [guid]::NewGuid().ToString()
+
+    Record-Event @{
+        type = "intent"
+        correlation_id = $correlationId
+        intent = $Intent
+        timestamp = (Get-Date).ToUniversalTime()
+    }
+
+    try {
+        $result = & $Action
+        $status = "success"
+    } catch {
+        $status = "failure"
+        throw
+    } finally {
+        Record-Event @{
+            type = "execution"
+            correlation_id = $correlationId
+            result = $status
+            timestamp = (Get-Date).ToUniversalTime()
+        }
+    }
+
+    return $result
+}
+
+Usage:
+
+Invoke-Governed {
+    Copy-Item file1.txt file2.txt
+} "copy file1.txt to file2.txt"
+
+
+====================================================================
+2. PERL
+====================================================================
+
+sub governed {
+    my (%args) = @_;
+    my $action = $args{action};
+    my $intent = $args{intent};
+
+    my $correlation_id = generate_uuid();
+
+    record_event({
+        type => "intent",
+        correlation_id => $correlation_id,
+        intent => $intent,
+        timestamp => time()
+    });
+
+    my $result;
+    my $status = "success";
+    my $err;
+
+    eval {
+        $result = $action->();
+    };
+    if ($@) {
+        $status = "failure";
+        $err = $@;
+    }
+
+    # cleanup runs regardless of eval outcome
+    record_event({
+        type => "execution",
+        correlation_id => $correlation_id,
+        result => $status,
+        timestamp => time()
+    });
+
+    die $err if $err;
+
+    return $result;
+}
+
+Usage:
+
+governed(
+    action => sub { system("cp file1.txt file2.txt") },
+    intent => "copy file1.txt to file2.txt"
+);
+
+
+====================================================================
+3. GO
+====================================================================
+
+func Governed(action func() error, intent string) error {
+    correlationID := NewUUID()
+
+    RecordEvent(map[string]interface{}{
+        "type":           "intent",
+        "correlation_id": correlationID,
+        "intent":         intent,
+        "timestamp":      time.Now().UTC(),
+    })
+
+    err := action()
+    status := "success"
+    if err != nil {
+        status = "failure"
+    }
+
+    RecordEvent(map[string]interface{}{
+        "type":           "execution",
+        "correlation_id": correlationID,
+        "result":         status,
+        "timestamp":      time.Now().UTC(),
+    })
+
+    return err
+}
+
+Usage:
+
+Governed(func() error {
+    return copyFile("file1.txt", "file2.txt")
+}, "copy file1.txt to file2.txt")
+
+
+====================================================================
+4. JAVASCRIPT (NODE.JS)
+====================================================================
+
+async function governed(action, intent) {
+    const correlationId = crypto.randomUUID();
+
+    recordEvent({
+        type: "intent",
+        correlation_id: correlationId,
+        intent: intent,
+        timestamp: new Date().toISOString()
+    });
+
+    let status = "success";
+    try {
+        return await action();
+    } catch (err) {
+        status = "failure";
+        throw err;
+    } finally {
+        recordEvent({
+            type: "execution",
+            correlation_id: correlationId,
+            result: status,
+            timestamp: new Date().toISOString()
+        });
+    }
+}
+
+Usage:
+
+await governed(
+    () => fs.copyFile("file1.txt", "file2.txt"),
+    "copy file1.txt to file2.txt"
+);
+
+
+====================================================================
+GLOBAL INVARIANT
+====================================================================
+
+If you replace:
+
+    governed(action, intent)
+
+with:
+
+    action()
+
+The program must behave identically.
+
+If behavior changes, the wrapper is incorrect.
+
+
+====================================================================
+FINAL STATEMENT
+====================================================================
+
+These wrappers implement the minimal record model:
+- intent is explicit
+- execution is factual
+- no inference
+- no control
+
+They are safe, optional, and evolvable.
+
+END OF FILE

@@ -1,0 +1,259 @@
+BISS–RIG LOGGING SPECIFICATION
+=============================
+
+STATUS
+------
+Normative specification
+
+AUDIENCE
+--------
+- Architects
+- Platform engineers
+- DevOps / Automation engineers
+- Script and tool authors
+- Observability and SRE teams
+
+This document defines WHAT must be logged in a BISS–RIG compliant system,
+WHAT must not be logged, and WHY.
+
+It applies to all BISS–RIG interactions (GIC, GCC, UCC) and is strictly
+about logging and observability.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Logging Specification
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+The purpose of logging in BISS–RIG is:
+
+- traceability
+- observability
+- debugging
+- auditability
+
+Logging is NOT used for:
+- decision making
+- orchestration
+- contractual truth
+- retry logic
+
+------------------------------------------------------------
+2. CORE PRINCIPLE
+------------------------------------------------------------
+
+BISS–RIG enforces a strict separation:
+
+- Contracts define truth
+- Logs explain execution
+
+Logs are always non-authoritative.
+
+------------------------------------------------------------
+3. LOGGING CATEGORIES (MANDATORY)
+------------------------------------------------------------
+
+------------------------------------------------------------
+3.1 Execution Identity
+------------------------------------------------------------
+
+Every execution MUST log:
+
+- execution / run identifier
+- component or script name
+- component version or commit
+- semantic type (GIC / GCC / UCC)
+- output schema version
+
+Purpose:
+- correlation
+- audit
+- traceability
+
+------------------------------------------------------------
+3.2 Timing and Performance
+------------------------------------------------------------
+
+Every execution MUST log:
+
+- start timestamp
+- end timestamp
+- total duration
+
+Optional:
+- per-phase durations
+
+Purpose:
+- performance analysis
+- capacity planning
+- anomaly detection
+
+------------------------------------------------------------
+3.3 Input Summary
+------------------------------------------------------------
+
+Logging full input payloads is OPTIONAL.
+
+Every execution SHOULD log:
+
+- input source (file, stdin, api)
+- normalized input hash
+- number of targets
+
+Purpose:
+- reproducibility
+- audit
+- debugging
+
+------------------------------------------------------------
+3.4 State Evaluation (UCC only)
+------------------------------------------------------------
+
+UCC executions SHOULD log:
+
+- count of targets already converged
+- count of targets requiring action
+
+Purpose:
+- explain why actions occurred
+- support debugging
+
+------------------------------------------------------------
+3.5 Actions Taken
+------------------------------------------------------------
+
+GCC and UCC executions SHOULD log:
+
+- number of actions attempted
+- action type(s)
+- number of failures
+
+Purpose:
+- human understanding
+- incident analysis
+
+------------------------------------------------------------
+3.6 Errors and Exceptions
+------------------------------------------------------------
+
+Every execution MUST log:
+
+- error category
+- affected target (if applicable)
+- correlation identifier
+
+Optional:
+- stack traces
+- raw error messages
+
+Purpose:
+- debugging
+- incident response
+
+------------------------------------------------------------
+3.7 Final Summary
+------------------------------------------------------------
+
+Every execution MUST log a final summary:
+
+- semantic outcome summary
+- counts derived from authoritative output
+- confirmation that authoritative output was emitted
+
+Purpose:
+- human readability
+- dashboards
+- audits
+
+------------------------------------------------------------
+4. WHAT MUST NOT BE LOGGED
+------------------------------------------------------------
+
+The following MUST NOT be logged as authoritative data:
+
+- contractual output (full JSON result)
+- decisions derived from orchestration
+- inferred semantics
+- retry decisions
+- data required by orchestrators
+
+Logs MUST NOT be parsed by machines to determine behavior.
+
+------------------------------------------------------------
+5. LOG LOCATION AND CHANNELS
+------------------------------------------------------------
+
+Recommended separation:
+
+- stdout  -> authoritative output only
+- stderr  -> logs
+
+Alternative environments MAY use equivalent channels,
+but separation MUST be preserved.
+
+------------------------------------------------------------
+6. LOG LEVEL GUIDELINES
+------------------------------------------------------------
+
+Suggested mapping:
+
+- DEBUG   : detailed diagnostics
+- INFO    : execution flow
+- NOTICE  : meaningful state changes
+- WARN    : recoverable anomalies
+- ERROR   : execution failures
+
+Log level usage MUST NOT affect contractual semantics.
+
+------------------------------------------------------------
+7. SECURITY AND SENSITIVITY
+------------------------------------------------------------
+
+Logs MUST:
+
+- avoid leaking secrets
+- redact sensitive input when necessary
+- avoid storing full payloads unless required
+
+Hashing input/output for traceability is RECOMMENDED.
+
+------------------------------------------------------------
+8. RELATIONSHIP TO CONTRACT OUTPUT
+------------------------------------------------------------
+
+The authoritative contract output:
+
+- is emitted exactly once
+- is deterministic
+- is consumed by machines
+
+Logs:
+
+- may repeat summary information
+- may include derived metrics
+- must never contradict the contract
+
+------------------------------------------------------------
+9. CANONICAL STATEMENTS
+------------------------------------------------------------
+
+- Logs are not contracts.
+- Logs must never be parsed by orchestrators.
+- Contracts are emitted once; logs may be verbose.
+- Logging explains execution, not truth.
+
+------------------------------------------------------------
+10. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS–RIG logging is intentionally boring.
+
+It exists to support humans, audits, and diagnostics,
+while contracts support automation and correctness.
+
+Keeping logs and contracts strictly separate is what
+allows systems to scale safely.
+
+END OF DOCUMENT

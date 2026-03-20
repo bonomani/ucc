@@ -1,0 +1,257 @@
+UCC-MAPPINGS – Mapping Examples (REST, CLI, Database)
+Universal Convergence Contract (UCC)
+
+This document is NON-NORMATIVE and EXPLANATORY.
+It provides concrete mappings from common paradigms (REST, CLI, DB)
+to the UCC/2.0 model, without adding new semantics.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Guidance – Domain Mapping Reference
+
+------------------------------------------------------------
+
+1. PURPOSE OF THIS DOCUMENT
+
+This document shows:
+
+- how existing interaction models map to UCC
+- that no paradigm requires extensions to UCC
+- how to reason about legacy systems using UCC concepts
+
+The mappings are illustrative and minimal.
+
+------------------------------------------------------------
+
+2. GENERAL MAPPING PRINCIPLE
+
+For any paradigm:
+
+- Observation maps to reading current state
+- Declaration maps to specifying a desired state
+- Diff maps to comparing current vs desired
+- Result maps to the observable outcome
+
+Formally:
+Transaction ≡ Observe → Declare → Diff → Result
+
+------------------------------------------------------------
+
+3. REST / HTTP API MAPPING
+
+3.1 GET (Read-only)
+
+HTTP:
+GET /resource/123
+
+UCC Mapping:
+- observe(): read resource state
+- declaration: none (implicit)
+- diff: not applicable
+- result: observation=ok, outcome=converged
+
+Interpretation:
+GET is a pure observation.
+
+------------------------------------------------------------
+
+3.2 PUT (Replace)
+
+HTTP:
+PUT /resource/123
+Body: { "name": "A", "value": 10 }
+
+UCC Mapping:
+- observe(): current resource state
+- declaration: desired_state = body
+- diff: current vs body
+- result:
+  - observation=ok, outcome=converged if already equal
+  - observation=ok, outcome=changed, completion=complete if updated
+  - observation=ok, outcome=failed if invalid
+
+------------------------------------------------------------
+
+3.3 POST (Create)
+
+HTTP:
+POST /resource
+Body: { "name": "A" }
+
+UCC Mapping:
+- observe(): resource does not exist
+- declaration: resource must exist with given state
+- diff: absence vs presence
+- result: observation=ok, outcome=changed, completion=complete (created)
+
+------------------------------------------------------------
+
+3.4 DELETE (Remove)
+
+HTTP:
+DELETE /resource/123
+
+UCC Mapping:
+- observe(): resource exists
+- declaration: resource must not exist
+- diff: existence vs absence
+- result:
+  - observation=ok, outcome=changed, completion=complete if removed
+  - observation=ok, outcome=converged if already absent
+
+------------------------------------------------------------
+
+4. CLI / SCRIPT MAPPING
+
+4.1 File Creation Script
+
+Shell:
+if [ ! -f /tmp/a ]; then touch /tmp/a; fi
+
+UCC Mapping:
+- observe(): file existence and metadata
+- declaration: file must exist
+- diff: exists vs not exists
+- result:
+  - observation=ok, outcome=converged if already exists
+  - observation=ok, outcome=changed, completion=complete if created
+
+------------------------------------------------------------
+
+4.2 Package Installation
+
+Shell:
+apt install curl
+
+UCC Mapping:
+- observe(): package list
+- declaration: curl must be installed
+- diff: installed vs not installed
+- result:
+  - observation=ok, outcome=converged if already installed
+  - observation=ok, outcome=changed, completion=complete if installed
+  - observation=ok, outcome=failed if impossible
+
+------------------------------------------------------------
+
+4.3 Configuration Enforcement
+
+Shell:
+sed -i 's/X=0/X=1/' config
+
+UCC Mapping:
+- observe(): configuration file content
+- declaration: config key X = 1
+- diff: current value vs desired
+- result:
+  - observation=ok, outcome=changed, completion=complete if modified
+  - observation=ok, outcome=converged if already correct
+
+------------------------------------------------------------
+
+5. DATABASE MAPPING
+
+5.1 SELECT (Read-only)
+
+SQL:
+SELECT * FROM users WHERE id = 1;
+
+UCC Mapping:
+- observe(): row snapshot
+- declaration: none
+- result: observation=ok, outcome=converged
+
+------------------------------------------------------------
+
+5.2 INSERT
+
+SQL:
+INSERT INTO users (id, name) VALUES (1, 'A');
+
+UCC Mapping:
+- observe(): row existence
+- declaration: row must exist with given values
+- diff: absence vs presence
+- result:
+  - observation=ok, outcome=changed, completion=complete if inserted
+  - observation=ok, outcome=failed if constraint violation
+
+------------------------------------------------------------
+
+5.3 UPDATE
+
+SQL:
+UPDATE users SET name = 'B' WHERE id = 1;
+
+UCC Mapping:
+- observe(): current row
+- declaration: name = 'B'
+- diff: current vs desired
+- result:
+  - observation=ok, outcome=changed, completion=complete if updated
+  - observation=ok, outcome=converged if already 'B'
+  - observation=ok, outcome=failed if row missing
+
+------------------------------------------------------------
+
+5.4 DELETE
+
+SQL:
+DELETE FROM users WHERE id = 1;
+
+UCC Mapping:
+- observe(): row existence
+- declaration: row must not exist
+- diff: presence vs absence
+- result:
+  - observation=ok, outcome=changed, completion=complete if deleted
+  - observation=ok, outcome=converged if already absent
+
+------------------------------------------------------------
+
+6. TRANSACTIONAL GUARANTEES
+
+Traditional guarantees map as follows:
+
+- Atomicity → single UCC result
+- Consistency → valid desired state
+- Isolation → external to UCC
+- Durability → observable state persistence
+
+UCC does not replace transactions;
+it models their observable intent and outcome.
+
+------------------------------------------------------------
+
+7. KEY INSIGHT
+
+REST, CLI, and database interactions are not different paradigms.
+They are syntactic variations of the same convergence process.
+
+UCC provides the semantic common denominator.
+
+NOTE: The term "Declaration" is used for the desired-state specification
+to avoid collision with Intent (correlation grouping) defined in CORE-CONCEPTS.
+See GLOSSARY.txt for canonical definitions.
+
+------------------------------------------------------------
+
+8. CONCLUSION
+
+These mappings demonstrate that:
+
+- no existing paradigm is excluded
+- no extension to UCC is required
+- UCC can reason about legacy systems
+  without rewriting them
+
+UCC is a unifying model, not a replacement.
+
+------------------------------------------------------------
+
+UCC-MAPPINGS – Mapping Examples (REST, CLI, Database)
+Non-normative explanatory document — UCC/2.0
+
+END OF DOCUMENT

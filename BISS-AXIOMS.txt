@@ -1,0 +1,240 @@
+BISS-AXIOMS – Canonical Architectural Rules
+============================================
+
+STATUS
+------
+Normative reference
+
+VERSION
+-------
+1.0
+
+PREREQUISITE READING
+--------------------
+BISS.txt        (two-axis model)
+GLOSSARY.txt    (canonical vocabulary)
+
+PURPOSE
+-------
+This document is the single source of truth for BISS architectural axioms.
+All other BISS documents reference this document rather than restating rules.
+
+KEY AXIOMS (START HERE)
+-----------------------
+These three axioms govern the most common design decisions:
+
+AXIOM 2.3 — SHARE MECHANISMS, NOT MEANING: Components may share execution
+            infrastructure but must never share semantic type through wrapping.
+AXIOM 2.4 — NO SEMANTIC WRAPPING: A GIC wrapper around GCC is not GIC.
+            Wrapping never downgrades or upgrades semantic type.
+AXIOM 4.5 — RETRY AUTHORIZATION: Only UCC interactions may be retried
+            automatically. Events (GIC) must not be retried as if they were
+            contracts. Retry behavior must be defined only for GCC and UCC.
+
+For the complete axiom set, continue to §1 below.
+
+------------------------------------------------------------
+
+1. SEPARATION AXIOMS
+------------------------------------------------------------
+
+AXIOM 1.1 — Two orthogonal axes
+BISS is defined along two independent axes.
+These axes MUST NOT be confused or merged.
+
+  Axis A: Interaction Type (GIC / GCC / UCC) — boundary interactions only
+  Axis B: Internal Quality Grade (Basic / RIG) — any code
+
+AXIOM 1.2 — BISS governs boundaries; RIG governs internals
+BISS governs EXTERNAL / BOUNDARY interactions.
+RIG governs INTERNAL interactions.
+They are complementary and non-overlapping.
+
+AXIOM 1.3 — Normativity is bounded
+Normativity applies only at boundaries.
+Observability and rigor MAY be applied everywhere.
+
+AXIOM 1.4 — Internal freedom
+BISS does NOT:
+- apply to internal functions
+- prescribe internal architecture
+- define algorithms or data structures
+
+Internal implementation details remain unconstrained by BISS.
+
+AXIOM 1.5 — Canonical roles
+GIC observes.
+RIG enforces internal rigor.
+GCC governs responsibility.
+UCC guarantees convergence.
+
+------------------------------------------------------------
+
+2. BOUNDARY AXIOMS
+------------------------------------------------------------
+
+AXIOM 2.1 — Implicit semantics forbidden
+Boundary interactions MUST NOT rely on implicit semantics.
+
+AXIOM 2.2 — Mandatory classification
+Every boundary interaction MUST be explicitly classified as one of:
+- GIC (interaction)
+- GCC (contract)
+- UCC (convergence contract)
+
+If none apply, the interaction MUST be declared non-contractual.
+
+AXIOM 2.3 — Share mechanisms, not meaning
+The single most important reuse rule is:
+
+SHARE MECHANISMS, NOT MEANING.
+
+- Anything that computes, observes, or transforms facts MAY be reused.
+- Anything that assigns meaning, authority, or obligation MUST NOT be reused.
+
+AXIOM 2.4 — No semantic layer may wrap another
+No semantic layer may wrap another semantic layer.
+
+It is incorrect to implement:
+  UCC = GCC + retry
+  GCC = RIG + result enum
+  RIG = GIC + assertions
+
+This causes semantics to become implicit, guarantees to leak across layers,
+and contracts to become accidental instead of declared.
+
+Correct design requires:
+- shared neutral core
+- separate semantic façades
+- zero semantic inheritance
+
+AXIOM 2.5 — Semantic meaning declared once
+Semantic meaning must be declared exactly once, at the chosen interaction level.
+Implementation code may be reused freely.
+
+------------------------------------------------------------
+
+3. QUALITY GRADE AXIOMS
+------------------------------------------------------------
+
+AXIOM 3.1 — RIG is not a contract
+RIG is NOT a contract.
+RIG is NOT part of the interaction type hierarchy.
+It is an independent quality grade that may be applied to any interaction
+at any level (GIC, GCC, or UCC).
+Placing RIG in the interaction type axis is incorrect.
+
+AXIOM 3.2 — RIG characteristics
+RIG describes internal interactions that follow strong rigor and
+observability rules without introducing contractual normativity.
+
+RIG explicitly does NOT include:
+- opposable results
+- compatibility guarantees
+- retry commitments
+- external responsibility
+
+AXIOM 3.3 — RIG does not provide external guarantees
+RIG does NOT:
+- define contracts
+- provide guarantees to external consumers
+- imply compatibility or versioning promises
+- authorize retries or automation
+
+AXIOM 3.4 — RIG purity rule
+A RIG function MUST NOT:
+- know GIC/GCC/UCC
+- know retry policy
+- know orchestration context
+- change behavior based on "mode"
+
+A RIG function MAY:
+- validate inputs
+- enforce technical invariants
+- fail on real-world constraints
+- return factual error states
+
+AXIOM 3.5 — Internal behavior must remain freely refactorable
+No internal behavior is presented as externally stable or normative.
+Internal behavior remains freely refactorable.
+
+------------------------------------------------------------
+
+4. CONTRACT ESCALATION AXIOMS
+------------------------------------------------------------
+
+AXIOM 4.1 — Escalation must be explicit
+Escalation from GIC or RIG to GCC or UCC MUST be explicit.
+If an interaction becomes externally relied upon, it must be escalated
+explicitly to GCC or UCC.
+
+AXIOM 4.2 — Semantics are declared, never inferred
+All semantic properties are declared, not discovered.
+Neither the wrapper nor the orchestrator may:
+- infer idempotence
+- infer retry safety
+- infer convergence
+
+AXIOM 4.3 — Semantic guarantees expressed by the boundary, not by flags
+Semantic guarantees MUST be expressed by:
+- the exposed command
+- the API endpoint
+- the interface name
+
+They MUST NOT be expressed by:
+- flags
+- runtime options
+- inferred behavior
+
+AXIOM 4.4 — UCC eligibility conditions
+An interaction MAY be declared UCC ONLY IF:
+- current state is observable
+- target state is explicit
+- retries are safe
+- convergence is mechanically verified
+
+If any condition is false, UCC is forbidden.
+
+AXIOM 4.5 — Retry behavior is bounded by contract type
+Retry behavior MUST be defined ONLY for GCC and UCC.
+Only UCC interactions may be retried automatically.
+Events (GIC) MUST NOT be retried as if they were contracts.
+
+AXIOM 4.6 — Generic orchestrator compatibility
+A generic orchestrator MUST be able to decide what to do using only:
+- interaction type (GIC/GCC/UCC)
+- result status
+
+If orchestration requires inspecting logs, reading code, or knowing
+implementation details, then the boundary is NOT compliant.
+
+------------------------------------------------------------
+
+5. RECORD AXIOMS
+------------------------------------------------------------
+
+AXIOM 5.1 — Result enums are semantic commitments
+Result enums, success/failure meaning, error-to-result mapping,
+and outcome authority are SEMANTIC COMMITMENTS.
+They must be declared separately at each level.
+Reusing these causes semantic leakage.
+
+AXIOM 5.2 — Logs must be descriptive, not authoritative
+Observability infrastructure (logging, tracing, metrics, correlation IDs,
+structured event emitters) is reusable only when logs are DESCRIPTIVE,
+not AUTHORITATIVE.
+
+AXIOM 5.3 — Data structures lose neutrality at the boundary
+Internal data structures (structs, DTOs, snapshots, internal state models)
+are reusable as neutral mechanisms.
+Once a structure becomes part of a PUBLIC RESULT, it is no longer neutral.
+
+AXIOM 5.4 — Meaning leakage is a design error
+If meaning leaks across layers, the design is wrong.
+This is not a style issue — it is a structural violation.
+
+AXIOM 5.5 — Semantics never leak from internal to boundary layers
+In a correct architecture, semantics never leak from internal to boundary layers.
+Contracts are declared, never inferred.
+
+END OF DOCUMENT

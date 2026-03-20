@@ -1,0 +1,318 @@
+BISS–RIG Component Mapping for Orchestration Platforms
+======================================================
+
+STATUS
+------
+Authoritative architectural reference
+
+AUDIENCE
+--------
+- Software architects
+- Platform engineers
+- Workflow / automation designers
+- DevOps and SRE engineers
+- AI / agent-system designers
+
+This document is NOT a product description.
+It is a semantic and architectural mapping reference.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Operational Process Control & Monitoring Specification
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+This document provides a complete mapping between the major components
+of orchestration platforms (such as a workflow orchestration platform or a visual automation tool) and the BISS–RIG
+semantic model.
+
+Its purpose is to:
+- clarify the role of each component
+- define where BISS applies
+- define where RIG applies
+- remove implicit or ambiguous semantics
+- provide a shared architectural language
+
+------------------------------------------------------------
+2. REFERENCE MODEL
+------------------------------------------------------------
+
+BISS–RIG distinguishes two semantic domains:
+
+- RIG (Rigorous Interaction Grade)
+  Applies to INTERNAL interactions:
+  rigor, observability, invariants, testability, refactorability.
+
+- BISS (Boundary Interaction Semantic Standard)
+  Applies to EXTERNAL / BOUNDARY interactions:
+  explicit classification as GIC, GCC, or UCC.
+
+Every component may:
+- operate internally under RIG
+- expose one or more BISS-classified boundaries
+- consume BISS-classified interactions from other components
+
+------------------------------------------------------------
+3. MAJOR COMPONENTS OVERVIEW
+------------------------------------------------------------
+
+A workflow orchestration platform is composed of the following
+major components:
+
+1. Orchestrator core
+2. Action / connector catalog
+3. Workflow model (DSL / graph)
+4. Scheduler and triggers
+5. Data flow engine
+6. State management and persistence
+7. Observability subsystem
+8. External APIs
+9. User interface (UI / UX)
+10. Security and governance
+11. AI / decision layer (when present)
+
+The orchestrator is central, but not sufficient on its own.
+
+------------------------------------------------------------
+4. GLOBAL CARTOGRAPHY TABLE
+------------------------------------------------------------
+
+Component                     | Internal (RIG) | Boundary (BISS) | Dominant Semantics
+----------------------------- | -------------- | ---------------- | -------------------
+Orchestrator core             | Yes (mandatory)| Yes (mandatory) | GCC / UCC
+Action / connector catalog    | Yes            | Yes              | GIC / GCC / UCC
+Workflow model (DSL / graph)  | Yes            | Optional         | GIC
+Scheduler / triggers          | Yes            | Yes              | GIC / GCC
+Data flow engine              | Yes (pure RIG) | No               | —
+State & persistence           | Yes (pure RIG) | Indirect         | —
+Observability subsystem       | Yes            | Yes              | GIC
+External APIs                 | —              | Yes (mandatory)  | GIC / GCC / UCC
+UI / UX                       | Yes            | Yes              | GIC / GCC
+Security & governance         | Yes            | Yes              | GCC
+AI / decision layer           | Yes            | Yes              | GCC / UCC
+
+------------------------------------------------------------
+5. COMPONENT DETAILS
+------------------------------------------------------------
+
+------------------------------------------------------------
+5.1 Orchestrator Core
+------------------------------------------------------------
+
+Role:
+- execute workflows
+- manage dependencies and ordering
+- handle retries and failures
+- coordinate parallelism
+- recover from crashes
+
+Internal semantics:
+- RIG mandatory
+- explicit invariants
+- structured observability
+- deterministic execution where possible
+- failures treated as bugs
+
+Boundary interactions (examples):
+- start_workflow        → GCC
+- get_execution_status  → GIC
+- replay_execution      → UCC
+- cancel_execution      → GCC
+
+------------------------------------------------------------
+5.2 Action / Connector Catalog
+------------------------------------------------------------
+
+Role:
+- provide executable building blocks
+- encapsulate external systems
+
+Each action MUST be explicitly classified:
+- signal / webhook            → GIC
+- command / API call          → GCC
+- state synchronization       → UCC
+
+Internal semantics:
+- RIG for validation, observability, invariants
+
+This component is typically the weakest point
+in existing platforms due to implicit semantics.
+
+------------------------------------------------------------
+5.3 Workflow Model (DSL / Graph)
+------------------------------------------------------------
+
+Role:
+- represent workflows structurally
+- encode nodes, edges, conditions, data flow
+
+Internal semantics:
+- RIG
+- validation of structure and consistency
+
+Boundary semantics:
+- read workflow      → GIC
+- create / update    → GCC
+
+The model SHOULD carry the BISS classification
+of each node explicitly.
+
+------------------------------------------------------------
+5.4 Scheduler and Triggers
+------------------------------------------------------------
+
+Role:
+- initiate workflow execution
+
+Trigger classification:
+- webhook / event     → GIC
+- cron                → GIC
+- manual start        → GCC
+
+The scheduler signals or commands;
+it does not decide outcomes.
+
+------------------------------------------------------------
+5.5 Data Flow Engine
+------------------------------------------------------------
+
+Role:
+- move and transform data between steps
+
+Semantics:
+- pure RIG
+- no contracts
+- no guarantees
+- no boundary exposure
+
+------------------------------------------------------------
+5.6 State Management and Persistence
+------------------------------------------------------------
+
+Role:
+- store workflow definitions
+- persist execution state
+- enable recovery and replay
+
+Semantics:
+- pure RIG internally
+- foundational for UCC replay safety
+- internal state never exposed as a contract
+
+------------------------------------------------------------
+5.7 Observability Subsystem
+------------------------------------------------------------
+
+Role:
+- logs
+- traces
+- metrics
+- execution history
+
+Boundary exposure:
+- event streams      → GIC
+- dashboards         → GIC
+
+Observability is descriptive, never authoritative.
+
+------------------------------------------------------------
+5.8 External APIs
+------------------------------------------------------------
+
+Role:
+- integration with external systems
+- remote control of the platform
+
+Typical classification:
+- read-only queries          → GIC
+- create / start / stop      → GCC
+- replay / reconcile         → UCC
+
+All APIs MUST be explicitly classified.
+
+------------------------------------------------------------
+5.9 User Interface (UI / UX)
+------------------------------------------------------------
+
+Role:
+- workflow design
+- execution monitoring
+- manual intervention
+
+Semantic mapping:
+- user action (click)        → GCC
+- status display             → GIC
+- replay / fix action        → GCC or UCC
+
+The UI reflects semantics; it does not invent them.
+
+------------------------------------------------------------
+5.10 Security and Governance
+------------------------------------------------------------
+
+Role:
+- authentication
+- authorization
+- secret management
+- audit
+
+Semantics:
+- GCC
+- results are authoritative and opposable
+
+------------------------------------------------------------
+5.11 AI / Decision Layer (when present)
+------------------------------------------------------------
+
+Role:
+- dynamic planning
+- decision making
+- corrective actions
+
+Semantic constraints:
+- observe via GIC
+- execute via GCC
+- correct / replay via UCC
+
+Without BISS, this layer is unsafe.
+With BISS, it becomes operable.
+
+------------------------------------------------------------
+6. CRITICAL OBSERVATIONS
+------------------------------------------------------------
+
+- Existing platforms rely heavily on implicit semantics
+- Retries and idempotence are often assumed, not declared
+- Orchestrator cores become complex due to ambiguity
+- AI increases risk without explicit semantic boundaries
+
+------------------------------------------------------------
+7. VALUE OF BISS–RIG FOR ORCHESTRATION PLATFORMS
+------------------------------------------------------------
+
+BISS–RIG enables:
+- generic orchestration logic
+- deterministic retries
+- safe automation
+- AI-operable execution
+- clear governance boundaries
+
+It does not replace existing components;
+it makes them explicit and governable.
+
+------------------------------------------------------------
+8. FINAL SYNTHESIS
+------------------------------------------------------------
+
+An orchestration platform is a composition of components,
+each with distinct semantic responsibilities.
+
+RIG governs internal rigor.
+BISS governs external meaning.
+
+Making this distinction explicit transforms orchestration
+from a heuristic practice into a deterministic discipline.
+
+END OF DOCUMENT

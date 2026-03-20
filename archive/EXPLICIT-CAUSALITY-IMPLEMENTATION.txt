@@ -1,0 +1,212 @@
+EXPLICIT-CAUSALITY-IMPLEMENTATION.txt
+==================================
+
+ADDRESSES
+---------
+Loss of Explicit Causality (see SYSTEMIC-GOVERNANCE-PROBLEMS.txt)
+
+PURPOSE
+-------
+This document defines a minimal, concrete, and technology-agnostic method
+to resolve **Problem #2: Loss of Explicit Causality** in distributed,
+automated, or AI-augmented systems.
+
+This approach complements BISS-RIG.
+It does NOT modify BISS-RIG.
+It adds explanation, not authority.
+
+
+PROBLEM STATEMENT
+-----------------
+Without explicit causality, a system can prove:
+- what was executed
+
+But cannot explain:
+- why it happened
+- what triggered it
+- how executions are related
+
+Time ordering and logs are insufficient in distributed systems.
+
+
+CORE PRINCIPLE
+--------------
+Causality is **recorded**, not inferred.
+
+Causality:
+- never executes
+- never blocks
+- never decides
+- never reorders
+
+It only explains.
+
+
+MINIMAL SOLUTION
+----------------
+Introduce a single, append-only **Event Store** with three mandatory fields.
+
+Required fields (mandatory):
+- event_id
+- parent_event_id
+- correlation_id
+
+That is the entire requirement.
+
+
+EVENT MODEL (MINIMAL)
+---------------------
+
+event_id
+- Unique identifier for this event
+- Must be globally unique
+
+parent_event_id
+- The direct cause of this event
+- Null only for root events
+- At most one parent is allowed
+
+correlation_id
+- Identifies a single logical intent or workflow
+- Shared across all related events
+
+
+OPTIONAL FIELDS (NON-ESSENTIAL)
+-------------------------------
+These fields improve readability but are not required:
+
+- event_type      (scan, decision, approval, execution, etc.)
+- actor           (system, human, policy, executor)
+- timestamp_utc
+- description
+
+
+EVENT STORE REQUIREMENTS
+------------------------
+- Append-only
+- Immutable records
+- No updates
+- No deletes
+
+Valid implementations:
+- Database table
+- JSONL file
+- Log stream
+- Message queue
+- Flat file
+
+Storage choice does not affect correctness.
+
+
+EVENT CREATION RULES
+--------------------
+
+Rule 1: One event, one cause
+- Each event has at most one parent_event_id
+- Multiple parents are forbidden
+
+Rule 2: Correlation represents intent
+- correlation_id is created at the start of a workflow
+- It is propagated unchanged
+
+Rule 3: Executions must reference causality
+- Any BISS-RIG execution must emit an event
+- That event must include:
+  - event_id
+  - correlation_id
+  - parent_event_id
+
+
+WORKED EXAMPLE
+--------------
+
+Step 1: Root event (scan)
+
+event_id: EVT-1
+parent_event_id: null
+correlation_id: CORR-1
+event_type: scan
+description: daily vulnerability scan
+
+
+Step 2: Decision event
+
+event_id: EVT-2
+parent_event_id: EVT-1
+correlation_id: CORR-1
+event_type: decision
+description: critical vulnerability detected
+
+
+Step 3: Execution event (BISS-RIG)
+
+event_id: EVT-3
+parent_event_id: EVT-2
+correlation_id: CORR-1
+event_type: execution
+description: deploy patch KB-501 on server A
+
+
+WHAT THIS ENABLES
+----------------
+With this data, the system can answer:
+
+- Why did EVT-3 occur?
+  -> Because EVT-2 occurred
+
+- Why did EVT-2 occur?
+  -> Because EVT-1 occurred
+
+- Which executions belong to the same intent?
+  -> All events with correlation_id = CORR-1
+
+- Was this human, automatic, or scheduled?
+  -> From event_type / description
+
+
+WHAT THIS DOES NOT DO
+--------------------
+This mechanism does NOT:
+- change execution order
+- influence BISS-RIG
+- block execution
+- infer causality
+- optimize behavior
+
+Missing causality is a diagnostic issue, not an execution error.
+
+
+MENTAL MODEL
+------------
+Causality forms a simple chain:
+
+EVT-1 -> EVT-2 -> EVT-3
+
+This is a causal chain, not a timeline.
+
+
+RELATION TO BISS-RIG
+-------------------
+- BISS-RIG proves WHAT happened
+- Explicit causality explains WHY it happened
+
+They must remain strictly separate.
+
+
+SUCCESS CRITERIA
+----------------
+Problem #2 is resolved if and only if:
+
+- Every execution emits an event_id
+- Every execution references a parent_event_id (or null)
+- Every related event shares a correlation_id
+
+If all three conditions are met, explicit causality exists.
+
+
+FINAL NOTE
+----------
+This solution is intentionally minimal.
+
+Any additional logic, inference, or authority added to causality
+reintroduces ambiguity and must be rejected.

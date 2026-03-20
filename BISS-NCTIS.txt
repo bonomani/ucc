@@ -1,0 +1,250 @@
+INTERFACING WITH NON-BISS TOOLS
+===============================
+
+STATUS
+------
+Authoritative architectural guideline
+
+AUDIENCE
+--------
+- Software architects
+- Platform and automation engineers
+- DevOps / SRE
+- Orchestrator designers
+- AI-system designers
+
+This document defines how BISS–RIG compliant systems
+interface safely with tools that are NOT BISS-compliant.
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+This document explains how to integrate external tools that:
+- do not expose explicit semantics,
+- do not guarantee determinism,
+- do not declare retry or idempotence properties,
+- were not designed with BISS in mind.
+
+The objective is to:
+- avoid semantic corruption of the orchestrator,
+- prevent unsafe automation,
+- maintain deterministic orchestration behavior.
+
+------------------------------------------------------------
+2. FUNDAMENTAL RULE
+------------------------------------------------------------
+
+A non-BISS tool is NEVER made BISS-compliant.
+
+It is:
+- encapsulated,
+- constrained,
+- and treated as opaque.
+
+The orchestrator does not trust the tool.
+It trusts ONLY the boundary contract it defines.
+
+------------------------------------------------------------
+3. THE BOUNDARY ADAPTER CONCEPT
+------------------------------------------------------------
+
+All non-BISS tools MUST be integrated through a Boundary Adapter.
+
+The adapter is responsible for:
+- invoking the external tool,
+- capturing its outputs,
+- enforcing minimal mechanical invariants,
+- exposing a BISS-classified interaction.
+
+The adapter MUST NOT:
+- infer semantics,
+- guess intent,
+- retry heuristically,
+- claim guarantees not explicitly proven.
+
+------------------------------------------------------------
+4. DEFAULT INTEGRATION STRATEGY (MANDATORY)
+------------------------------------------------------------
+
+The default classification for any non-BISS tool is:
+
+→ GCC (Generic Contract Core)
+
+This is the MAXIMUM trust level unless strict proof exists.
+
+Implications:
+- execution happens once,
+- success or failure is authoritative,
+- no automatic retry,
+- failures require explicit decision or escalation.
+
+------------------------------------------------------------
+5. ALLOWED BISS CLASSIFICATIONS FOR NON-BISS TOOLS
+------------------------------------------------------------
+
+------------------------------------------------------------
+5.1 GIC — Observational Integration
+------------------------------------------------------------
+
+Allowed when the tool:
+- emits events,
+- produces logs,
+- sends notifications,
+- exposes read-only information.
+
+Characteristics:
+- no side effects,
+- no retry,
+- no interpretation.
+
+Examples:
+- webhook receivers
+- log streams
+- monitoring outputs
+
+------------------------------------------------------------
+5.2 GCC — Normative but Non-Convergent Integration
+------------------------------------------------------------
+
+Allowed when the tool:
+- performs an action,
+- produces an output,
+- but offers no convergence or idempotence guarantee.
+
+Characteristics:
+- explicit input,
+- closed result set defined by the adapter,
+- authoritative outcome,
+- no retry implied.
+
+Examples:
+- legacy scripts
+- SaaS APIs
+- CLI tools
+- LLM-based tools (LLM-based coding assistants, command-line AI agents)
+
+------------------------------------------------------------
+5.3 UCC — Convergent Integration (EXCEPTIONAL)
+------------------------------------------------------------
+
+Allowed ONLY if all conditions are demonstrably met:
+
+1. Current state is observable
+2. Target state is explicit
+3. Operation is idempotent
+4. Retry is provably safe
+5. Convergence can be mechanically verified
+
+If any condition is missing:
+→ UCC is FORBIDDEN.
+
+Examples (rare):
+- Terraform
+- Kubernetes controllers
+- strictly idempotent Ansible playbooks
+
+------------------------------------------------------------
+6. SPECIAL CASE: LLM-BASED TOOLS
+------------------------------------------------------------
+
+LLM-based tools are:
+- non-deterministic,
+- probabilistic,
+- non-convergent,
+- non-authoritative.
+
+Rules:
+- NEVER UCC
+- GCC maximum
+- sometimes GIC for read-only analysis
+
+LLMs may:
+- propose changes,
+- generate artifacts,
+- assist humans.
+
+LLMs may NOT:
+- decide success,
+- trigger retries,
+- converge state,
+- apply changes autonomously.
+
+------------------------------------------------------------
+7. ORCHESTRATOR BEHAVIOR (UNCHANGED)
+------------------------------------------------------------
+
+The orchestrator logic does NOT adapt to the tool.
+
+It applies the same rules:
+- GIC: observe only
+- GCC: execute once, stop on failure
+- UCC: retry until converged
+
+All complexity lives in the adapter,
+not in the orchestrator core.
+
+------------------------------------------------------------
+8. FAILURE HANDLING
+------------------------------------------------------------
+
+Failures from non-BISS tools are interpreted strictly
+through the adapter’s declared classification.
+
+- GIC failure: logged, ignored
+- GCC failure: authoritative failure
+- UCC non-convergence: retry allowed
+
+No exception handling based on tool type is permitted.
+
+------------------------------------------------------------
+9. WHAT IS EXPLICITLY FORBIDDEN
+------------------------------------------------------------
+
+The following practices are forbidden:
+
+- heuristic retries
+- guessing idempotence
+- parsing error messages for meaning
+- promoting a tool to UCC by “experience”
+- wrapping tools to fake convergence
+- letting tools influence orchestration logic
+
+------------------------------------------------------------
+10. SECURITY AND GOVERNANCE
+------------------------------------------------------------
+
+Boundary adapters are governance points.
+
+They must:
+- be reviewed,
+- be auditable,
+- have explicit contracts,
+- be versioned carefully.
+
+Changing an adapter’s classification
+is an architectural decision.
+
+------------------------------------------------------------
+11. CANONICAL STATEMENT
+------------------------------------------------------------
+
+“Non-BISS tools are integrated exclusively through explicit
+boundary adapters, without inferring or extending guarantees
+beyond what is demonstrably provided.”
+
+------------------------------------------------------------
+12. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS–RIG does not reject existing tools.
+It refuses to lie about them.
+
+By forcing explicit boundaries:
+- unsafe automation is prevented,
+- orchestration remains generic,
+- AI becomes usable without becoming dangerous.
+
+This discipline is the price of determinism.
+
+END OF DOCUMENT

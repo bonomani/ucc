@@ -1,0 +1,175 @@
+SYSTEMIC-VISIBILITY-RESOLUTION.txt
+================================
+
+ADDRESSES
+---------
+Absence of Systemic Visibility (see SYSTEMIC-GOVERNANCE-PROBLEMS.txt)
+
+PURPOSE
+-------
+This document defines a minimal, concrete, and technology-agnostic method
+to resolve **Problem #6: Absence of Systemic Visibility** in distributed,
+automated, or AI-augmented systems.
+
+This approach complements BISS-RIG.
+It does NOT modify BISS-RIG.
+It synthesizes information without adding authority.
+
+
+PROBLEM STATEMENT
+-----------------
+As systems scale, they become:
+- correct locally
+- opaque globally
+
+Even when execution is auditable and causal chains exist:
+- humans cannot understand the whole
+- dependencies are invisible
+- impact of change is unclear
+
+This is not a logging problem.
+It is a synthesis problem.
+
+BISS-RIG guarantees correctness per execution.
+It does NOT provide a global understanding of the system.
+
+
+CORE PRINCIPLE
+--------------
+Systemic visibility is **derived**, not declared.
+
+Visibility must:
+- aggregate existing facts
+- reduce cognitive load
+- remain non-authoritative
+
+It must never:
+- decide
+- enforce
+- execute
+- block
+
+
+MINIMAL SOLUTION
+----------------
+Introduce a **Systemic View Layer** that derives global views from:
+- execution events (BISS-RIG)
+- causality chains
+- state declarations
+- reasoning declarations
+- quality observations
+
+This layer is read-only.
+
+
+SYSTEMIC VIEW ARTIFACTS
+----------------------
+The layer produces synthesized artifacts such as:
+
+- dependency graphs
+- execution flow maps
+- hotspot maps (state, failures, quality)
+- correlation timelines
+- impact scopes
+
+These artifacts are outputs, not inputs.
+
+
+DERIVATION RULES
+----------------
+
+Rule 1: Views are derived only
+- No manual input
+- No inferred facts
+- No hidden logic
+
+Rule 2: Views have no authority
+- They cannot trigger actions
+- They cannot block actions
+
+Rule 3: Views are reproducible
+- Same input data produces same view
+
+Rule 4: Views are discardable
+- Deleting a view must not affect the system
+
+
+EXAMPLE ARTIFACTS
+-----------------
+
+1. Dependency graph
+- Nodes: targets, states, reasoning artifacts
+- Edges: causal or state relationships
+
+2. Execution map
+- Correlation_id as workflow
+- Fan-out and fan-in visualization
+
+3. Hotspot view
+- States with highest write frequency
+- Targets with most failures
+- Reasoning versions with quality degradation
+
+
+WHAT THIS ENABLES
+-----------------
+With systemic visibility, operators can:
+
+- Understand global behavior
+- Identify critical dependencies
+- Anticipate blast radius
+- Prioritize remediation
+- Communicate system state clearly
+
+Example questions now answerable:
+- What depends on this database?
+- Which workflows touch this service?
+- Where is complexity accumulating?
+- What is the likely impact of a change?
+
+
+WHAT THIS DOES NOT DO
+--------------------
+This mechanism does NOT:
+- validate correctness
+- optimize execution
+- arbitrate priorities
+- replace documentation
+- simplify the system itself
+
+It simplifies understanding, not reality.
+
+
+MENTAL MODEL
+------------
+Raw facts exist at execution level.
+Understanding exists at view level.
+
+Facts -> Aggregation -> Synthesis -> Human comprehension
+
+
+RELATION TO BISS-RIG
+-------------------
+- BISS-RIG provides reliable facts
+- Systemic visibility turns facts into understanding
+
+They must remain strictly separated.
+
+
+SUCCESS CRITERIA
+----------------
+Problem #6 is resolved if and only if:
+
+- Global views can be generated automatically
+- No execution depends on those views
+- Humans can answer system-level questions
+- Removing the view layer does not affect execution
+
+
+FINAL NOTE
+----------
+Opacity is not caused by lack of data.
+It is caused by lack of structure.
+
+Systemic visibility restores understanding
+without reintroducing ambiguity or authority.

@@ -1,0 +1,75 @@
+BISS-RIG-GUIDE.txt
+==================
+
+PURPOSE
+-------
+Entry point for all BISS–RIG supporting documents.
+BISS–RIG (Rigorous Interaction Grade) is Axis B of the BISS model — the
+internal quality grade applied to any interaction type (GIC, GCC, or UCC).
+
+See BISS.txt §5 for the authoritative two-axis model definition.
+See BISS-AXIOMS.txt for canonical architectural rules.
+
+CLASSIFICATION
+--------------
+Reference – BISS–RIG Document Guide
+
+STATUS
+------
+Reference material — non-normative guidance
+
+------------------------------------------------------------
+
+COMPLIANCE & ASSESSMENT
+-----------------------
+BISS-RIG-CA.txt   — Compliance Assessment template (audit checklist and five
+                    normative compliance rules for reviewing any function or
+                    component against BISS–RIG requirements)
+BISS-RIG-CS.txt   — Compliance Statement specification (canonical form for
+                    claiming BISS and RIG compliance in a software system,
+                    with correct and incorrect claim examples)
+BISS-RIG-WHY.txt  — Why RIG compliance matters (rationale document explaining
+                    the core problem BISS–RIG solves and the benefits it yields
+                    across agents, tools, output, logging, and project structure)
+
+SPECIFICATIONS
+--------------
+BISS-RIG-IO.txt   — Input/Output specification (mandatory rules governing
+                    authoritative vs. non-authoritative output, output formats,
+                    input handling, and exit code semantics)
+BISS-RIG-OS.txt   — Orchestrator Specification (semantic, architectural, and
+                    operational model of a BISS–RIG compliant orchestrator,
+                    covering internal RIG model and BISS boundary classification)
+BISS-RIG-LS.txt   — Logging Specification (what must and must not be logged,
+                    mandatory logging categories, and the separation of logs
+                    from contractual output)
+BISS-RIG-RMS.txt  — Roles & Responsibilities Specification (clarifies that
+                    BISS–RIG defines four semantic roles — orchestration,
+                    boundary semantics, contract description, business logic —
+                    which may be merged or separated depending on system scale)
+BISS-RIG-AS.txt   — Agent Specification (architectural and responsibility
+                    specification for AI agents in a BISS–RIG governed system,
+                    defining the cognition/interaction boundary and agent
+                    prohibitions)
+BISS-RIG-OPCM.txt — Operational Process Control & Monitoring Specification
+                    (component mapping between workflow orchestration platforms
+                    and visual automation tools and the BISS–RIG semantic model)
+
+REFERENCE & GUIDANCE
+--------------------
+BISS-RIG-PSG.txt  — Project Structure Guide (practical guide for which
+                    documents to create, where they must live, and how
+                    /agent, /spec, /tools, /rag, /app, and /logs directories
+                    relate to BISS–RIG responsibilities)
+
+------------------------------------------------------------
+
+READING ORDER
+-------------
+New to BISS–RIG: start with BISS-RIG-WHY.txt, then BISS-RIG-CA.txt.
+Implementing:    BISS-RIG-IO.txt → BISS-RIG-OS.txt → BISS-RIG-LS.txt.
+Auditing:        BISS-RIG-CA.txt → BISS-RIG-CS.txt.
+Building agents: BISS-RIG-AS.txt → BISS-RIG-RMS.txt.
+Project setup:   BISS-RIG-PSG.txt.
+
+END OF DOCUMENT

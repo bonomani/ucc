@@ -1,0 +1,213 @@
+UCC-PIPE-ICC_DESIGN-1 – Pipe-UCC Tool Design
+Universal Convergence Contract (UCC)
+
+This document is NON-NORMATIVE and PRESCRIPTIVE.
+It defines:
+- a GENERIC pipe-ucc tool
+- its contract
+- its execution model
+- a concrete example of a UCC pipeline
+
+Nothing is implicit. Everything is explicit.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Product/Planning – pipe-ucc Tool Design
+
+------------------------------------------------------------
+
+NOTE
+----
+ICC in the filename refers to the internal command channel pattern used by this tool.
+
+------------------------------------------------------------
+
+============================================================
+PART 1 – WHAT pipe-ucc IS
+============================================================
+
+pipe-ucc is a GENERIC orchestration tool whose role is:
+
+- to replace Unix pipe composition (cmd1 | cmd2 | cmd3)
+- with explicit UCC steps
+- while still being able to call underlying commands internally
+
+pipe-ucc is NOT:
+- a shell
+- a stream processor
+- a DSL
+
+pipe-ucc IS:
+- a UCC orchestrator for pipelines
+- declaration-driven
+- result-driven
+
+============================================================
+PART 2 – CORE CONCEPT
+============================================================
+
+Unix pipe:
+  cmd1 | cmd2 | cmd3
+
+pipe-ucc equivalent:
+  Step 1 → Step 2 → Step 3
+
+Where each step:
+- has explicit declaration
+- produces explicit state
+- has an observable result
+
+The pipe becomes:
+- orchestration logic
+- NOT a contract
+
+============================================================
+PART 3 – GENERIC pipe-ucc INTERFACE
+============================================================
+
+Executable:
+  pipe-ucc
+
+UCC mode selector:
+  --ucc=full
+
+------------------------------------------------------------
+pipe-ucc MODES
+------------------------------------------------------------
+
+ucc=full
+- accepts UCC declaration
+- outputs UCC ResultMessage
+
+============================================================
+PART 4 – GENERIC UCC PIPE DECLARATION FORMAT
+============================================================
+
+FILE: pipe-declaration.json
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "pipe-001"
+  },
+  "declaration": {
+    "target": "pipeline",
+    "desired_state": {
+      "steps": [
+        {
+          "id": "step1",
+          "type": "command",
+          "command": "grep",
+          "args": ["ERROR"],
+          "input": "/var/log/app.log",
+          "output": "/tmp/pipe-step1.txt"
+        },
+        {
+          "id": "step2",
+          "type": "command",
+          "command": "wc",
+          "args": ["-l"],
+          "input": "/tmp/pipe-step1.txt",
+          "output": "/tmp/pipe-step2.txt"
+        }
+      ]
+    }
+  }
+}
+
+This declaration:
+- fully replaces a pipe
+- makes intermediate state explicit
+- is retry-safe and auditable
+
+============================================================
+PART 5 – INTERNAL EXECUTION MODEL
+============================================================
+
+For each step:
+
+observe():
+- input exists?
+- output exists?
+- hashes / timestamps
+
+apply():
+- desired output exists and matches expected result
+
+diff():
+- output missing or stale?
+
+decision:
+- execute legacy command only if required
+
+Commands are executed WITHOUT pipes:
+- using files as explicit boundaries
+
+============================================================
+PART 6 – EXAMPLE: FULL UCC MODE
+============================================================
+
+Invocation:
+  pipe-ucc --ucc=full < pipe-declaration.json
+
+Output (UCC):
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "pipe-001"
+  },
+  "observe": {
+    "observed_before": {
+      "step1_output": {
+        "exists": true,
+        "hash": "aaa"
+      },
+      "step2_output": {
+        "exists": true,
+        "hash": "bbb",
+        "value": 42
+      }
+    },
+    "diff": {}
+  },
+  "result": {
+    "observation": "ok",
+    "outcome": "converged"
+  }
+}
+
+stdout:
+  (JSON only)
+
+exit code:
+  0 (non-semantic)
+
+============================================================
+PART 7 – WHY THIS DESIGN WORKS
+============================================================
+
+- Pipes become explicit orchestration
+- Underlying tools remain untouched
+- Streaming is optional, internal
+- Each step is independently observable
+
+============================================================
+PART 8 – FINAL INSIGHT
+============================================================
+
+pipe-ucc does not replace Unix pipes.
+It lifts them into a formal semantic layer.
+
+Pipes were about composition.
+UCC is about correctness.
+
+============================================================
+
+UCC-PIPE-ICC_DESIGN-1 – Pipe-UCC Tool Design
+
+END OF DOCUMENT

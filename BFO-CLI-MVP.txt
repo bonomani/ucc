@@ -1,0 +1,347 @@
+BISS-FIRST CLI ORCHESTRATOR — MVP SPECIFICATION
+==============================================
+
+NOTE: Normative semantic requirements for orchestrators have been extracted to
+UCC-ORCHESTRATOR-SEMANTICS.txt. This document covers the BFO CLI product design
+and implementation details only.
+
+STATUS
+------
+Design specification for a Minimal Viable Product (MVP)
+
+AUDIENCE
+--------
+- Software architects
+- Platform / automation engineers
+- DevOps / SRE
+- AI-system designers
+
+This document defines the MINIMAL orchestration system
+that is natively BISS–RIG compliant.
+No UI. CLI only. No plugins marketplace. No SaaS.
+
+------------------------------------------------------------
+1. PURPOSE OF THE MVP
+------------------------------------------------------------
+
+The goal of this MVP is NOT to:
+- compete with general-purpose visual workflow platforms or commercial orchestration tools
+- provide visual workflows
+- cover all orchestration use cases
+
+The goal IS to:
+- prove that BISS–RIG makes orchestration trivial
+- provide a reference implementation
+- demonstrate deterministic, AI-operable orchestration
+- eliminate implicit semantics entirely
+
+This MVP is intentionally small.
+
+------------------------------------------------------------
+2. NON-GOALS (IMPORTANT)
+------------------------------------------------------------
+
+The MVP explicitly excludes:
+- graphical UI
+- workflow editor
+- dynamic plugins
+- long-running distributed scaling
+- business logic inside the orchestrator
+
+Anything not essential to BISS–RIG is out of scope.
+
+------------------------------------------------------------
+3. CORE PRINCIPLES
+------------------------------------------------------------
+
+1. All boundary interactions are BISS-classified
+2. All internal logic follows RIG
+3. No implicit retry, ever
+4. No heuristic decisions
+5. All behavior is auditable from the CLI
+6. Orchestration logic is generic and fixed
+
+Note: Items 1–4 and 6 are normative semantic rules that apply to any
+compliant orchestrator. Full normative statements are in
+UCC-ORCHESTRATOR-SEMANTICS.txt §1. Item 5 is specific to this CLI product.
+
+------------------------------------------------------------
+4. ARCHITECTURE OVERVIEW
+------------------------------------------------------------
+
+Components (minimal set):
+
+1. CLI Interface
+2. Workflow Definition (file-based)
+3. Orchestrator Core
+4. Action Executor
+5. State Store
+6. Observability Output
+
+Everything runs as a single process.
+
+------------------------------------------------------------
+5. WORKFLOW DEFINITION FORMAT
+------------------------------------------------------------
+
+Workflows are defined as plain text files (YAML or JSON).
+
+Each step MUST declare:
+- id
+- type (GIC / GCC / UCC)
+- command
+- dependencies
+
+Example:
+
+workflow.yaml
+-------------
+workflow_id: example_1
+
+steps:
+  - id: receive_event
+    type: GIC
+    command: "echo event received"
+
+  - id: copy_file
+    type: UCC
+    command: "cp file1 file2"
+    depends_on: [receive_event]
+
+  - id: notify
+    type: GCC
+    command: "curl -X POST https://example/api"
+    depends_on: [copy_file]
+
+------------------------------------------------------------
+6. CLI SURFACE (BOUNDARIES — BISS)
+------------------------------------------------------------
+
+All CLI commands are boundary interactions.
+
+------------------------------------------------------------
+6.1 Submit workflow
+------------------------------------------------------------
+
+Command:
+  orchestrator submit workflow.yaml
+
+BISS classification:
+  GCC
+
+Result:
+  ACCEPTED | REJECTED
+
+------------------------------------------------------------
+6.2 Run workflow
+------------------------------------------------------------
+
+Command:
+  orchestrator run example_1
+
+BISS classification:
+  GCC
+
+Effect:
+  Starts execution once.
+  No retry implied.
+
+------------------------------------------------------------
+6.3 Observe status
+------------------------------------------------------------
+
+Command:
+  orchestrator status example_1
+
+BISS classification:
+  GIC
+
+Effect:
+  Pure observation.
+  No guarantees.
+
+------------------------------------------------------------
+6.4 Replay / reconcile
+------------------------------------------------------------
+
+Command:
+  orchestrator reconcile example_1
+
+BISS classification:
+  UCC
+
+Effect:
+  Replays until workflow converges to a terminal state.
+
+------------------------------------------------------------
+6.5 Cancel execution
+------------------------------------------------------------
+
+Command:
+  orchestrator cancel example_1
+
+BISS classification:
+  GCC
+
+------------------------------------------------------------
+7. ORCHESTRATOR CORE LOGIC (GENERIC)
+------------------------------------------------------------
+
+The orchestrator core uses ONLY the step classification.
+Normative per-type execution rules are defined in UCC-ORCHESTRATOR-SEMANTICS.txt §2.
+
+Summary for this implementation:
+- GIC steps: execute, ignore exit code, continue.
+- GCC steps: execute, stop workflow on failure.
+- UCC steps: execute, mark for replay if not converged.
+
+Pseudocode:
+
+for step in workflow:
+  if step.type == GIC:
+    execute(step)
+    continue
+
+  if step.type == GCC:
+    result = execute(step)
+    if result.failed:
+      stop_execution()
+    continue
+
+  if step.type == UCC:
+    result = execute(step)
+    if not result.converged:
+      mark_for_replay()
+
+------------------------------------------------------------
+8. ACTION EXECUTION MODEL
+------------------------------------------------------------
+
+Actions are shell commands (this CLI implementation).
+
+Execution rules:
+- stdout/stderr captured
+- exit code interpreted ONLY by step type
+- no parsing of business output
+
+Exit code mapping (normative rules in UCC-ORCHESTRATOR-SEMANTICS.txt §2 and §4):
+- GIC: exit code ignored
+- GCC: exit code authoritative
+- UCC: exit code + state check determines convergence
+
+------------------------------------------------------------
+9. STATE MODEL
+------------------------------------------------------------
+
+State stored locally (file or embedded DB):
+
+- workflow_id
+- step_id
+- status: pending | running | done | failed
+- last_result
+- replay_count
+
+State is:
+- internal (RIG)
+- restart-safe
+- never exposed as a contract
+
+------------------------------------------------------------
+10. OBSERVABILITY
+------------------------------------------------------------
+
+Observability is CLI-visible and file-logged.
+
+Events:
+- workflow_started
+- step_started
+- step_completed
+- step_failed
+- workflow_converged
+
+All events are:
+- structured
+- timestamped
+- GIC by nature
+
+------------------------------------------------------------
+11. FAILURE HANDLING
+------------------------------------------------------------
+
+Failure semantics are normative and defined in UCC-ORCHESTRATOR-SEMANTICS.txt §2.
+This implementation enforces them as follows:
+
+- GIC failure: logged, ignored — execution continues.
+- GCC failure: stops workflow immediately.
+- UCC failure: step marked for replay; workflow does not stop.
+
+No exception to these rules.
+
+------------------------------------------------------------
+12. REPLAY MODEL (CRITICAL)
+------------------------------------------------------------
+
+Replay is explicit. Normative replay semantics are defined in
+UCC-ORCHESTRATOR-SEMANTICS.txt §3.
+
+CLI command for this implementation:
+  orchestrator reconcile example_1
+
+Behavior (per normative rules):
+- reloads state
+- re-executes only non-converged UCC steps
+- never replays GIC
+- never replays successful GCC
+
+------------------------------------------------------------
+13. INTERNAL RIG REQUIREMENTS
+------------------------------------------------------------
+
+Normative MUST rules for internal orchestrator behavior are defined in
+UCC-ORCHESTRATOR-SEMANTICS.txt §5. This implementation satisfies them by:
+
+- logging every state transition to the state store and observability output
+- asserting valid workflow structure at submit time
+- detecting invalid dependency graphs before execution begins
+- crashing fast on internal inconsistency
+- being fully testable as a single-process binary
+
+Internal bugs are not workflow failures.
+
+------------------------------------------------------------
+14. WHY THIS MVP IS ENOUGH
+------------------------------------------------------------
+
+With this MVP you get:
+- deterministic orchestration
+- safe retries (see UCC-EXECUTION.txt)
+- replay after crash
+- AI-operable CLI
+- zero heuristics
+- zero UI complexity
+
+This MVP already demonstrates:
+- why BISS trivializes orchestration
+- why existing tools are complex
+- why AI needs explicit semantics
+
+------------------------------------------------------------
+15. CANONICAL CLAIM
+------------------------------------------------------------
+
+“This orchestrator is BISS-first and RIG-compliant:
+all boundary interactions are explicitly classified
+and all internal execution logic is rigorous,
+observable, and replay-safe.”
+
+------------------------------------------------------------
+16. FINAL NOTE
+------------------------------------------------------------
+
+If this MVP feels “too simple”,
+that is the point.
+
+The complexity has been removed,
+not ignored.
+
+END OF DOCUMENT

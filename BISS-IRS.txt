@@ -1,0 +1,349 @@
+BISS IMPLEMENTATION & REUSE GUIDE
+================================
+
+STATUS
+------
+Normative guidance
+
+AUDIENCE
+--------
+- Architects
+- Tech leads
+- Developers defining interface reuse patterns
+
+CLASSIFICATION
+--------------
+Supporting – BISS Implementation & Reuse Specification
+
+This document explains, in detail, how reuse works across the BISS semantic
+layers (GIC, RIG, GCC, UCC), what is reusable, what is not, and why.
+It consolidates all explanations, examples, and rules discussed so far.
+
+This is a TECHNICAL REFERENCE document.
+It is intentionally explicit and complete.
+
+------------------------------------------------------------
+1. CONTEXT AND GOAL
+------------------------------------------------------------
+
+BISS defines a semantic hierarchy for interactions:
+
+- GIC — Generic Interaction Core
+- RIG — Rigorous Interaction Grade (internal, non-normative)
+- GCC — Generic Contract Core (normative)
+- UCC — Universal Convergence Contract (normative + convergence)
+
+A recurring question is:
+
+- Can these layers reuse code?
+- Can one layer wrap another?
+- What is shared, and what must remain separate?
+
+This document answers those questions precisely.
+
+See BISS-AXIOMS.txt §1 for the canonical role of each layer.
+
+------------------------------------------------------------
+2. FUNDAMENTAL RULE
+------------------------------------------------------------
+
+See BISS-AXIOMS.txt §2.3 (SHARE MECHANISMS, NOT MEANING) and
+§2.4 (No semantic layer may wrap another) for the foundational rules
+this section applies.
+
+The practical consequence:
+- shared neutral core
+- separate semantic façades
+- zero semantic inheritance
+
+------------------------------------------------------------
+3. SEMANTIC RELATIONSHIP BETWEEN LAYERS
+------------------------------------------------------------
+
+For the authoritative two-axis model definition, see BISS.txt §5.
+The BISS axes — Axis A (interaction type: GIC → GCC → UCC) and Axis B
+(quality grade: Basic / RIG) — are independent and apply to all interfaces
+described in this document.
+
+------------------------------------------------------------
+4. WHY WRAPPING SEMANTICS IS FORBIDDEN
+------------------------------------------------------------
+
+See BISS-AXIOMS.txt §2.4 for the normative prohibition and its rationale.
+
+It is tempting to implement something like:
+
+  UCC = GCC + retry
+  GCC = RIG + result enum
+  RIG = GIC + assertions
+
+This is WRONG. It causes:
+- semantics to become implicit
+- guarantees to leak across layers
+- changes in one layer to silently break others
+- contracts to become accidental instead of declared
+
+------------------------------------------------------------
+5. WHAT IS REUSABLE (SAFE)
+------------------------------------------------------------
+
+Reusable elements are SEMANTICALLY NEUTRAL.
+They describe facts or perform mechanics.
+
+5.1 Core logic
+- file copy implementation
+- IO primitives
+- parsing
+- encoding/decoding
+- hashing
+- diff computation
+- state observation
+
+These have NO meaning by themselves.
+
+------------------------------------------------------------
+
+5.2 Validation primitives
+- boolean checks
+- schema validators
+- invariant predicates
+
+Example (reusable):
+  is_readable(path) -> bool
+
+Non-reusable:
+  validate_contract_input(input)
+
+------------------------------------------------------------
+
+5.3 Observability infrastructure
+- logging libraries
+- tracing
+- metrics
+- correlation IDs
+- structured event emitters
+
+Condition:
+Logs must be DESCRIPTIVE, not AUTHORITATIVE.
+
+See BISS-AXIOMS.txt §5.2.
+
+------------------------------------------------------------
+
+5.4 Data structures (internal)
+- structs
+- DTOs
+- snapshots
+- internal state models
+
+Once a structure becomes part of a PUBLIC RESULT,
+it is no longer neutral.
+
+See BISS-AXIOMS.txt §5.3.
+
+------------------------------------------------------------
+
+5.5 Error mechanisms
+- exceptions
+- error propagation
+- stack capture
+- context enrichment
+
+As long as errors are not mapped to contract outcomes.
+
+------------------------------------------------------------
+
+5.6 Test infrastructure
+- test harnesses
+- property-based generators
+- fuzzers
+- golden file helpers
+
+Tests do NOT define semantics.
+Contracts do.
+
+------------------------------------------------------------
+6. CONDITIONALLY REUSABLE (WITH DISCIPLINE)
+------------------------------------------------------------
+
+6.1 Diff computation
+Reusable only if it returns FACTS.
+
+Reusable:
+  diff(a, b) -> { changed_fields }
+
+Not reusable:
+  diff(a, b) -> CONVERGED | DIVERGED
+
+------------------------------------------------------------
+
+6.2 Retry machinery
+Reusable only as a MECHANISM.
+
+Reusable:
+- retry loops
+- backoff algorithms
+- schedulers
+
+Not reusable:
+- decision that retry is allowed
+- claims of idempotence
+
+See BISS-AXIOMS.txt §4.5 for retry authorization rules.
+
+------------------------------------------------------------
+7. NOT REUSABLE (HARD BOUNDARY)
+------------------------------------------------------------
+
+See BISS-AXIOMS.txt §5.1 for the normative rule.
+
+These elements are SEMANTIC COMMITMENTS.
+They must be declared separately at each level.
+
+- result enums
+- success / failure meaning
+- error-to-result mapping
+- retry authorization
+- idempotence guarantees
+- compatibility promises
+- versioning rules
+- outcome authority
+
+Reusing these causes semantic leakage.
+
+------------------------------------------------------------
+8. FULL EXAMPLE — cp file1 → file2
+------------------------------------------------------------
+
+8.1 Shared neutral core (reused everywhere)
+
+copy_impl(source, target):
+  open source
+  read bytes
+  write bytes to target
+  fsync target
+
+No logging.
+No result.
+No retries.
+No promises.
+
+------------------------------------------------------------
+
+8.2 RIG variant (internal, non-normative)
+
+copy_rig(source, target):
+  log.debug("copy start")
+  assert is_readable(source)
+  assert is_writable(target)
+
+  before = observe_file(source)
+  copy_impl(source, target)
+  after = observe_file(target)
+
+  assert before.size == after.size
+  assert before.hash == after.hash
+
+Meaning:
+- assertions signal bugs
+- logs are informational
+- no guarantee to callers
+
+------------------------------------------------------------
+
+8.3 GCC variant (normative command)
+
+copy_gcc(source, target):
+  try:
+    copy_impl(source, target)
+    return SUCCESS
+  except:
+    return FAILED
+
+Meaning:
+- result enum is authoritative
+- caller relies on SUCCESS / FAILED
+- retry policy must be documented
+
+------------------------------------------------------------
+
+8.4 UCC variant (convergence contract)
+
+copy_ucc(declaration):
+  current = observe_file(declaration.target)
+
+  if current matches declaration.source:
+    return CONVERGED
+
+  copy_impl(declaration.source, declaration.target)
+  return CHANGED
+
+Meaning:
+- desired state is declared
+- operation is idempotent
+- safe to retry
+- convergence is guaranteed
+
+------------------------------------------------------------
+9. REUSE MATRIX (SUMMARY)
+------------------------------------------------------------
+
+Element                     | Reusable | Reason
+--------------------------- | -------- | -----------------------------
+Core logic                  | Yes      | Pure mechanism
+State observation           | Yes      | Descriptive
+Diff computation            | Yes*     | If factual only
+Validation helpers          | Yes      | Boolean only
+Observability infra          | Yes      | Descriptive
+Retry machinery              | Yes*     | Authorization external
+Result enums                | No       | Semantic commitment
+Error semantics              | No       | Normativity
+Retry guarantees             | No       | Claim, not mechanism
+Compatibility promises       | No       | External obligation
+Outcome authority            | No       | Core of contract
+
+------------------------------------------------------------
+10. CANONICAL DESIGN RULES
+------------------------------------------------------------
+
+Rule 1:
+Implementation code may be reused freely.
+
+Rule 2:
+Semantic meaning must be declared exactly once,
+at the chosen interaction level.
+See BISS-AXIOMS.txt §2.5.
+
+Rule 3:
+No semantic layer may wrap another semantic layer.
+See BISS-AXIOMS.txt §2.4.
+
+Rule 4:
+If meaning leaks, the design is wrong.
+See BISS-AXIOMS.txt §5.4.
+
+Rule 5:
+If an interaction becomes externally relied upon,
+it must be escalated explicitly to GCC or UCC.
+See BISS-AXIOMS.txt §4.1.
+
+------------------------------------------------------------
+11. FINAL SYNTHESIS
+------------------------------------------------------------
+
+- GIC observes.
+- RIG enforces internal rigor.
+- GCC declares responsibility.
+- UCC guarantees convergence.
+
+All layers may share the same mechanical core.
+No layer may inherit meaning from another.
+
+This separation is what makes BISS:
+- rigorous
+- reusable
+- evolvable
+- automation-safe
+- AI-compatible
+
+END OF DOCUMENT

@@ -1,0 +1,198 @@
+TEST-ENFORCED DEVELOPMENT
+LANGUAGE-AGNOSTIC BEST PRACTICES
+================================
+
+STATUS
+------
+Normative guidance
+
+CLASSIFICATION
+--------------
+Supporting – Test-Enforced Development Specification
+
+1. PURPOSE
+----------
+
+This document defines a minimal, enforceable discipline to ensure that all
+behavioral logic is protected by tests.
+
+The goal is not measurement, reporting, or methodology compliance.
+The goal is a hard guarantee: no behavior without a test.
+
+This applies to any language, any framework, any project size.
+
+---
+
+2. CORE PRINCIPLE (NON-NEGOTIABLE)
+---------------------------------
+
+A unit of behavior is invalid unless it is protected by a test that fails when
+the behavior breaks.
+
+If this rule is violated, the system is considered incorrect.
+
+---
+
+3. DEFINITIONS
+--------------
+
+3.1 Behavioral Unit
+
+A behavioral unit is any code element that introduces logic or decisions, such as:
+- functions
+- methods
+- procedures
+- logic-bearing modules
+
+3.2 Orchestration Unit
+
+An orchestration unit coordinates execution and side effects but does not define
+business logic, such as:
+- scripts
+- entry points
+- CLI wrappers
+- bootstrap code
+
+Orchestration units are not directly test-mandatory.
+
+---
+
+4. MANDATORY RULES
+------------------
+
+4.1 One Behavioral Unit = One Test (Minimum)
+
+Every behavioral unit must have at least one corresponding test.
+The mapping between unit and test must be deterministic.
+
+Example (conceptual):
+  behavior X  ->  test_X
+
+4.2 Tests Are the Execution Gate
+
+Code is never considered valid unless tests pass.
+During development, execution is performed only via the test runner.
+
+4.3 Tests Must Kill Broken Behavior
+
+A test is valid only if:
+- it fails when the implementation is intentionally broken
+- it passes when the behavior is correct
+
+A test that does not fail on breakage does not count.
+
+---
+
+5. WHAT IS NOT REQUIRED
+-----------------------
+
+The following are explicitly not required:
+- code coverage percentages
+- branch coverage
+- mutation tooling
+- CI/CD pipelines
+- test-first ideology
+- exhaustive edge-case enumeration
+
+These may be added later, but they are not part of the core guarantee.
+
+---
+
+6. BRANCHES AND CONDITIONALS
+----------------------------
+
+The presence of conditionals (if/else, switch, etc.) does not imply a fixed
+number of tests.
+
+Tests are added only if existing tests fail to detect broken behavior.
+
+Branch counting is informational only and must never drive test quantity.
+
+---
+
+7. SCOPE OF TESTING
+-------------------
+
+7.1 Must Be Tested
+
+- decision logic
+- state evaluation
+- transformations
+- convergence and invariant logic
+
+7.2 Must NOT Be Tested
+
+- configuration files
+- constants
+- wiring or delegation code
+- logging
+- environment-specific side effects (unless isolated)
+
+---
+
+8. EXISTING CODEBASES
+---------------------
+
+For existing scripts or applications:
+
+1. Do not rewrite existing code
+2. Identify logic seams
+3. Extract logic into testable units (functions or modules)
+4. Apply test rules only to extracted logic
+5. Keep orchestration scripts thin and untested
+
+This improves correctness without destabilizing the system.
+
+---
+
+9. TEST RUNNER REQUIREMENTS
+---------------------------
+
+A compliant test runner must:
+
+1. Discover behavioral units
+2. Discover corresponding tests
+3. Fail if any unit has no test
+4. Execute all tests
+5. Exit immediately on failure
+
+The test runner is the only development execution path.
+
+---
+
+10. ENFORCEMENT MODEL
+---------------------
+
+Enforcement must be mechanical, not cultural.
+
+- missing test  -> execution blocked
+- failing test  -> execution blocked
+- no bypass path allowed
+
+Documentation or discipline alone is insufficient.
+
+---
+
+11. COMPLETION CRITERIA
+-----------------------
+
+A component is complete when:
+
+- all behavioral units have tests
+- all tests fail when behavior is broken
+- the test runner passes without exception
+
+No additional metrics are required.
+
+---
+
+12. FINAL INVARIANT
+-------------------
+
+If a behavior can be broken without a test failing, the system is insufficient.
+If it cannot, the system is sufficient.
+
+This invariant is language-agnostic, framework-independent, scalable,
+and enforceable.
+
+END OF DOCUMENT
