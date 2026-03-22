@@ -1,0 +1,36 @@
+BFO-CLI – Failure and Replay Behavior
+=====================================
+
+This document defines replay and failure handling for the MVP.
+
+------------------------------------------------------------
+
+1. FAILURE HANDLING
+------------------------------------------------------------
+
+Failure semantics are normative and defined in UCC-ORCHESTRATOR-SEMANTICS.txt.
+This implementation enforces them as follows:
+
+- GIC failure: logged, ignored — execution continues
+- GCC failure: stops workflow immediately
+- UCC failure: step marked for replay; workflow does not stop
+
+------------------------------------------------------------
+
+2. REPLAY MODEL
+------------------------------------------------------------
+
+Replay is explicit.
+
+CLI command:
+  orchestrator reconcile example_1
+
+Behavior:
+- reloads state
+- re-executes only non-converged UCC steps
+- never replays GIC
+- never replays successful GCC
+
+------------------------------------------------------------
+
+END OF DOCUMENT

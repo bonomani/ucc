@@ -1,0 +1,27 @@
+BFO-CLI – Observability
+=======================
+
+This document defines the observability surface of the MVP.
+
+------------------------------------------------------------
+
+1. OBSERVABILITY
+------------------------------------------------------------
+
+Observability is CLI-visible and file-logged.
+
+Events:
+- workflow_started
+- step_started
+- step_completed
+- step_failed
+- workflow_converged
+
+All events are:
+- structured
+- timestamped
+- GIC by nature
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,383 @@
+UCC-EXT-COMPENSATION – Compensation Extension
+=============================================
+
+TIER
+-----
+Tier 2 – Extension. Depends on: UCC-EXECUTION.
+Independent of: UCC-EXT-EQUALITY, UCC-EXT-CONCURRENCY, UCC-EXT-ASYNC.
+
+PREREQUISITE READING
+--------------------
+../execution-semantics/UCC-EXECUTION.txt   (core execution model — mandatory)
+UCC-STATUS.txt      (result field semantics)
+GLOSSARY.txt        (canonical vocabulary)
+
+STATUS
+------
+Normative extension to UCC/2.0 (R16-A through R16-G).
+
+VERSION
+-------
+2.0
+
+SCOPE
+-----
+This document specifies:
+- the separate compensation declaration structure (Form B)
+- trigger types for automatic and manual compensation
+- the `compensation_context` block for correlating manual compensation
+- the compensation execution lifecycle
+- result reporting when compensation is applied
+- interaction with the partial outcome modifier
+
+The interaction between compensation triggers and async deferred
+completion is governed by UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+1. PROBLEM STATEMENT
+------------------------------------------------------------
+
+UCC interactions are idempotent and convergent, but some transitions
+produce observable side effects in systems that cannot be undone by
+simply re-applying the desired state. Examples:
+
+- A payment was debited but the order failed
+- A resource was allocated but its consumer was never started
+- A certificate was issued but the service that needed it was deleted
+- An external notification was sent for a state that was then rolled back
+
+In these scenarios, reaching the original S0 (before the failed transition)
+is not possible by re-declaring the desired state — a dedicated
+compensation action is required.
+
+This document provides contractual compensation: the ability to declare,
+trigger, and audit a reversal action as part of the UCC lifecycle.
+
+------------------------------------------------------------
+
+2. COMPENSATION DECLARATION STRUCTURE (FORM B)
+------------------------------------------------------------
+
+In UCC/2.0, compensation is a SEPARATE top-level declaration, linked to
+the primary declaration via a `compensates` field. Compensation is not
+a nested block inside the primary declaration.
+
+A compensation declaration is identified by the presence of the `compensates`
+field. The `meta.id` of the compensation declaration serves as its identifier.
+
+{
+  "meta": {
+    "contract": "string",
+    "version": "2.0",
+    "id": "comp-001",
+    "timestamp": "ISO-8601"
+  },
+  "declaration": {
+    "compensates": "tx-001",
+    "target": "string",
+    "desired_state": {},
+    "trigger": "on_failure | on_partial | manual",
+    "compensation_context": {
+      "original_interaction_id": "string",
+      "compensates_for": "string"
+    }
+  }
+}
+
+The primary declaration has NO compensation block:
+
+{
+  "meta": {
+    "contract": "string",
+    "version": "2.0",
+    "id": "tx-001",
+    "timestamp": "ISO-8601"
+  },
+  "declaration": {
+    "target": "string",
+    "desired_state": {},
+    "requires": [],
+    "equality": {},
+    "concurrency": {}
+  }
+}
+
+`compensates`
+  REQUIRED in a compensation declaration. The `meta.id` of the primary
+  declaration that this declaration compensates.
+  A declaration with `compensates` MUST NOT itself have a `compensates`
+  field (prevents nesting).
+
+`desired_state`
+  REQUIRED. The compensating desired state: the state to converge the
+  target to if compensation is triggered.
+  This is a full UCC desired state, subject to all UCC invariants.
+  It MUST be independently achievable via a standard UCC cycle.
+
+`trigger`
+  REQUIRED. Defines when compensation is automatically executed.
+
+  on_failure
+    Compensation is triggered if the primary result is
+    outcome=failed (either retryable or permanent).
+    Compensation attempts to restore the target to its pre-transition state.
+
+  on_partial
+    Compensation is triggered when outcome=changed and partial=true.
+    Compensation applies only to the sub-targets that successfully transitioned.
+
+  manual
+    Compensation is NOT automatically triggered.
+    The consumer receives a `compensation_available` signal in the result
+    and decides whether to initiate compensation.
+
+`compensation_context`
+  OPTIONAL. Correlates this compensation declaration to the interaction
+  that it is intended to reverse. Used for audit trails and error reporting
+  when manual compensation fails or is rejected.
+
+  `original_interaction_id`
+    REQUIRED when compensation_context is present. The `meta.id` of the
+    original interaction that this compensation reverses. Allows consumers
+    and auditors to trace compensation back to the originating cycle.
+
+  `compensates_for`
+    REQUIRED when compensation_context is present. A human-readable
+    description of what the compensation reverses (e.g.,
+    "Reverses payment debit from order ABC-123").
+    MUST be sufficient for an operator to independently verify the intent.
+
+------------------------------------------------------------
+
+3. COMPENSATION SEMANTICS
+------------------------------------------------------------
+
+In UCC/2.0, the primary outcome is ALWAYS preserved. Compensation does NOT
+replace the primary outcome. Instead, compensation is reported in a separate
+`compensation` block alongside the primary outcome.
+
+This means:
+  - A primary outcome of outcome=failed, failure_class=permanent remains
+    outcome=failed, failure_class=permanent even when compensation succeeds.
+  - A primary outcome of outcome=changed, partial=true remains
+    outcome=changed, partial=true even when compensation succeeds.
+  - The `compensation` block tells the consumer what happened to the
+    compensation action.
+
+Consumer obligation:
+  - The primary outcome describes whether the PRIMARY GOAL was achieved.
+  - The compensation block describes whether the COMPENSATING ACTION was applied.
+  - These are orthogonal. A successful compensation does NOT mean the primary
+    goal was achieved. The consumer MUST NOT treat a successful compensation
+    as a success for the primary goal.
+
+------------------------------------------------------------
+
+4. COMPENSATION LIFECYCLE
+------------------------------------------------------------
+
+When a compensation trigger condition is met:
+
+Trigger conditions are evaluated after the primary cycle has been
+classified and before the final result is emitted.
+
+Step C1 – Compensation eligibility check
+  Observe the current state and compute diff against compensation desired_state.
+  If D = ∅, compensation is not needed. Proceed to Step C4 with
+  the original failure outcome unchanged.
+
+Step C2 – Compensation transition
+  Execute a full UCC cycle (Steps 0–6) for the compensation declaration.
+  The compensation cycle MUST be recorded separately in audit logs.
+
+Step C3 – Compensation result evaluation
+  If compensation converged or changed → emit compensation.status = converged or changed
+  If compensation failed              → emit compensation.status = failed with failure_class
+
+Step C4 – Result reporting
+  Emit exactly one result object.
+  The primary outcome is preserved.
+  The `compensation` block carries the compensation result.
+
+------------------------------------------------------------
+
+5. RESULT REPORTING
+------------------------------------------------------------
+
+When compensation runs automatically (trigger = on_failure or on_partial)
+and compensation succeeds:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "failed",
+    "failure_class": "permanent",
+    "compensation": {
+      "status": "converged",
+      "observed_after_compensation": {}
+    },
+    "message": "..."
+  }
+}
+
+When compensation runs automatically and compensation itself fails:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "failed",
+    "failure_class": "permanent",
+    "compensation": {
+      "status": "failed",
+      "failure_class": "retryable",
+      "message": "compensation cycle failed because..."
+    },
+    "message": "..."
+  }
+}
+
+When trigger = manual and the primary outcome is failed or partial:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "failed",
+    "failure_class": "retryable",
+    "compensation_available": {
+      "declaration_id": "comp-001",
+      "desired_state": {},
+      "expires_at": "ISO-8601"
+    },
+    "message": "..."
+  }
+}
+
+`compensation.status`
+  REQUIRED when the compensation block is present.
+  The result of the compensation UCC cycle itself.
+  Valid values: converged, changed, failed.
+
+`compensation.failure_class`
+  REQUIRED when compensation.status = failed.
+  Classifies the compensation failure as retryable or permanent.
+
+`compensation.observed_after_compensation`
+  REQUIRED when compensation.status = converged or changed.
+  The target state after compensation.
+
+`compensation.message`
+  REQUIRED when compensation.status = failed.
+  Describes why the compensation cycle failed.
+
+`compensation_available`
+  Present when trigger = manual AND (outcome = failed OR partial = true).
+  Signals to the consumer that a compensation declaration is ready to
+  be executed on demand.
+  `declaration_id` is the meta.id of the compensation declaration.
+  `expires_at` is REQUIRED. The timestamp after which the compensation
+  declaration is no longer safe to apply. The target state may have
+  changed after this point, making the declared compensation desired_state
+  incorrect or unsafe. A consumer MUST NOT execute compensation after
+  this timestamp. A new interaction cycle is required if compensation
+  is still needed.
+
+------------------------------------------------------------
+
+6. COMPENSATION AND IDEMPOTENCE
+------------------------------------------------------------
+
+The compensation desired_state MUST itself be idempotent:
+
+  evaluate(C, evaluate(C, S)) = evaluate(C, S)
+
+Compensation is a UCC declaration and is subject to all UCC invariants.
+It is not an exception to idempotence.
+
+------------------------------------------------------------
+
+7. INTERACTION WITH PARTIAL OUTCOME
+------------------------------------------------------------
+
+When trigger = on_partial and the primary result is
+outcome=changed, partial=true:
+- Compensation applies only to the sub-targets that successfully transitioned.
+- Sub-targets that failed are NOT compensated (they did not change).
+- If compensation of successful sub-targets succeeds → compensation.status = converged or changed
+- If compensation of any successfully-transitioned sub-target fails:
+  - The overall primary outcome retains outcome=changed, partial=true.
+  - A compensation block with status=failed MUST be present per R16-E.
+  - The `message` field SHOULD also describe the situation.
+
+------------------------------------------------------------
+
+8. NORMATIVE RULES
+------------------------------------------------------------
+
+R16-A – Compensation is a full UCC cycle
+  The compensation action MUST be executed as a complete UCC cycle
+  (Steps 0–6) against the same target. Direct state mutation without
+  a UCC cycle is forbidden.
+
+R16-B – Primary outcome is always preserved
+  When compensation runs, the primary outcome MUST remain unchanged
+  in the result. The `compensation` block reports the compensation
+  outcome alongside the unchanged primary outcome.
+  There is no `compensated` status; the primary outcome is never replaced.
+
+R16-C – Manual trigger requires compensation_available
+  When trigger = manual and the primary interaction results in a failure
+  or partial outcome, the result MUST include a `compensation_available`
+  block. Silently omitting the compensation signal is non-compliant.
+
+R16-D – Compensation desired_state is idempotent
+  The compensation `desired_state` MUST satisfy the idempotence guarantee.
+  A non-idempotent compensation declaration is a contract violation.
+
+R16-E – Compensation failure is reported in the compensation block
+  If compensation itself fails, the overall result MUST reflect the
+  original primary outcome and the `compensation` block MUST carry the
+  failure detail. Silently swallowing a compensation failure is non-compliant.
+
+R16-F – compensation_available requires expiry
+  A `compensation_available` block MUST include `expires_at`.
+  A compensation_available block without expires_at is non-compliant.
+  The consumer MUST NOT execute compensation after the declared expiry.
+
+R16-G – Rejection message MUST reference original_interaction_id when compensation_context is present
+  When trigger = manual and the consumer attempts to execute a compensation
+  declaration that is rejected (expired or otherwise invalid), the result
+  MUST be outcome=failed, failure_class=permanent. If a `compensation_context`
+  block is present in the declaration, the `message` field MUST reference the
+  `original_interaction_id` so the consumer can trace the rejection back
+  to the originating interaction.
+
+NOTE: The rule governing compensation triggers and async deferred completion
+(formerly R-INT-3) has been moved to UCC-COMPOSITION. It is not part of
+this Tier 2 extension.
+
+------------------------------------------------------------
+
+9. COMPLIANCE
+------------------------------------------------------------
+
+An implementation is compliant with UCC-EXT-COMPENSATION if:
+- It triggers compensation under the declared trigger conditions.
+- It executes compensation as a full UCC cycle.
+- It preserves the primary outcome; compensation is reported in a separate block.
+- It includes a `compensation` block describing the compensation result.
+- It includes `compensation_available` for manual triggers on failure.
+- It includes `original_interaction_id` in rejection messages when
+  compensation_context is present.
+- It complies with R16-A through R16-G.
+
+------------------------------------------------------------
+
+The interaction between compensation triggers and async deferred
+completion is governed by UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+UCC-EXT-COMPENSATION – Tier 2 Extension. Part of UCC/2.0 framework.
+
+END OF DOCUMENT

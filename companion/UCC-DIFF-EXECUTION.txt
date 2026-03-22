@@ -1,0 +1,32 @@
+UCC-DIFF – Execution Semantics Companion
+========================================
+
+This document is NORMATIVE.
+It describes how diff semantics are used during a UCC run.
+
+------------------------------------------------------------
+
+1. RUNTIME ROLE
+------------------------------------------------------------
+
+The runtime role of diff computation is defined in
+../execution-semantics/UCC-EXECUTION.txt and
+../execution-semantics/UCC-STATUS.txt.
+
+At execution time:
+
+- diff is computed after observation and declaration evaluation
+- an empty diff means the current state already satisfies the desired state
+- a non-empty diff is the input to the execution decision
+- the diff object in the result message is governed by the execution
+  result model, not by the primitive alone
+
+------------------------------------------------------------
+
+2. BOUNDARY RULE
+------------------------------------------------------------
+
+This companion does not redefine the diff primitive.
+It only states how the primitive participates in execution.
+
+END OF DOCUMENT

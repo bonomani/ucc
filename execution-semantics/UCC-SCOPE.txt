@@ -1,0 +1,572 @@
+UCC-SCOPE – Scope-Aware Execution Model
+========================================
+
+TIER
+-----
+Tier 1 – Core Execution Extension.
+Depends on: UCC-EXECUTION, UCC-OBSERVATION, UCC-DESIRED-STATE, UCC-DIFF.
+Parallel to: UCC-PRECONDITIONS, UCC-STATUS.
+
+VERSION
+-------
+1.0
+
+STATUS
+------
+Provisional extension. The message shape (`meta.scope`, `meta.caused_by`)
+is schema-backed in UCC-SCHEMA and may be used immediately. The full
+cross-scope semantics in this document are not yet covered by the
+reference implementation or by scope-specific compliance tests, so
+certification claims remain provisional.
+
+------------------------------------------------------------
+
+1. PURPOSE
+------------------------------------------------------------
+
+UCC-EXECUTION defines the convergence contract at operation scope:
+a single target (file, registry key, API resource) is observed,
+diffed, and converged.
+
+This document extends UCC to apply the same contract — observe, diff,
+converge, report — at five distinct scopes.
+
+The insight is that all systemic governance problems reduce to the same
+pattern applied at a higher level of abstraction. A decision record
+either exists in its declared form or it does not. System quality
+either falls within declared bounds or it does not. Policy conflicts
+either exist or they do not. Each is a convergence problem.
+
+This document defines:
+
+- the five execution scopes and their semantics
+- the scope declaration field and validation rules
+- per-scope observation semantics (what S0 means at each scope)
+- per-scope convergence semantics (what "converged" means at each scope)
+- cross-scope causality rules
+- topology-agnosticism: scope connections are a deployment decision
+- normative rules RS-1 through RS-12
+
+------------------------------------------------------------
+
+2. THE FIVE SCOPES
+------------------------------------------------------------
+
+Scope is a first-class field in the execution message. It declares
+the level of abstraction at which the convergence contract is applied.
+
+Five scopes are defined. They are CLOSED. No other scope values exist.
+
+  operation   — convergence of a concrete target state
+                (file, registry, database row, API resource, service config)
+
+  decision    — convergence of a decision record
+                (a choice was made, it is versioned, it is traceable)
+
+  system      — convergence of observable system quality
+                (metrics within declared bounds, no unacknowledged drift)
+
+  policy      — convergence of a conflict-free execution space
+                (no active priority violations, no unresolved conflicts)
+
+  intent      — convergence of alignment between declared human intent
+                and current system behavior
+
+Each scope uses the same execution lifecycle (Steps 0–6 from
+UCC-EXECUTION). Each scope uses the same result model
+(observation / outcome / completion). The semantics of
+"observe" and "converge" are scope-specific. The result structure
+is identical across all scopes.
+
+------------------------------------------------------------
+
+3. SCOPE DECLARATION
+------------------------------------------------------------
+
+Scope is declared in the `meta` block of the execution message:
+
+{
+  "meta": {
+    "contract": "string",
+    "version": "2.0",
+    "id": "string",
+    "timestamp": "ISO-8601",
+    "scope": "operation | decision | system | policy | intent",
+    "caused_by": "string"
+  },
+  "declaration": { ... }
+}
+
+scope field:
+  OPTIONAL. Defaults to "operation" when absent.
+  When present, MUST be one of the five values above.
+  Once declared, all scope-specific rules of this document apply.
+
+caused_by field:
+  OPTIONAL. When present, MUST reference the `meta.id` of an existing
+  execution message that caused this execution to be triggered.
+  Absence of caused_by means "no declared causality".
+  Causality is never inferred. See Section 5.
+
+------------------------------------------------------------
+
+4. PER-SCOPE EXECUTION SEMANTICS
+------------------------------------------------------------
+
+4.1 SCOPE: operation
+--------------------
+
+This is the default UCC scope. No new semantics beyond UCC-EXECUTION.
+
+Observation (S0):
+  The current state of a concrete target object.
+  Examples: file hash, registry value, service configuration,
+  database row, API resource representation.
+
+Desired state (S1):
+  The declared target state.
+
+Convergence:
+  S0 equals S1 under the applicable equality semantics
+  (structural by default; see UCC-EXT-EQUALITY for semantic equality).
+
+Transition:
+  A concrete state mutation. File write, registry set, API PUT.
+
+Determinism: full.
+
+------------------------------------------------------------
+
+4.2 SCOPE: decision
+-------------------
+
+A decision record declares that a choice was made, which versioned
+reasoning artifact produced it, and what alternatives were considered.
+Convergence means the decision record is present and complete.
+
+Observation (S0):
+  Whether a decision record exists for this correlation_id and
+  declared reasoning_artifact version.
+  S0 = { exists: true, complete: true, artifact_version: "x.y.z" }
+    or { exists: false }
+    or { exists: true, complete: false }
+
+Desired state (S1):
+  A complete decision record referencing the declared reasoning artifact
+  version, with declared confidence and alternatives fields populated.
+
+Convergence:
+  The decision record exists, is complete, and references the correct
+  artifact version. Record presence is binary (exists or does not).
+
+Transition:
+  Append a new decision record. Decision records are ALWAYS append-only.
+  An existing record is NEVER mutated. If a new decision supersedes a
+  prior one, a new record is appended with a reference to the prior
+  record's event_id.
+
+Determinism: full. A record either exists in the declared form or not.
+
+Additional declaration fields at decision scope:
+
+  declaration.desired_state MUST include:
+    reasoning_artifact_id      (string) — identifier of the artifact
+    reasoning_artifact_version (string) — immutable version reference
+    confidence                 (number, 0.0–1.0) — OPTIONAL
+    alternatives_considered    (array of strings) — OPTIONAL
+
+------------------------------------------------------------
+
+4.3 SCOPE: system
+-----------------
+
+System scope observes whether the aggregate quality of operation-scope
+executions within a declared window falls within declared bounds.
+It does NOT gate or block individual executions. It produces signals.
+
+Observation (S0):
+  Aggregated quality metrics for the declared target group
+  (by contract name, correlation prefix, time window, or tag).
+  Examples:
+    { retry_rate: 0.04, partial_rate: 0.01, failed_rate: 0.00 }
+    { p99_duration_ms: 320, convergence_rate: 0.99 }
+
+  S0 = indeterminate when no executions exist in the declared window
+  (no data yet — not a failure, not a quality problem).
+
+Desired state (S1):
+  Declared bounds per metric.
+  Examples:
+    { retry_rate: { max: 0.05 }, failed_rate: { max: 0.01 } }
+
+Convergence:
+  All declared metrics fall within their declared bounds.
+  Convergence at system scope is BOUNDED, not exact.
+  The tolerance is declared in the desired_state, not inferred.
+
+Transition:
+  Emit a quality record (see RECORD-MODEL-SPEC §5.6).
+  No state mutation occurs at system scope.
+  The transition IS the record emission.
+
+Determinism: bounded. Given the same metric aggregates and the same
+declared bounds, the result is identical. The metric aggregates
+themselves depend on prior operation-scope executions.
+
+Important: A system-scope result with outcome=failed does NOT mean
+individual operations failed. It means aggregate quality fell outside
+declared bounds. These are orthogonal signals.
+
+------------------------------------------------------------
+
+4.4 SCOPE: policy
+-----------------
+
+Policy scope observes whether the current execution space contains
+active conflicts that violate declared priority rules. Convergence
+means no unresolved conflicts exist within the declared scope.
+
+Observation (S0):
+  The set of active (in-progress or pending) executions that match
+  the declared conflict pattern.
+  Examples:
+    { active_writes_to: "prod-db", count: 3, freeze_active: true }
+    { competing_targets: ["task-A", "task-B"], priority_inversion: true }
+
+  S0 = indeterminate when conflict detection infrastructure is unavailable.
+
+Desired state (S1):
+  A conflict-free execution space matching the declared rules.
+  Examples:
+    { freeze_active: false }
+    { priority_inversion: false }
+
+Convergence:
+  No active conflicts matching the declared pattern exist.
+
+Transition:
+  Emit a policy / authority record (see RECORD-MODEL-SPEC §5.5).
+  For active conflicts: emit an arbitration decision record.
+  Arbitration produces allow / defer / reject signals.
+  No execution is directly blocked by this contract.
+  Enforcement (actually preventing execution) is the responsibility
+  of the execution gate that consumes policy-scope results.
+
+Determinism: conditional. Given the same set of active executions and
+the same declared rules, the arbitration decision is identical.
+Active execution state changes continuously in live systems.
+
+------------------------------------------------------------
+
+4.5 SCOPE: intent
+-----------------
+
+Intent scope observes whether declared human intent is reflected in
+current system behavior. Convergence means no unacknowledged divergences
+exist between intent and behavior.
+
+Observation (S0):
+  The set of active divergences between declared intent records and
+  current system-scope or operation-scope outcomes.
+  A divergence is a gap between what was declared as intent and what
+  is actually happening.
+  Examples:
+    { unacknowledged_divergences: 0 }
+    { unacknowledged_divergences: 3, oldest_divergence_age_s: 7200 }
+
+  S0 = indeterminate when divergence detection is not yet populated
+  (e.g., first run, no history).
+
+Desired state (S1):
+  No unacknowledged divergences within the declared staleness window.
+  Examples:
+    { unacknowledged_divergences: 0 }
+    { max_divergence_age_s: 3600 }
+
+Convergence:
+  All divergences within the declared window are acknowledged.
+  "Acknowledged" means a human override record or a resolution record
+  exists for each divergence. Acknowledgment is itself an operation
+  that produces a decision-scope record (see Section 4.2).
+
+Transition:
+  Emit a view record summarizing current divergence state
+  (see RECORD-MODEL-SPEC §5.7).
+  No automated state mutation occurs at intent scope.
+  Human action is required to acknowledge divergences.
+
+Determinism: interpretive. Convergence depends on human acknowledgment
+records. Given the same acknowledgment records and the same declared
+window, the result is identical.
+
+------------------------------------------------------------
+
+5. CROSS-SCOPE CAUSALITY
+------------------------------------------------------------
+
+5.1 The caused_by field
+
+Every execution message MAY include a `caused_by` field in `meta`.
+When present, it MUST reference the `meta.id` of another execution
+message that directly triggered this one.
+
+Causality is EXPLICIT and SINGLE-PARENT.
+Each execution has at most one declared cause.
+Causality is NEVER inferred from timestamps or correlation groups.
+Absence of caused_by means "no declared causality".
+
+The causal chain threads through all scopes:
+
+  intent/xyz → caused_by nothing (human-initiated)
+  policy/uvw → caused_by: intent/xyz
+  system/rst → caused_by: policy/uvw
+  decision/qpr → caused_by: system/rst
+  operation/abc → caused_by: decision/qpr
+
+This chain is fully traceable in both directions using the
+event records produced by each execution.
+
+5.2 Causality rules
+
+RS-5: caused_by MUST reference the meta.id of an existing execution
+message. Forward references are forbidden.
+
+RS-6: A single execution MAY be the cause of multiple downstream
+executions. Each downstream execution carries its own caused_by
+referencing the same parent id.
+
+RS-7: Causality does not imply ordering constraint enforcement.
+The caused_by field is descriptive, not prescriptive. It records
+what triggered what. It does not force execution ordering.
+Ordering enforcement is a deployment concern.
+
+RS-8: A caused_by reference MUST NOT create a cycle.
+Cyclic causality is a contract violation.
+
+5.3 Cross-scope causality is not required
+
+Executions at the same scope MAY reference each other via caused_by.
+Cross-scope causality is common but not mandatory.
+An operation-scope execution MAY exist without any higher-scope cause.
+A decision-scope execution MAY exist without a system-scope cause.
+
+------------------------------------------------------------
+
+6. TOPOLOGY AGNOSTICISM
+------------------------------------------------------------
+
+This document defines contracts at each scope. It does NOT prescribe
+how scopes connect or trigger each other.
+
+The following topologies are all valid implementations:
+
+  Linear (upward reporting):
+    operation → decision → system → policy → intent
+    Events bubble up. Higher scopes observe lower scopes.
+
+  Closed loop (with feedback):
+    system scope detects drift → triggers new operation-scope executions
+    policy scope detects conflict → gates pending operation executions
+    This is a valid deployment. UCC-SCOPE does not forbid feedback.
+
+  Event bus (peer model):
+    All scopes emit to a shared event stream.
+    Each scope subscribes to the event types it consumes.
+    Topology is implicit in subscription configuration.
+
+The choice of topology is a deployment decision.
+The contracts defined in this document are valid under all three.
+
+What the topology MUST preserve regardless of implementation:
+- The caused_by chain MUST remain traceable end-to-end.
+- The result model MUST be identical across all scopes.
+- Higher-scope executions MUST NOT directly mutate operation-scope state.
+  (They produce records and signals; operation-scope executions do the mutating.)
+
+------------------------------------------------------------
+
+7. NORMATIVE RULES
+------------------------------------------------------------
+
+RS-1 – Scope closed vocabulary
+The scope field MUST be one of: operation, decision, system, policy, intent.
+No other values are permitted.
+
+RS-2 – Scope default
+When scope is absent, it defaults to "operation".
+All UCC-EXECUTION rules apply without modification.
+
+RS-3 – Same result model across scopes
+All five scopes use the same three-field result model
+(observation / outcome / completion) with the same value sets.
+Scope-specific semantics apply to observation and convergence only.
+The result structure is identical.
+
+RS-4 – Observation-first at all scopes
+Step 1 (observation) MUST precede any transition at all scopes.
+A transition MUST NOT be attempted if observation = failed or indeterminate.
+
+RS-5 – caused_by references an existing id
+When caused_by is present, it MUST reference the meta.id of an
+execution message that already exists.
+Forward references are forbidden.
+
+RS-6 – Multiple effects from one cause
+A single execution MAY be the declared cause of multiple downstream
+executions. Each downstream execution carries its own caused_by.
+
+RS-7 – Causality is descriptive
+caused_by records what triggered what. It does not enforce execution
+ordering. Ordering is a deployment concern.
+
+RS-8 – No cyclic causality
+A caused_by chain MUST NOT form a cycle.
+Cyclic causality is a contract violation.
+
+RS-9 – Higher scopes do not mutate operation-scope state
+Executions at decision, system, policy, or intent scope MUST NOT
+directly mutate concrete target state (files, registry, APIs).
+Their transition step produces records and signals only.
+
+RS-10 – Bounded convergence at system scope
+At system scope, convergence is declared within tolerance bounds.
+Exact equality is not required. The bounds are part of the declared
+desired state. Bounds-checking MUST be deterministic given the same
+metrics and the same declared bounds.
+
+RS-11 – Indeterminate is valid at higher scopes
+At system, policy, and intent scope, observation = indeterminate is
+a valid and expected result when the observation substrate has no data
+yet (empty window, first run, infrastructure not yet populated).
+This MUST NOT be treated as a failure.
+
+RS-12 – Acknowledgment at intent scope is a decision record
+Every human action that acknowledges a divergence at intent scope
+MUST produce a decision-scope execution record (see Section 4.2).
+Unrecorded human overrides are a contract violation.
+Human decisions are not exempt from governance.
+
+------------------------------------------------------------
+
+8. SCHEMA EXTENSION
+------------------------------------------------------------
+
+The canonical machine-readable schema file
+../formal/ucc-2.0.schema.json includes the following optional `meta`
+fields for both declaration and result messages:
+
+MetaIn extension (scope-aware):
+
+  "scope": {
+    "type": "string",
+    "enum": ["operation", "decision", "system", "policy", "intent"],
+    "default": "operation"
+  },
+  "caused_by": {
+    "type": "string",
+    "minLength": 1
+  }
+
+The DeclarationMessage and ResultMessage top-level shapes are otherwise
+unchanged. The three-field result model is unchanged.
+
+Scope-specific desired_state fields (Section 4) are carried inside the
+existing declaration.desired_state object. No new top-level message
+types are introduced.
+
+------------------------------------------------------------
+
+9. NON-GOALS
+------------------------------------------------------------
+
+This document does NOT:
+
+- define execution engines or orchestrators
+- enforce causality ordering (RS-7)
+- prevent human action from bypassing scope contracts
+  (it only requires that such actions produce records — RS-12)
+- define synthesis algorithms for system-scope observation
+  (the aggregation method is an implementation concern)
+- prescribe topology (Section 6)
+- replace RECORD-MODEL-SPEC.txt (records are the substrate;
+  UCC-SCOPE governs convergence on top of that substrate)
+
+------------------------------------------------------------
+
+10. RELATIONSHIP TO OTHER DOCUMENTS
+------------------------------------------------------------
+
+RECORD-MODEL-SPEC.txt
+  Defines the seven record types that scope-aware transitions produce.
+  UCC-SCOPE governs the convergence contract.
+  RECORD-MODEL-SPEC governs the record structure.
+  These are complementary and non-overlapping.
+
+UCC-EXECUTION.txt
+  Defines the core execution lifecycle (Steps 0–6) and result model.
+  UCC-SCOPE extends it with scope semantics and the caused_by field.
+  In case of conflict, UCC-EXECUTION.txt governs core lifecycle rules.
+  UCC-SCOPE governs scope-specific semantics.
+
+SYSTEMIC-GOVERNANCE-PROBLEMS.txt
+  Identifies eight systemic problems. UCC-EXECUTION solves Problem 1.
+  UCC-SCOPE provides the convergence contract substrate for the
+  remaining seven by mapping them to scopes:
+
+    Problem 2 (causality)            → caused_by field (Section 5)
+    Problem 3 (implicit state)       → operation scope with mandatory
+                                       state_references in declaration
+    Problem 4 (ungoverned reasoning) → decision scope (Section 4.2)
+    Problem 5 (compliance/quality)   → system scope (Section 4.3)
+    Problem 6 (systemic visibility)  → system scope, intent scope
+    Problem 7 (global arbitration)   → policy scope (Section 4.4)
+    Problem 8 (human supervision)    → intent scope (Section 4.5)
+
+SYSTEMIC-GOVERNANCE-SOLUTIONS.txt §Problem 2
+  Defines the minimal event store for causality recording.
+  UCC-SCOPE's caused_by field is the execution-layer counterpart
+  to that document's parent_event_id field at the record layer.
+
+------------------------------------------------------------
+
+11. COMPLIANCE CRITERION
+------------------------------------------------------------
+
+An implementation can only make a PROVISIONAL UCC-SCOPE claim if:
+
+1. The scope field, when present, uses only the five defined values.
+2. caused_by, when present, references an existing execution id.
+3. Transitions at decision, system, policy, and intent scope produce
+   records only — no direct mutation of operation-scope state (RS-9).
+4. The three-field result model is used identically across all scopes.
+5. Rules RS-1 through RS-12 are respected.
+
+Compliance with UCC-EXECUTION remains REQUIRED.
+UCC-SCOPE compliance does not replace it.
+Full certification remains unavailable until UCC-TESTS defines
+scope-specific phases and the reference implementation exercises them.
+
+------------------------------------------------------------
+
+12. NORMATIVE SUMMARY
+------------------------------------------------------------
+
+The convergence pattern — observe, diff, converge, report — is universal.
+It applies at every level of abstraction from a single file write to
+the alignment between human intent and system behavior.
+
+UCC-SCOPE makes this explicit. By declaring scope, an execution message
+states which level of abstraction it governs. By declaring caused_by,
+it records what triggered it. The result model is identical at all
+scopes. The topology is left to the deployment.
+
+Five scopes. One contract. One result model. One causality field.
+
+The stack is not five frameworks. It is one pattern applied five times.
+
+------------------------------------------------------------
+
+UCC-SCOPE – Tier 1 Extension. Part of UCC/2.0 framework.
+Footer: See FRAMEWORK-MAP.txt for the complete document index.
+
+END OF DOCUMENT

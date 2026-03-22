@@ -1,0 +1,52 @@
+BFO-CLI – Architecture Overview
+===============================
+
+This document describes the high-level architecture of the MVP.
+It is non-normative and explanatory.
+
+------------------------------------------------------------
+
+1. ARCHITECTURE OVERVIEW
+------------------------
+
+Components (minimal set):
+
+1. CLI Interface
+2. Workflow Definition (file-based)
+3. Orchestrator Core
+4. Action Executor
+5. State Store
+6. Observability Output
+
+Everything runs as a single process.
+
+------------------------------------------------------------
+
+2. WHY THIS ARCHITECTURE IS ENOUGH
+----------------------------------
+
+With this architecture you get:
+- deterministic orchestration
+- replay after crash
+- AI-operable CLI
+- zero heuristics
+- zero UI complexity
+
+This architecture demonstrates:
+- why BISS trivializes orchestration
+- why existing tools are complex
+- why AI needs explicit semantics
+
+------------------------------------------------------------
+
+3. CANONICAL CLAIM
+------------------
+
+“This orchestrator is BISS-first and RIG-compliant:
+all boundary interactions are explicitly classified
+and all internal execution logic is rigorous,
+observable, and replay-safe.”
+
+------------------------------------------------------------
+
+END OF DOCUMENT

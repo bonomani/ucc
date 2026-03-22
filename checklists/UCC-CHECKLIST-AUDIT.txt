@@ -1,0 +1,18 @@
+UCC-CHECKLIST – Audit Trail Checklist
+=====================================
+
+This document is non-normative.
+It collects the audit trail checks.
+
+------------------------------------------------------------
+
+[ ] Every interaction produces a ResultMessage
+[ ] ResultMessage includes observed_before when Step 1 completed successfully
+[ ] All transitions that reach Step 3 produce a diff
+[ ] Step 0-blocked results include observe.preconditions evidence
+[ ] All changes include proof or explanation
+[ ] All failures include message describing the cause
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,329 @@
+MODEL-GOVERNANCE-FRAMEWORK.txt
+============================
+
+This document defines the governance framework that guarantees
+evolvability, auditability, and long-term correctness of the system.
+It governs model lifecycle and version binding only.
+It does not define the record substrate.
+
+It contains three sections:
+1. MODEL LIFECYCLE
+2. VERSION-BINDING RULES PER ARTIFACT
+3. CONFORMANCE CHECKLIST
+
+This document is normative.
+It governs model lifecycle and version binding.
+
+
+====================================================================
+1. MODEL LIFECYCLE
+====================================================================
+
+PURPOSE
+-------
+Define how models, specifications, and concepts are introduced,
+used, evolved, and retired without breaking meaning or history.
+
+
+MODEL DEFINITION
+----------------
+A model is any artifact that defines meaning, structure, or rules
+used to interpret events, decisions, or executions.
+
+Examples:
+- CORE-CONCEPTS
+- BISS-RIG
+- Reasoning schemas
+- Arbitration policies
+- Quality models
+
+
+MODEL STATES
+------------
+Each model version MUST be in exactly one state:
+
+- draft
+- active
+- deprecated
+- superseded
+- retired
+
+
+STATE DEFINITIONS
+-----------------
+draft:
+- Not authoritative
+- Cannot be referenced by executions
+
+active:
+- Authoritative for new artifacts
+- May coexist with older versions
+
+deprecated:
+- Still valid for interpretation
+- Must not be used for new artifacts
+
+superseded:
+- Replaced by a newer version
+- Still valid for historical data
+
+retired:
+- No longer recommended for interpretation
+- Kept only for archival or legal reasons
+
+
+MODEL VERSION RULES
+-------------------
+- Models are immutable once published
+- Any semantic change requires a new version
+- Patching without version change is forbidden
+- Old versions are never deleted
+
+
+SUPERSESSION RULES
+------------------
+A new model version MUST declare:
+
+- supersedes: <model_id + version>
+- reason: <explicit explanation>
+- scope_of_change
+- known_limitations
+
+Supersession is additive, never corrective.
+
+
+VALIDITY SCOPE
+--------------
+Each model version MUST declare:
+
+- intended scope
+- known limitations
+- contexts where it must not be applied
+
+Absence of declared limitations is a defect.
+
+
+====================================================================
+2. VERSION-BINDING RULES PER ARTIFACT
+====================================================================
+
+PURPOSE
+-------
+Ensure that every artifact can always be interpreted
+using the exact model versions that defined its meaning.
+
+
+GENERAL RULE
+------------
+Every artifact that carries meaning MUST explicitly bind
+to the model versions it conforms to.
+
+
+BINDING MECHANISM
+-----------------
+Artifacts MUST include a version-binding block.
+
+Example:
+
+model_binding:
+  CORE-CONCEPTS: 1.0
+  BISS: 1.1
+  RIG: 1.0
+  REASONING-SCHEMA: 1.1
+
+
+ARTIFACT-SPECIFIC RULES
+----------------------
+
+EVENT
+-----
+- MUST bind to CORE-CONCEPTS version
+- MUST NOT rely on implicit global semantics
+
+DECISION
+--------
+- MUST bind to:
+  - CORE-CONCEPTS
+  - Reasoning model (if applicable)
+  - Policy model (if applicable)
+
+EXECUTION
+---------
+- MUST bind to:
+  - BISS-RIG version
+  - CORE-CONCEPTS version
+
+REASONING ARTIFACT
+------------------
+- MUST have:
+  - reasoning_id
+  - version
+- MUST be immutable per version
+- MUST NOT be modified in place
+
+POLICY
+------
+- MUST be versioned
+- MUST declare scope
+- MUST declare precedence rules
+
+METRIC
+------
+- MUST bind to metric definition version
+- Baseline changes require new metric version
+
+VIEW
+----
+- MUST declare:
+  - derivation rules version
+- MUST be reproducible from raw data
+
+
+FORWARD COMPATIBILITY RULE
+--------------------------
+New artifact versions MUST NOT reinterpret old artifacts.
+Interpretation is always driven by the artifact’s own bindings.
+
+
+====================================================================
+3. CONFORMANCE CHECKLIST
+====================================================================
+
+This checklist determines whether the system is compliant
+with the governance and evolvability doctrine.
+
+
+MODEL GOVERNANCE
+----------------
+[ ] All models are versioned
+[ ] Models are immutable once published
+[ ] Supersession is explicit and documented
+[ ] Known limitations are declared
+[ ] No model is silently replaced
+
+
+ARTIFACT GOVERNANCE
+-------------------
+[ ] All artifacts have stable identifiers
+[ ] All artifacts are immutable
+[ ] All artifacts are persistently stored
+[ ] All artifacts bind to model versions
+[ ] No artifact relies on implicit meaning
+
+
+EXECUTION GOVERNANCE
+--------------------
+[ ] Every execution references a BISS-RIG version
+[ ] Execution meaning is version-bound
+[ ] No execution behavior is retroactively changed
+
+
+REASONING GOVERNANCE
+--------------------
+[ ] All reasoning artifacts are versioned
+[ ] Reasoning never executes actions directly
+[ ] Reasoning influence is explicitly declared
+[ ] Old reasoning versions remain interpretable
+
+
+CAUSALITY AND STATE
+-------------------
+[ ] Events declare causal parents explicitly
+[ ] State reads/writes are declared
+[ ] No undeclared state influences execution
+
+
+QUALITY AND SUPERVISION
+----------------------
+[ ] Quality metrics have baselines
+[ ] Degradation is observable without blocking execution
+[ ] Human supervision uses synthesized views
+[ ] Raw data remains accessible
+
+
+EVOLVABILITY GUARANTEES
+----------------------
+[ ] Past data never changes meaning
+[ ] New models do not reinterpret history
+[ ] Multiple model versions coexist safely
+[ ] Mistakes are preserved, not erased
+[ ] Learning is encoded through supersession
+
+
+FINAL CONFORMANCE TEST
+----------------------
+The system is evolvable if and only if:
+
+- Removing all new models does not invalidate old data
+- Replaying history yields the same interpretation
+- Every decision can be explained using artifacts available at the time
+
+
+====================================================================
+4. MODEL REGISTRY
+====================================================================
+
+PURPOSE
+-------
+Declare which documents are governed models (subject to versioning
+and supersession rules) versus reference materials (may evolve
+without formal versioning).
+
+GOVERNED MODELS (versioning and supersession rules apply)
+---------------------------------------------------------
+  BISS            v1.1   active    BISS.txt
+  GIC             v1.0   active    GIC.txt
+  GCC             v1.0   active    GCC.txt
+  UCC             v2.0   active    ../execution-semantics/UCC-EXECUTION.txt
+  RIG             v1.0   active    RIG.txt
+  CORE-CONCEPTS   v1.0   active    CORE-CONCEPTS.txt
+  RECORD-MODEL    v1.0   active    RECORD-MODEL-SPEC.txt
+  UCC-SCOPE       v1.0   active    UCC-SCOPE.txt
+
+SUPERSESSION MAP
+----------------
+  Model       Old Version  New Version  Reason
+  -------     -----------  -----------  ------
+  UCC         v1.2         v2.0         Three-field result model replaces flat ten-status model
+
+NORMATIVE SPECIFICATIONS (governed by their parent model)
+---------------------------------------------------------
+  UCC-OBSERVATION, UCC-DECLARATION, UCC-DIFF     (governed by UCC)
+  UCC-PRECONDITIONS, UCC-STATUS                  (governed by UCC)
+  UCC-EXT-EQUALITY, UCC-EXT-CONCURRENCY,
+  UCC-EXT-ASYNC, UCC-EXT-COMPENSATION            (governed by UCC)
+  UCC-COMPOSITION                                (governed by UCC)
+  BISS-AXIOMS                                    (governed by BISS)
+  SYSTEMIC-GOVERNANCE-SOLUTIONS                  (governed by BISS + UCC-SCOPE)
+  UCC-SCHEMA            v2.0   (governed by UCC, versioned with UCC-EXECUTION)
+
+REFERENCE MATERIALS (may evolve freely, no formal versioning)
+------------------------------------------------------------
+  GLOSSARY.txt                  (canonical vocabulary — brief reference)
+  FRAMEWORK-MAP.txt             (document index and reading order)
+  UCC-IMPL-GUIDE.txt            (implementation guidance)
+  UCC-CHECKLIST.txt             (compliance checklist)
+  UCC-RFC.txt                   (non-authoritative reading format)
+  UCC-RATIONALE.txt             (design rationale)
+  UCC-GUIDE-*.txt               (fit assessment guides)
+  BISS-RIG-*.txt                (BISS-RIG guidance documents)
+  policy/GOVERNED-WRAPPER-IMPLEMENTATIONS.txt
+  policy/TEST-ENFORCED-DEVELOPMENT.txt
+
+HISTORICAL
+----------
+  Historical notes are kept out of the active corpus.
+
+====================================================================
+FINAL STATEMENT
+====================================================================
+
+Evolvability is not achieved by correctness.
+It is achieved by discipline.
+
+This framework guarantees that:
+- mistakes remain explainable
+- improvements remain safe
+- trust remains intact
+
+END OF DOCUMENT

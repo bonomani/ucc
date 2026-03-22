@@ -1,0 +1,375 @@
+UCC-EXAMPLE – Consolidated End-to-End Example
+Universal Convergence Contract (UCC/2.0)
+
+This document is NON-NORMATIVE and PRACTICAL.
+It provides a complete, linear, concrete illustration of UCC:
+- the problem
+- the declaration
+- the executable design
+- the Python implementation
+- the observable output
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Guidance – Worked Example
+
+------------------------------------------------------------
+1. SCENARIO
+------------------------------------------------------------
+
+Goal:
+Ensure that a destination file exists and has exactly the same
+content as a source file.
+
+This is a universal operation:
+- copy
+- sync
+- deploy
+- enforce state
+
+------------------------------------------------------------
+2. REAL-WORLD PROBLEM (IMPERATIVE VIEW)
+------------------------------------------------------------
+
+Typical approach:
+- check if file exists
+- copy file
+- overwrite if needed
+- rely on exit code
+
+Problems:
+- not idempotent by default
+- unsafe retries
+- no proof of convergence
+- poor auditability
+
+------------------------------------------------------------
+3. UCC VIEW OF THE SAME PROBLEM
+------------------------------------------------------------
+
+Target state:
+- source file MUST exist
+- destination file MUST exist
+- destination content MUST equal source content
+
+No commands.
+Only convergence.
+
+------------------------------------------------------------
+4. UCC DECLARATION MESSAGE (INPUT)
+------------------------------------------------------------
+
+FILE: declaration.json
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "copy-001",
+    "timestamp": "2026-01-06T14:00:00Z"
+  },
+  "declaration": {
+    "target": "file-copy",
+    "desired_state": {
+      "source": "/data/input.txt",
+      "destination": "/data/output.txt"
+    }
+  }
+}
+
+------------------------------------------------------------
+5. EXECUTABLE CONTRACT
+------------------------------------------------------------
+
+Executable name:
+copy-file
+
+Transport:
+- stdin  : DeclarationMessage
+- stdout : ResultMessage
+- stderr : runtime only
+
+Invocation:
+cat declaration.json | copy-file > result.json
+
+------------------------------------------------------------
+6. INTERNAL MODEL (UCC PRIMITIVES)
+------------------------------------------------------------
+
+observe():
+- read source existence
+- read destination existence
+- compute hashes
+
+evaluate(declaration, state):
+- compute desired destination state
+- no side effects
+
+diff(state_before, state_after):
+- detect hash mismatch or missing file
+
+------------------------------------------------------------
+7. PYTHON IMPLEMENTATION
+------------------------------------------------------------
+
+FILE: copy_file.py
+
+#!/usr/bin/env python3
+
+import sys
+import json
+import hashlib
+import os
+import shutil
+from datetime import datetime, timezone
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def observe(source, destination):
+    try:
+        return {
+            "source_exists": os.path.isfile(source),
+            "destination_exists": os.path.isfile(destination),
+            "source_hash": sha256(source) if os.path.isfile(source) else None,
+            "destination_hash": sha256(destination) if os.path.isfile(destination) else None
+        }
+    except OSError as e:
+        return None  # observation infrastructure failure
+
+def evaluate_declaration(declaration, state):
+    if not state["source_exists"]:
+        return None  # desired state is structurally unreachable
+    return {
+        "destination_exists": True,
+        "destination_hash": state["source_hash"]
+    }
+
+def diff(state, desired):
+    # desired is guaranteed non-None here; callers check for None (⊥) before calling
+    if (
+        state["destination_exists"] and
+        state["destination_hash"] == desired["destination_hash"]
+    ):
+        return {}
+    return { "destination_hash": {"before": state["destination_hash"], "after": desired["destination_hash"]} }
+
+def main():
+    decl_msg = json.load(sys.stdin)
+
+    meta = decl_msg["meta"]
+    desired = decl_msg["declaration"]["desired_state"]
+
+    source = desired["source"]
+    destination = desired["destination"]
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    observed = observe(source, destination)
+
+    if observed is None:
+        result = {
+            "meta": {
+                "contract": meta["contract"],
+                "version": "2.0",
+                "id": meta["id"],
+                "timestamp": now,
+                "duration_ms": 0  # should be measured in production
+            },
+            "observe": {},
+            "result": {
+                "observation": "failed",
+                "message": "Could not read file system state"
+            }
+        }
+        json.dump(result, sys.stdout, indent=2)
+        return
+
+    desired_state = evaluate_declaration(desired, observed)
+
+    # evaluate_declaration returns None (⊥) when desired state is structurally
+    # unreachable (source does not exist). This is a declaration evaluation
+    # failure — do not call diff(); emit outcome=failed, failure_class=permanent directly.
+    if desired_state is None:
+        outcome = "failed"
+        failure_class = "permanent"
+        message = f"Source file does not exist: {source}"
+        observed_after = None
+        proof = None
+        delta = None
+    else:
+        delta = diff(observed, desired_state)
+
+    if desired_state is None:
+        # outcome, failure_class, message, delta already set above (⊥ path)
+        pass
+    elif not delta:
+        outcome = "converged"
+        failure_class = None
+        message = None
+        observed_after = None
+        proof = None
+    else:
+        try:
+            os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
+            tmp = destination + ".tmp"
+            shutil.copyfile(source, tmp)
+            os.replace(tmp, destination)
+            outcome = "changed"
+            failure_class = None
+            message = None
+            observed_after = observe(source, destination)  # post-mutation observation
+            proof = {"copied_from": source, "hash": desired_state["destination_hash"]}
+        except PermissionError as e:
+            outcome = "failed"
+            failure_class = "permanent"
+            message = f"Permission denied: {e}"
+            observed_after = None
+            proof = None
+        except OSError as e:
+            outcome = "failed"
+            failure_class = "retryable"
+            message = f"Transient filesystem error: {e}"
+            observed_after = None
+            proof = None
+
+    observe_block = {"observed_before": observed}
+    if delta is not None:
+        observe_block["diff"] = delta
+    if observed_after is not None:
+        observe_block["observed_after"] = observed_after
+
+    result_block = {"observation": "ok", "outcome": outcome}
+    if outcome == "changed":
+        result_block["completion"] = "complete"
+    if failure_class:
+        result_block["failure_class"] = failure_class
+    if message:
+        result_block["message"] = message
+    if proof:
+        result_block["proof"] = proof
+
+    result = {
+        "meta": {
+            "contract": meta["contract"],
+            "version": "2.0",
+            "id": meta["id"],
+            "timestamp": now,
+            "duration_ms": 0  # should be measured in production
+        },
+        "observe": observe_block,
+        "result": result_block
+    }
+
+    json.dump(result, sys.stdout, indent=2)
+
+if __name__ == "__main__":
+    main()
+
+------------------------------------------------------------
+8. RESULT MESSAGE (OUTPUT)
+------------------------------------------------------------
+
+FILE: result.json
+Example case: destination did not exist before
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "copy-001",
+    "timestamp": "2026-01-06T14:00:01Z",
+    "duration_ms": 42
+  },
+  "observe": {
+    "observed_before": {
+      "source_exists": true,
+      "destination_exists": false,
+      "source_hash": "3a6eb0790f9f8c5b...",
+      "destination_hash": null
+    },
+    "observed_after": {
+      "source_exists": true,
+      "destination_exists": true,
+      "source_hash": "3a6eb0790f9f8c5b...",
+      "destination_hash": "3a6eb0790f9f8c5b..."
+    },
+    "diff": {
+      "destination_hash": {
+        "before": null,
+        "after": "3a6eb0790f9f8c5b..."
+      }
+    }
+  },
+  "result": {
+    "observation": "ok",
+    "outcome": "changed",
+    "completion": "complete",
+    "proof": {
+      "copied_from": "/data/input.txt",
+      "hash": "3a6eb0790f9f8c5b..."
+    }
+  }
+}
+
+NOTE: All result messages in this document validate against
+formal/ucc-2.0.schema.json.
+Use a JSON Schema (Draft 2020-12) validator with that file to verify
+compliance of result messages programmatically.
+
+------------------------------------------------------------
+9. OTHER POSSIBLE OUTCOMES
+------------------------------------------------------------
+
+- observation=ok, outcome=converged:
+  destination already matches source (diff is empty)
+
+- observation=ok, outcome=changed, completion=complete:
+  destination created or updated to match source
+
+- observation=ok, outcome=failed, failure_class=permanent:
+  source file does not exist, or permission permanently denied
+
+- observation=ok, outcome=failed, failure_class=retryable:
+  transient filesystem error (e.g., locked file, I/O error)
+
+- observation=failed:
+  could not read the filesystem state at all
+
+No other outcomes exist.
+
+------------------------------------------------------------
+10. WHY THIS SINGLE EXAMPLE MATTERS
+------------------------------------------------------------
+
+This one document demonstrates:
+
+- UCC declaration as the only input
+- deterministic behavior
+- idempotence
+- safe retries
+- no imperative flags
+- full audit trail with proof
+- language-independent semantics
+- proper failure classification (permanent vs retryable vs observation)
+
+------------------------------------------------------------
+11. FINAL INSIGHT
+------------------------------------------------------------
+
+This executable is not a command.
+
+It is a convergence engine.
+
+------------------------------------------------------------
+
+UCC-EXAMPLE – Consolidated End-to-End Copy File Example
+Non-normative — UCC/2.0
+
+END OF DOCUMENT

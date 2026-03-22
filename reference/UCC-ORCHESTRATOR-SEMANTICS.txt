@@ -1,0 +1,93 @@
+UCC-ORCHESTRATOR-SEMANTICS
+==========================
+
+STATUS
+------
+Normative guidance
+
+AUDIENCE
+--------
+- Architects
+- Developers implementing orchestrators
+- Platform engineers
+
+CLASSIFICATION
+--------------
+Supporting – UCC Orchestrator Semantic Requirements
+
+PREREQUISITE READING
+--------------------
+../execution-semantics/UCC-EXECUTION.txt    (UCC contract lifecycle — normative spec)
+BISS.txt             (two-axis model)
+GIC.txt              (GIC interaction type)
+GCC.txt              (GCC interaction type)
+GLOSSARY.txt         (canonical vocabulary)
+
+PURPOSE
+-------
+UCC-specific semantic requirements for orchestrators that execute UCC
+steps. These rules are tool-agnostic and apply regardless of implementation
+language, platform, or deployment model.
+
+------------------------------------------------------------
+1. UCC ORCHESTRATION PRINCIPLES
+------------------------------------------------------------
+
+Any compliant orchestrator MUST:
+
+1. Treat UCC steps according to the UCC execution contract.
+2. Keep business logic out of orchestration logic.
+3. Avoid implicit retry.
+4. Avoid heuristic decisions for UCC result handling.
+5. Delegate replay details to UCC-ORCHESTRATOR-REPLAY.txt.
+
+These principles are not optional.
+
+------------------------------------------------------------
+2. UCC STEP EXECUTION SEMANTICS
+------------------------------------------------------------
+
+The orchestrator MUST process each UCC step according to the declared
+contract result model.
+
+UCC (Universal Convergence Contract)
+--------------------------------------
+- The orchestrator MUST execute the step.
+- Convergence is determined by exit code combined with a state check;
+  neither alone is sufficient.
+- If a UCC step has not converged, it MUST be handled according to the
+  replay model.
+
+------------------------------------------------------------
+3. RESULT AND STATUS HANDLING RULES
+------------------------------------------------------------
+
+Exit code interpretation MUST follow the UCC contract model.
+The orchestrator MUST NOT parse business output (stdout/stderr content)
+to determine step outcome.
+
+For UCC, the accompanying state check is permitted input to result
+determination.
+Replay semantics are defined in UCC-ORCHESTRATOR-REPLAY.txt.
+
+------------------------------------------------------------
+4. WHAT THESE RULES GOVERN
+------------------------------------------------------------
+
+These rules govern the semantic contract between the orchestrator and the
+UCC steps it executes.
+
+They apply to:
+- any language runtime implementing the orchestrator
+- any platform (CLI, server, embedded, AI agent loop)
+- any workflow definition format (YAML, JSON, programmatic)
+
+They do NOT govern:
+- how the CLI surface is designed
+- how workflow files are formatted
+- how state is persisted internally
+- how observability output is structured
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,42 @@
+BFO-CLI – Workflow Definition
+=============================
+
+This document defines the workflow file format used by the MVP.
+
+------------------------------------------------------------
+
+1. WORKFLOW DEFINITION FORMAT
+------------------------------------------------------------
+
+Workflows are defined as plain text files (YAML or JSON).
+
+Each step MUST declare:
+- id
+- type (GIC / GCC / UCC)
+- command
+- dependencies
+
+Example:
+
+workflow.yaml
+-------------
+workflow_id: example_1
+
+steps:
+  - id: receive_event
+    type: GIC
+    command: "echo event received"
+
+  - id: copy_file
+    type: UCC
+    command: "cp file1 file2"
+    depends_on: [receive_event]
+
+  - id: notify
+    type: GCC
+    command: "curl -X POST https://example/api"
+    depends_on: [copy_file]
+
+------------------------------------------------------------
+
+END OF DOCUMENT

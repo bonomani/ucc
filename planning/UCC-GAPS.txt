@@ -1,0 +1,513 @@
+UCC-GAPS.txt
+============
+
+PURPOSE
+-------
+This document identifies what is currently incomplete, deferred, or missing
+in the UCC framework relative to its stated goals. It is a living document —
+gaps are resolved by updating the corresponding specifications and removing
+or updating entries here.
+
+STATUS
+------
+Active — maintained alongside framework evolution
+
+CLASSIFICATION
+--------------
+Reference – Framework Completeness Tracker
+
+------------------------------------------------------------
+
+HOW TO READ THIS DOCUMENT
+--------------------------
+Each gap entry states:
+- AREA: the framework area it affects
+- GOAL: what the framework intends to achieve
+- GAP: what is currently missing or incomplete
+- IMPACT: who is affected and how
+- RESOLUTION PATH: what would close this gap
+
+Gap states:
+  RESOLVED  — implemented and reflected in current artifacts
+  DEFERRED  — intentionally postponed, tracked for future work
+  PARTIAL   — partially specified, needs completion
+  MISSING   — not yet addressed anywhere in the framework
+  DRAFT     — exists but is explicitly marked incomplete
+
+------------------------------------------------------------
+
+1. DEFERRED / DRAFT CONTENT
+----------------------------
+
+GAP-1.1
+  STATE:  RESOLVED
+  AREA:   MVP / Product
+  GOAL:   UCC-MVP-1.txt exists to define the minimal executable proof of UCC:
+          four artifacts covering architecture, schema, implementation, and
+          CLI invocation (Sections 4–7).
+  GAP:    CLOSED. UCC-MVP-1.txt now defines the four artifacts explicitly and
+          points to the implemented engine, CLI, schema, and compliance suite.
+  IMPACT: The minimal executable proof now exists for operation-scope file
+          convergence.
+  RESOLUTION PATH: Maintain the artifact references as the MVP evolves.
+
+------------------------------------------------------------
+
+2. NORMATIVE SPEC GAPS
+-----------------------
+
+GAP-2.1
+  STATE:  PARTIAL
+  AREA:   Scope / Implicit State (Problem 3)
+  GOAL:   SYSTEMIC-GOVERNANCE-SOLUTIONS.txt §Problem 3 and SYSTEMIC-GOVERNANCE-
+          PROBLEMS.txt §Problem 3 state that every execution must declare
+          state reads, writes, and assumptions (the State Declaration Envelope).
+          UCC-SCOPE.txt §10 maps Problem 3 to "scope: operation with mandatory
+          state_references in declaration".
+  GAP:    No normative spec defines the state_references field in the
+          UCC declaration message. ../execution-semantics/UCC-EXECUTION.txt §3.1 (canonical declaration
+          message structure) does not include a state_references block.
+          UCC-SCHEMA.txt does not define or validate it. The record type for
+          state declaration exists in RECORD-MODEL-SPEC.txt §5.3, but the
+          execution-layer counterpart (declaring state access inside a UCC
+          declaration) is unspecified.
+  IMPACT: Implementers cannot produce compliant state-declaring executions.
+          Problem 3 is architecturally resolved in concept but not normatively
+          enforced at the execution layer.
+  RESOLUTION PATH: Add a normative state_references block (reads, writes, assumes)
+          to ../execution-semantics/UCC-EXECUTION.txt §3.1 and to UCC-SCHEMA.txt. Specify when the
+          field is required vs. optional. Update UCC-CHECKLIST.txt.
+
+GAP-2.2
+  STATE:  MISSING
+  AREA:   Test contract / Scope extension
+  GOAL:   UCC-SCOPE.txt defines five scopes (operation, decision, system, policy,
+          intent) each with its own observation and convergence semantics. RS-1
+          through RS-12 are normative. Compliance with UCC-SCOPE requires
+          scope-aware execution to be testable.
+  GAP:    UCC-TESTS.txt defines no test phases for scope-aware execution. All
+          eight mandatory phases and all extension phases target operation-scope
+          behaviors only. There are no test contracts for:
+          - decision-scope convergence (record existence, append-only transitions)
+          - system-scope convergence (bounded metrics, indeterminate on empty window)
+          - policy-scope convergence (conflict detection, arbitration signals)
+          - intent-scope convergence (divergence detection, acknowledgment records)
+          - caused_by field validation (RS-5, RS-8: no cycle, no forward reference)
+  IMPACT: A UCC-SCOPE-compliant implementation cannot be certified by UCC-TESTS.txt.
+          The test contract does not cover the majority of what UCC-SCOPE specifies.
+  RESOLUTION PATH: Add a §6 (or equivalent) to UCC-TESTS.txt defining scope-
+          specific test phases: SC-1 through SC-N covering each scope's observation
+          semantics, convergence semantics, and causality rules.
+
+GAP-2.3
+  STATE:  PARTIAL
+  AREA:   Model governance / Version-binding
+  GOAL:   MODEL-GOVERNANCE-FRAMEWORK.txt §2 requires every artifact (event,
+          execution, decision, reasoning artifact, policy, metric, view) to
+          include a model_binding block referencing exact model versions.
+  GAP:    The UCC declaration message (../execution-semantics/UCC-EXECUTION.txt §3.1) and result message
+          (§3.2) do not include a model_binding block. UCC-SCHEMA.txt does not
+          define or validate it. No UCC or BISS document shows how a compliant
+          execution record satisfies the version-binding requirement at the
+          artifact level (as opposed to the meta.version field which only
+          identifies the UCC spec version, not the CORE-CONCEPTS or BISS-RIG
+          version bindings).
+  IMPACT: Executors cannot produce artifacts that fully satisfy the governance
+          framework's version-binding obligation. Post-hoc historical
+          interpretation may be ambiguous.
+  RESOLUTION PATH: Clarify in MODEL-GOVERNANCE-FRAMEWORK.txt whether the
+          meta.version = "2.0" field is sufficient for execution-record binding,
+          or define a model_binding extension to the meta block. Update
+          UCC-SCHEMA.txt accordingly.
+
+GAP-2.4
+  STATE:  MISSING
+  AREA:   Conformance / Compliance certification
+  GOAL:   The framework defines compliance criteria in ../execution-semantics/UCC-EXECUTION.txt §10,
+          UCC-SCOPE.txt §11, and UCC-TESTS.txt §12. MODEL-GOVERNANCE-FRAMEWORK.txt
+          §3 provides a conformance checklist.
+  GAP:    No document defines a formal compliance certification process: who
+          certifies, how conformance is asserted, what artifacts are produced,
+          and how BISS-RIG-CS.txt (Compliance Statement Specification) integrates
+          with the UCC compliance criterion. The compliance checklist (UCC-CHECKLIST.txt)
+          is self-assessment only; there is no structured output format for a
+          compliance claim that links checklist, test results, and model bindings.
+  IMPACT: Organizations cannot formally assert or record UCC conformance.
+          UCC-TESTS.txt compliance is separately defined from BISS-RIG-CS.txt
+          compliance with no normative bridge between them.
+  RESOLUTION PATH: Define a UCC compliance statement format (possibly extending
+          BISS-RIG-CS.txt) that records: which documents were checked, test runner
+          pass/fail, and model versions bound. Or explicitly state in BISS-RIG-CS.txt
+          that UCC-TESTS.txt pass constitutes the UCC compliance claim.
+
+GAP-2.5
+  STATE:  PARTIAL
+  AREA:   Scope / System-scope aggregation
+  GOAL:   UCC-SCOPE.txt §4.3 defines system-scope observation as aggregated
+          quality metrics for a declared target group. The observation substrate
+          is described (S0 = metric aggregates), but UCC-SCOPE.txt §9 (NON-GOALS)
+          explicitly states "the aggregation method is an implementation concern."
+  GAP:    No document specifies:
+          - which events feed system-scope observation (execution records? quality
+            records? or both?)
+          - the minimal aggregation window semantics (how "window" is expressed in
+            the desired_state declaration)
+          - how a system-scope observer discovers which operation-scope executions
+            belong to its declared target group (by contract name? correlation prefix?
+            tag?)
+          This creates an underspecified interface between operation-scope results
+          and system-scope observation: the contract boundary is defined but the
+          data flow into it is not.
+  IMPACT: Implementers must invent an aggregation scheme with no framework guidance.
+          Cross-implementation interoperability at system scope is not guaranteed.
+  RESOLUTION PATH: Add a non-normative (or normative) section to UCC-SCOPE.txt or
+          a new guide document specifying the minimal aggregation interface:
+          what record types are consumed, how target group membership is declared,
+          and what the minimum window declaration looks like.
+
+------------------------------------------------------------
+
+3. TEST COVERAGE GAPS
+----------------------
+
+GAP-3.1
+  STATE:  MISSING
+  AREA:   Test contract / Scope-aware execution
+  GOAL:   (same as GAP-2.2 — listed here for traceability)
+          UCC-TESTS.txt is normative for UCC compliance. UCC-SCOPE.txt is
+          normative once a scope field is declared.
+  GAP:    No test phases exist for any of the four non-operation scopes nor for
+          the caused_by causality rules (RS-5, RS-8). UCC-TESTS.txt §5 (extension
+          test phases) covers only Tier 2 extensions (equality, concurrency, async,
+          compensation), not the Tier 1 scope extension.
+  IMPACT: Implementers using decision, system, policy, or intent scope have no
+          normative test contract to verify against.
+  RESOLUTION PATH: See GAP-2.2.
+
+GAP-3.2
+  STATE:  RESOLVED
+  AREA:   Test contract / Preconditions
+  GOAL:   UCC-PRECONDITIONS.txt is normative. It defines Step 0 behavior: cyclic
+          dependency detection, permanent failure on unsatisfied precondition, and
+          the message format identifying the unsatisfied declaration_id. UCC-CHECKLIST.txt
+          §9 lists precondition compliance items.
+  GAP:    CLOSED. UCC-TESTS.txt now defines PRE-1 (unsatisfied precondition)
+          and PRE-2 (cycle detection or explicit not-applicable justification).
+  IMPACT: Precondition behavior is now part of the normative test contract.
+  RESOLUTION PATH: Extend PRE coverage further only if new precondition semantics are added.
+
+GAP-3.3
+  STATE:  RESOLVED
+  AREA:   Test contract / Dry-run mode
+  GOAL:   Dry-run mode (mode=dry_run) has normative semantics in ../execution-semantics/UCC-EXECUTION.txt §4
+          and UCC-IMPL-GUIDE.txt §8. UCC-TESTS.txt §7.5 describes dry-run as an
+          optional (recommended but not mandatory) test.
+  GAP:    CLOSED. UCC-TESTS.txt now defines DRY-1 and DRY-2 as mandatory
+          dry-run scenarios.
+  IMPACT: Dry-run suppression and dry-run convergence are now certifiable behaviors.
+  RESOLUTION PATH: Maintain parity between dry-run semantics in UCC-EXECUTION and DRY-* tests.
+
+GAP-3.4
+  STATE:  MISSING
+  AREA:   Test contract / Model governance
+  GOAL:   MODEL-GOVERNANCE-FRAMEWORK.txt §3 defines a conformance checklist
+          covering model governance, artifact governance, execution governance,
+          reasoning governance, causality/state, quality/supervision, and
+          evolvability. These are framed as mandatory checklist items.
+  GAP:    No test contract exists for governance conformance. Items in the
+          MODEL-GOVERNANCE-FRAMEWORK.txt checklist are unverifiable by
+          automated tests as no test specification or test runner is defined
+          for them.
+  IMPACT: Governance conformance is self-assessed only. The framework's stated
+          evolvability guarantees (§3 Final Conformance Test) cannot be machine-verified.
+  RESOLUTION PATH: Acknowledge in MODEL-GOVERNANCE-FRAMEWORK.txt that the conformance
+          checklist is a human-assessed audit artifact, not a machine-testable contract.
+          Alternatively, define automated verification criteria for specific items
+          (e.g., artifact version-binding presence can be schema-validated).
+
+------------------------------------------------------------
+
+4. IMPLEMENTATION GAPS
+-----------------------
+
+GAP-4.1
+  STATE:  RESOLVED
+  AREA:   Implementation / Reference implementation
+  GOAL:   UCC-MVP-1.txt §1 establishes the goal: prove UCC with a minimal
+          implementation. UCC-PRODUCT-PLAN-1.txt §2.1 specifies that the
+          open-source core (UCC engine + CLI) is the first deliverable.
+          UCC-IMPL-GUIDE.txt provides guidance; UCC-EXAMPLE.txt provides
+          an end-to-end example.
+  GAP:    CLOSED for the MVP scope. The reference engine now exists at
+          `mvp/ucc_mvp/engine.py`, the CLI at `mvp/ucc_mvp/cli.py`, the
+          canonical schema at `formal/ucc-2.0.schema.json`, and the
+          compliance suite at `mvp/tests/test_ucc_mvp.py`.
+  IMPACT: The framework now has an executable operation-scope baseline.
+          Non-operation scopes and product-grade orchestrators remain separate gaps.
+  RESOLUTION PATH: Extend the reference implementation only when expanding beyond MVP scope.
+
+GAP-4.2
+  STATE:  PARTIAL
+  AREA:   Implementation / Scope-aware components
+  GOAL:   UCC-SCOPE.txt defines the full convergence contract at decision,
+          system, policy, and intent scope. GOVERNED-WRAPPER-IMPLEMENTATIONS.txt
+          exists as a concrete patterns document.
+  GAP:    No worked implementation example exists for any non-operation scope.
+          UCC-EXAMPLE.txt covers operation-scope only. There is no example
+          showing how to implement a decision-scope component (appending a
+          decision record) or a system-scope observer (aggregating metrics
+          and comparing to declared bounds) that produces a valid UCC result
+          message. GOVERNED-WRAPPER-IMPLEMENTATIONS.txt focuses on operation-scope
+          wrappers.
+  IMPACT: Architects and engineers cannot see a concrete end-to-end example
+          of the five-scope governance stack in action. The connection between
+          UCC-SCOPE.txt's abstract definitions and a real implementation is
+          not demonstrated.
+  RESOLUTION PATH: Extend UCC-EXAMPLE.txt or create a UCC-EXAMPLE-SCOPE.txt
+          with at least one worked example per non-operation scope.
+
+GAP-4.3
+  STATE:  PARTIAL
+  AREA:   Implementation / pipe-ucc tool
+  GOAL:   UCC-PIPE-ICC-DESIGN.txt defines the pipe-ucc tool design: a UCC
+          orchestrator for pipelines that replaces Unix pipe composition with
+          explicit UCC steps. The design is complete (Parts 1–8).
+  GAP:    pipe-ucc is a design document only. No implementation exists. The
+          tool is listed in ../framework/FRAMEWORK-INDEX.txt §7 as a product/planning document
+          but the implementation status is untracked. There is no compliance
+          criterion or test contract for pipe-ucc behavior (e.g., does it correctly
+          handle each pipeline step's result model?).
+  IMPACT: The pipeline orchestration pattern has a complete design but no
+          reference implementation or verification path.
+  RESOLUTION PATH: Implement pipe-ucc per the design spec. Define a test contract
+          for it aligned with UCC-TESTS.txt phases. Track implementation status
+          in a product document.
+
+GAP-4.4
+  STATE:  PARTIAL
+  AREA:   Implementation / BFO-CLI orchestrator
+  GOAL:   BFO-CLI-MVP.txt defines a complete MVP design for a BISS-first CLI
+          orchestrator: components, CLI surface, workflow format, execution model,
+          state model, failure handling, replay model, and RIG requirements.
+          UCC-ORCHESTRATOR-SEMANTICS.txt provides normative semantic requirements.
+  GAP:    BFO-CLI is a design specification only. No implementation exists.
+          The workflow definition format (YAML/JSON, §5) is described by example
+          but not formally specified (no schema, no validation rules). The state
+          store format (§9) is described in prose only.
+  IMPACT: The reference orchestrator remains unbuilt. The UCC product roadmap's
+          first step (UCC-PRODUCT-PLAN-1.txt §5 item 1: "Build UCC core and CLI")
+          is blocked.
+  RESOLUTION PATH: Build the BFO-CLI implementation per the MVP spec. Define a
+          formal schema for the workflow definition format. Publish a compliance
+          test suite for the orchestrator against UCC-ORCHESTRATOR-SEMANTICS.txt.
+
+------------------------------------------------------------
+
+5. TOOLING GAPS
+----------------
+
+GAP-5.1
+  STATE:  RESOLVED
+  AREA:   Tooling / Schema validator
+  GOAL:   UCC-SCHEMA defines the machine-normative schema contract. UCC-TESTS.txt §1 states: "All test
+          result assertions in this document MUST produce result messages that
+          validate against the canonical schema. Schema validation is a prerequisite
+          for compliance certification." UCC-EXAMPLE.txt references using a
+          JSON Schema Draft 2020-12 validator with `formal/ucc-2.0.schema.json`.
+  GAP:    CLOSED. The canonical schema artifact now exists at
+          `formal/ucc-2.0.schema.json`, and the MVP test suite validates emitted
+          results against it with `jsonschema`.
+  IMPACT: A concrete schema-validation path now exists for the reference engine.
+  RESOLUTION PATH: Keep the schema artifact versioned alongside the normative docs.
+
+GAP-5.2
+  STATE:  PARTIAL
+  AREA:   Tooling / Test runner
+  GOAL:   UCC-TESTS.txt §9 defines test runner requirements (execute mandatory
+          phases in order, restore environment between phases, fail on missing
+          phases, report which phase failed). A UCC test runner MUST enforce
+          these rules.
+  GAP:    A concrete MVP compliance suite now exists for the reference engine
+          (`mvp/tests/test_ucc_mvp.py`), but there is still no generic runner
+          that can execute UCC-TESTS against arbitrary implementations through
+          a shared interface.
+  IMPACT: The reference implementation is certifiable, but cross-implementation
+          certification is not yet uniform.
+  RESOLUTION PATH: Generalize the MVP suite into a reusable runner interface
+          for external executors.
+
+GAP-5.3
+  STATE:  MISSING
+  AREA:   Tooling / pipe-ucc implementation
+  GOAL:   (same tool as GAP-4.3 — listed here for tooling traceability)
+          pipe-ucc is a described tool with a complete design.
+  GAP:    The tool does not exist as an executable artifact.
+  IMPACT: The pattern of lifting Unix pipelines into explicit UCC steps cannot
+          be demonstrated or adopted.
+  RESOLUTION PATH: See GAP-4.3.
+
+GAP-5.4
+  STATE:  MISSING
+  AREA:   Tooling / BFO-CLI implementation
+  GOAL:   (same tool as GAP-4.4 — listed here for tooling traceability)
+          BFO-CLI is a described orchestrator with a complete MVP design.
+  GAP:    The orchestrator does not exist as an executable artifact.
+  IMPACT: The framework's product roadmap cannot proceed to step 3 (workflow
+          engine) without step 1 (UCC core and CLI) being complete.
+  RESOLUTION PATH: See GAP-4.4.
+
+------------------------------------------------------------
+
+6. GOVERNANCE GAPS
+-------------------
+
+GAP-6.1
+  STATE:  PARTIAL
+  AREA:   Governance / Lifecycle states for framework documents
+  GOAL:   MODEL-GOVERNANCE-FRAMEWORK.txt §1 defines five model states
+          (draft, active, deprecated, superseded, retired) and requires every
+          model version to be in exactly one state. §4 (Model Registry) lists
+          governed models with their version and state.
+  GAP:    The model registry in §4 lists states for governed models (e.g.,
+          BISS v1.1 active, UCC v2.0 active) but does not track states for
+          normative specifications governed by those models (UCC-OBSERVATION,
+          UCC-DECLARATION, UCC-DIFF, UCC-PRECONDITIONS, UCC-STATUS, UCC-EXT-*,
+          UCC-COMPOSITION, BISS-AXIOMS, SYSTEMIC-GOVERNANCE-SOLUTIONS, UCC-SCHEMA).
+          These are listed as "governed by their parent model" but without
+          individual version and state entries. Deprecation tracking is separate
+          from model state tracking.
+  IMPACT: The lifecycle state of normative sub-specifications is not
+          consistently tracked. No clear answer exists to "is UCC-EXT-ASYNC
+          active or draft?"
+  RESOLUTION PATH: Expand MODEL-GOVERNANCE-FRAMEWORK.txt §4 to include version
+          and state for all normative specifications, not just top-level governed
+          models.
+
+GAP-6.2
+  STATE:  MISSING
+  AREA:   Governance / Plugin conformance (product)
+  GOAL:   UCC-PRODUCT-PLAN-1.txt §2.3 states that plugins execute inside the
+          UCC engine and MUST obey UCC semantics; "no plugin may bypass validation
+          or execution rules." The plugin ABI/API is listed as a Tier 1 core
+          component.
+  GAP:    No document defines the plugin ABI/API contract: what interface a
+          plugin must implement, how it is verified against UCC semantics, what
+          compliance claims it must make, and how the marketplace enforces
+          conformance. UCC-PRODUCT-PLAN-1.txt describes the business model for
+          plugins but not the technical conformance requirement.
+  IMPACT: The plugin marketplace model has no normative technical foundation.
+          Third-party plugins cannot be evaluated for UCC compliance without
+          a defined plugin interface specification.
+  RESOLUTION PATH: Define a Plugin Conformance Specification (possibly a new
+          document) that specifies the plugin ABI, required UCC contract adherence,
+          and the compliance verification path for marketplace submissions.
+
+GAP-6.3
+  STATE:  PARTIAL
+  AREA:   Governance / Human override traceability
+  GOAL:   UCC-SCOPE.txt RS-12 requires every human acknowledgment at intent scope
+          to produce a decision-scope record. SYSTEMIC-GOVERNANCE-SOLUTIONS.txt
+          §Problem 7 Rule 4 states human override is always available and must be
+          recorded. MODEL-GOVERNANCE-FRAMEWORK.txt §3 (Reasoning Governance)
+          states "reasoning never executes actions directly."
+  GAP:    No document specifies the normative form of a human override record:
+          what fields it must contain (which human? which authority? what
+          override scope?), how it links to the execution it overrides, and how
+          its presence satisfies the convergence contract at intent scope.
+          RS-12 requires the record but does not specify its structure. The
+          RECORD-MODEL-SPEC.txt decision/reasoning record (§5.4) does not
+          distinguish human decisions from AI-generated ones at the structural level.
+  IMPACT: Human override compliance cannot be verified. An implementation that
+          produces any decision record — even one without actor or authority
+          fields — technically satisfies RS-12 as written.
+  RESOLUTION PATH: Extend RECORD-MODEL-SPEC.txt §5.4 or UCC-SCOPE.txt RS-12 to
+          specify the required fields for a human acknowledgment record. Define
+          what makes a decision record a human override vs. an automated decision.
+
+------------------------------------------------------------
+
+7. CONCEPT / VOCABULARY GAPS
+-----------------------------
+
+GAP-7.1
+  STATE:  PARTIAL
+  AREA:   Vocabulary / "Convergence" at non-operation scopes
+  GOAL:   The framework's canonical statement (BISS.txt §15) says "UCC guarantees
+          convergence." UCC-SCOPE.txt extends convergence to five scopes. Each
+          scope has a different semantics for "converged": operation uses state
+          equality, system uses bounded metrics, policy uses conflict absence,
+          intent uses divergence acknowledgment, decision uses record presence.
+  GAP:    GLOSSARY.txt does not define "convergence" as a term. It defines the
+          result fields (outcome=converged means "diff is empty") but only for
+          the operation-scope case. The meaning of outcome=converged at system,
+          policy, or intent scope — where convergence is bounded or interpretive
+          rather than exact — is not captured in the vocabulary. A reader of
+          GLOSSARY.txt alone would not know that convergence has scope-dependent
+          semantics.
+  IMPACT: The most fundamental claim of the framework ("convergence") is not
+          fully defined in the canonical vocabulary document. Engineers reading
+          GLOSSARY.txt get an incomplete picture of the result model.
+  RESOLUTION PATH: Add a "Convergence" entry to GLOSSARY.txt that summarizes
+          the scope-dependent semantics, with a forward reference to UCC-SCOPE.txt.
+
+GAP-7.2
+  STATE:  MISSING
+  AREA:   Vocabulary / "Divergence" (intent scope)
+  GOAL:   UCC-SCOPE.txt §4.5 introduces "divergence" as a key concept at intent
+          scope: a gap between declared intent and current behavior. It defines
+          S0 in terms of unacknowledged divergences and requires divergences to
+          be acknowledged to achieve convergence.
+  GAP:    "Divergence" is not defined in GLOSSARY.txt or CORE-CONCEPTS.txt.
+          It is used extensively in UCC-SCOPE.txt §4.5 but has no canonical
+          definition, no declared properties, and no normative rules in the
+          vocabulary layer. It is not listed in ../framework/FRAMEWORK-INDEX.txt §5 (core
+          concepts).
+  IMPACT: A new concept central to intent-scope governance has no canonical
+          definition. Implementers must infer its semantics from context in
+          UCC-SCOPE.txt alone.
+  RESOLUTION PATH: Add "Divergence" to GLOSSARY.txt and optionally to
+          CORE-CONCEPTS.txt with a formal definition, properties (what constitutes
+          a divergence, how it is identified, how it is acknowledged), and a
+          reference to UCC-SCOPE.txt §4.5.
+
+GAP-7.3
+  STATE:  MISSING
+  AREA:   Vocabulary / "Arbitration decision" (policy scope)
+  GOAL:   UCC-SCOPE.txt §4.4 introduces three signals produced by a policy-scope
+          transition: allow, defer, and reject. These arbitration signals are
+          central to the policy-scope convergence model.
+  GAP:    "Allow", "defer", and "reject" as arbitration signals are not defined
+          in GLOSSARY.txt or CORE-CONCEPTS.txt. Their relationship to the
+          UCC result model (how do they map to observation/outcome/completion?)
+          is described informally in UCC-SCOPE.txt §4.4 but not formalized.
+          "Defer" in this context is different from completion=pending (async
+          deferral) but the distinction is not captured in the vocabulary.
+  IMPACT: Policy-scope implementers cannot distinguish "defer" (arbitration
+          signal) from completion=pending (async state) without careful cross-
+          referencing. The vocabulary gap creates ambiguity risk.
+  RESOLUTION PATH: Add "Arbitration Signal" (with values allow/defer/reject) to
+          GLOSSARY.txt. Clarify that policy-scope "defer" is an arbitration
+          outcome carried in the result's outcome/proof, distinct from async
+          completion=pending.
+
+GAP-7.4
+  STATE:  PARTIAL
+  AREA:   Vocabulary / "Acknowledgment" (intent scope)
+  GOAL:   UCC-SCOPE.txt §4.5 and RS-12 use "acknowledgment" as the mechanism
+          by which humans resolve divergences at intent scope. RS-12 states
+          that acknowledgment "MUST produce a decision-scope execution record."
+  GAP:    "Acknowledgment" is not defined in GLOSSARY.txt. Its relationship
+          to a decision-scope record (is the decision record itself the
+          acknowledgment, or does a decision record contain an acknowledgment
+          field?) is not specified. The form of an acknowledgment (what fields
+          must the decision record carry to be valid as an acknowledgment vs.
+          any other decision record) is left to the implementer.
+  IMPACT: RS-12 compliance cannot be verified without a definition of what
+          constitutes a valid acknowledgment.
+  RESOLUTION PATH: Add "Acknowledgment" to GLOSSARY.txt with a definition that
+          links to RS-12 and specifies the minimal decision-scope record fields
+          required for acknowledgment. See also GAP-6.3.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

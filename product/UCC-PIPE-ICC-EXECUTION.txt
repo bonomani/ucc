@@ -1,0 +1,29 @@
+UCC-PIPE-ICC-EXECUTION
+======================
+
+This document describes the internal execution model for pipe-ucc.
+
+------------------------------------------------------------
+
+For each step:
+
+observe():
+- input exists?
+- output exists?
+- hashes / timestamps
+
+evaluate():
+- desired output exists and matches expected result
+
+diff():
+- output missing or stale?
+
+decision:
+- execute legacy command only if required
+
+Commands are executed WITHOUT pipes:
+- using files as explicit boundaries
+
+------------------------------------------------------------
+
+END OF DOCUMENT

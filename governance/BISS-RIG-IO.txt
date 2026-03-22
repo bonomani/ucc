@@ -1,0 +1,266 @@
+BISS–RIG INPUT / OUTPUT SPECIFICATION
+====================================
+
+STATUS
+------
+Normative specification
+
+AUDIENCE
+--------
+- Architects
+- Platform engineers
+- DevOps / Automation engineers
+- Script and tool authors
+- Orchestrator designers
+
+This document defines the mandatory and optional rules
+governing INPUT and OUTPUT handling for BISS–RIG compliant
+interactions (GIC, GCC, UCC).
+
+It focuses strictly on I/O semantics.
+It does NOT define business logic, orchestration, or tooling.
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+The purpose of this specification is to ensure that:
+
+- contractual results are machine-readable
+- orchestration never depends on log parsing
+- semantics are deterministic and explicit
+- tools remain interoperable and evolvable
+
+------------------------------------------------------------
+2. CORE PRINCIPLE
+------------------------------------------------------------
+
+BISS–RIG distinguishes between:
+
+- AUTHORITATIVE OUTPUT (contract)
+- NON-AUTHORITATIVE OUTPUT (logs, diagnostics)
+
+Only authoritative output may be consumed by machines.
+
+------------------------------------------------------------
+3. OUTPUT CLASSIFICATION
+------------------------------------------------------------
+
+3.1 Authoritative Output
+
+Authoritative output represents the contractual result
+of an interaction.
+
+It MUST:
+- be deterministic
+- be machine-readable
+- be schema-validatable
+- be complete
+- be emitted exactly once per execution
+
+Authoritative output MUST be written to:
+- stdout (CLI tools)
+- HTTP response body (APIs)
+- message payload (events)
+
+Logs MUST NOT be mixed with authoritative output.
+
+------------------------------------------------------------
+
+3.2 Non-Authoritative Output (Logs)
+
+Logs are:
+- informational
+- diagnostic
+- unordered
+- non-deterministic
+
+Logs:
+- MUST NOT be parsed
+- MUST NOT influence orchestration
+- MUST NOT replace authoritative output
+
+Logs SHOULD be written to:
+- stderr (CLI)
+- logging systems
+- observability pipelines
+
+------------------------------------------------------------
+4. REQUIRED OUTPUT STRUCTURE
+------------------------------------------------------------
+
+For GCC and UCC interactions, authoritative output MUST include:
+
+- semantic type (GCC or UCC)
+- execution status
+- per-target results (if applicable)
+
+The exact serialization format is flexible,
+but the structure must be explicit.
+
+------------------------------------------------------------
+5. OUTPUT FORMAT REQUIREMENTS
+------------------------------------------------------------
+
+The chosen output format MUST satisfy ALL of the following:
+
+1. Machine-readable
+2. Structurally deterministic
+3. Explicit field names (no positional meaning)
+4. Schema-validatable
+5. Language-agnostic
+6. Stable across versions
+7. Single-document output
+
+------------------------------------------------------------
+6. RECOMMENDED OUTPUT FORMATS
+------------------------------------------------------------
+
+Recommended formats (in order of preference):
+
+- JSON (default reference format)
+- Restricted YAML (safe subset only)
+- XML
+- CBOR / MessagePack
+- Protobuf / Avro (advanced platforms)
+
+Formats that MUST NOT be used as authoritative output:
+
+- plain text
+- logs
+- exit codes
+- CSV / TSV
+
+------------------------------------------------------------
+7. INPUT HANDLING RULES
+------------------------------------------------------------
+
+Input is NOT a contract.
+
+Input formats are flexible and contextual.
+
+------------------------------------------------------------
+
+7.1 Input Sources
+
+Input MAY come from:
+- CLI arguments
+- configuration files
+- environment variables
+- standard input (stdin)
+- API request bodies
+
+------------------------------------------------------------
+
+7.2 Input Formats
+
+Allowed input formats include:
+- CLI arguments
+- JSON
+- YAML
+- ENV-style variables
+
+The choice of input format SHOULD consider:
+- human usability
+- automation needs
+- complexity of the data
+
+------------------------------------------------------------
+
+7.3 Input Validation
+
+All structured input SHOULD be:
+- validated
+- normalized
+- defaulted
+
+Validation errors MUST:
+- be explicit
+- fail fast
+- not produce authoritative output
+
+------------------------------------------------------------
+8. HELPER FUNCTIONS
+------------------------------------------------------------
+
+Helper functions MAY be used to:
+
+- parse input formats
+- validate schemas
+- normalize structures
+- serialize output
+- enforce deterministic ordering
+- separate logs from output
+
+Helper functions MUST NOT:
+
+- infer semantics (GIC/GCC/UCC)
+- decide retry behavior
+- modify contractual meaning
+- interpret results
+
+Helpers are mechanical adapters, not decision makers.
+
+------------------------------------------------------------
+9. EXIT CODE SEMANTICS
+------------------------------------------------------------
+
+Exit codes MUST reflect execution health only.
+
+Exit codes MUST NOT:
+- encode business success
+- encode convergence
+- replace authoritative output
+
+Typical usage:
+- exit 0: execution completed
+- exit != 0: execution error (crash, invalid input, runtime failure)
+
+------------------------------------------------------------
+10. ORCHESTRATOR INTERACTION
+------------------------------------------------------------
+
+Orchestrators MUST:
+- consume authoritative output only
+- ignore logs
+- never parse human text
+- decide behavior based on declared semantics and status
+
+Orchestrators MUST NOT:
+- infer retry safety
+- guess idempotence
+- inspect implementation details
+
+------------------------------------------------------------
+11. CANONICAL STATEMENTS
+------------------------------------------------------------
+
+- Logs are not contracts.
+- Exit codes are not contracts.
+- Output formats carry contracts.
+- Helpers handle representation, not meaning.
+- Semantics must never be inferred from text.
+
+------------------------------------------------------------
+12. CROSS-REFERENCES
+------------------------------------------------------------
+For canonical interaction type definitions, see GIC.txt, GCC.txt, ../execution-semantics/UCC-EXECUTION.txt.
+For quality grade (RIG) definition, see RIG.txt and BISS.txt §5.
+For compliance assessment, see BISS-RIG-CA.txt.
+
+------------------------------------------------------------
+13. FINAL SYNTHESIS
+------------------------------------------------------------
+
+BISS–RIG input and output rules exist to eliminate ambiguity
+between humans and machines.
+
+Authoritative output expresses truth.
+Logs express context.
+
+Separating the two is the foundation of:
+- safe automation
+- trivial orchestration
+- scalable systems
+
+END OF DOCUMENT

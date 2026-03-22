@@ -1,0 +1,417 @@
+UCC-TODO.txt
+============
+
+PURPOSE
+-------
+Actionable task list for closing the gaps identified in UCC-GAPS.txt.
+Each task maps to one or more gap entries and describes exactly what
+needs to be written, defined, or built.
+
+STATUS
+------
+Active — updated as tasks are completed or new gaps are found
+
+CLASSIFICATION
+--------------
+Reference – Framework Work Backlog
+
+------------------------------------------------------------
+
+HOW TO READ THIS DOCUMENT
+--------------------------
+Tasks are grouped by area and ordered by dependency (earlier tasks
+unblock later ones). Each task has:
+
+  ID      — stable identifier (TODO-N)
+  GAP     — reference to UCC-GAPS.txt entry
+  AREA    — what part of the framework it affects
+  TASK    — exactly what needs to be done
+  OUTPUTS — what documents/sections are created or updated
+  BLOCKS  — other TODOs that depend on this one
+
+Task states (update in place):
+  [ ] open
+  [~] in progress
+  [x] done
+
+------------------------------------------------------------
+
+A. VOCABULARY (unblock everything else)
+----------------------------------------
+These must be done first — other specs reference these terms.
+
+[ ] TODO-A1
+    GAP:     GAP-7.1
+    AREA:    GLOSSARY.txt
+    TASK:    Add "Convergence" entry covering scope-dependent semantics:
+             - operation scope: diff is empty (state equality)
+             - system scope: metrics within declared bounds
+             - policy scope: no unresolved conflicts
+             - intent scope: no unacknowledged divergences
+             - decision scope: required record exists
+             Forward reference to UCC-SCOPE.txt for full semantics.
+    OUTPUTS: GLOSSARY.txt — new entry in UCC RESULT FIELDS section
+
+[ ] TODO-A2
+    GAP:     GAP-7.2
+    AREA:    GLOSSARY.txt, CORE-CONCEPTS.txt
+    TASK:    Add "Divergence" as a canonical concept:
+             - definition: a gap between declared intent and current behavior
+             - properties: how identified, how acknowledged, lifecycle
+             - reference: UCC-SCOPE.txt §4.5
+             Consider whether Divergence belongs in CORE-CONCEPTS.txt
+             (9 canonical concepts) or only in GLOSSARY.txt.
+    OUTPUTS: GLOSSARY.txt — new entry
+             CORE-CONCEPTS.txt — optional new concept §10
+
+[ ] TODO-A3
+    GAP:     GAP-7.3
+    AREA:    GLOSSARY.txt
+    TASK:    Add "Arbitration Signal" entry:
+             - values: allow, defer, reject
+             - clarify: policy-scope "defer" ≠ completion=pending
+             - how each maps to the UCC result model
+    OUTPUTS: GLOSSARY.txt — new entry
+             UCC-SCOPE.txt §4.4 — cross-reference to GLOSSARY
+
+[ ] TODO-A4
+    GAP:     GAP-7.4, GAP-6.3
+    AREA:    GLOSSARY.txt, RECORD-MODEL-SPEC.txt
+    TASK:    Add "Acknowledgment" entry:
+             - definition: a human-produced decision-scope record that
+               resolves a divergence at intent scope
+             - required fields that distinguish it from other decision records
+             - reference: UCC-SCOPE.txt RS-12
+             Also extend RECORD-MODEL-SPEC.txt §5.4 to distinguish human
+             decisions from automated decisions at the structural level.
+    OUTPUTS: GLOSSARY.txt — new entry
+             RECORD-MODEL-SPEC.txt §5.4 — human override record fields
+             UCC-SCOPE.txt RS-12 — cross-reference
+
+------------------------------------------------------------
+
+B. NORMATIVE SPEC COMPLETIONS
+------------------------------
+Extend existing specs with missing normative content.
+
+[ ] TODO-B1
+    GAP:     GAP-2.1
+    AREA:    ../execution-semantics/UCC-EXECUTION.txt, UCC-SCHEMA.txt, UCC-CHECKLIST.txt
+    TASK:    Define state_references block in the UCC declaration message:
+             - add to ../execution-semantics/UCC-EXECUTION.txt §3.1: state_references field
+               (reads / writes / assumes — each a list of state_ids)
+             - specify when required vs. optional
+             - add to UCC-SCHEMA.txt: StateReferences object definition
+             - add to UCC-CHECKLIST.txt: state declaration compliance items
+    OUTPUTS: ../execution-semantics/UCC-EXECUTION.txt §3.1 — state_references field
+             UCC-SCHEMA.txt — StateReferences schema object
+             UCC-CHECKLIST.txt — new checklist section
+    BLOCKS:  TODO-C1 (test contract for state references)
+
+[ ] TODO-B2
+    GAP:     GAP-2.3
+    AREA:    MODEL-GOVERNANCE-FRAMEWORK.txt, UCC-SCHEMA.txt
+    TASK:    Clarify model_binding requirement at execution level:
+             - decide: is meta.version = "2.0" sufficient for version-binding,
+               or is a separate model_binding block required?
+             - if sufficient: add an explicit statement in
+               MODEL-GOVERNANCE-FRAMEWORK.txt §2 (Execution binding rules)
+             - if not sufficient: define model_binding block in UCC-SCHEMA.txt
+               and add it to ../execution-semantics/UCC-EXECUTION.txt §3.1/§3.2
+    OUTPUTS: MODEL-GOVERNANCE-FRAMEWORK.txt §2 — clarifying statement
+             UCC-SCHEMA.txt — model_binding block (if needed)
+
+[ ] TODO-B3
+    GAP:     GAP-2.5
+    AREA:    UCC-SCOPE.txt or new UCC-GUIDE-SCOPE-AGGREGATION.txt
+    TASK:    Specify the aggregation interface between operation scope and
+             system scope:
+             - which record types feed system-scope observation
+             - how target group membership is declared
+             - minimum window declaration syntax in desired_state
+             Can be normative (added to UCC-SCOPE.txt §4.3) or
+             non-normative (new guide document).
+    OUTPUTS: UCC-SCOPE.txt §4.3 extended, OR
+             new UCC-GUIDE-SCOPE-AGGREGATION.txt
+
+[ ] TODO-B4
+    GAP:     GAP-6.1
+    AREA:    MODEL-GOVERNANCE-FRAMEWORK.txt §4
+    TASK:    Expand model registry to include version and state for all
+             normative sub-specifications:
+             UCC-OBSERVATION, UCC-DECLARATION, UCC-DIFF, UCC-PRECONDITIONS,
+             UCC-STATUS, UCC-EXT-EQUALITY, UCC-EXT-CONCURRENCY,
+             UCC-EXT-ASYNC, UCC-EXT-COMPENSATION, UCC-COMPOSITION,
+             BISS-AXIOMS, SYSTEMIC-GOVERNANCE-SOLUTIONS, UCC-SCHEMA
+    OUTPUTS: MODEL-GOVERNANCE-FRAMEWORK.txt §4 — expanded registry table
+
+[ ] TODO-B5
+    GAP:     GAP-6.3
+    AREA:    RECORD-MODEL-SPEC.txt, UCC-SCOPE.txt
+    TASK:    Define the normative structure of a human override record:
+             - required fields: actor, authority, override_scope, rationale
+             - how it links to the execution it overrides (correlation_id)
+             - what distinguishes it from an automated decision record
+             See also TODO-A4 (vocabulary side of this gap).
+    OUTPUTS: RECORD-MODEL-SPEC.txt §5.4 — human override record fields
+             UCC-SCOPE.txt RS-12 — updated to reference the record spec
+
+------------------------------------------------------------
+
+C. TEST CONTRACT EXTENSIONS
+-----------------------------
+Extend UCC-TESTS.txt with missing mandatory test phases.
+
+[ ] TODO-C1
+    GAP:     GAP-2.2, GAP-3.1
+    AREA:    UCC-TESTS.txt
+    TASK:    Add scope-aware execution test phases (new §6 or extension
+             to existing §5). Define mandatory test phases for:
+             SC-1: decision-scope convergence (record existence, append-only)
+             SC-2: system-scope convergence (bounded metrics, indeterminate
+                   on empty window)
+             SC-3: policy-scope convergence (conflict detection, arbitration
+                   signals)
+             SC-4: intent-scope convergence (divergence detection,
+                   acknowledgment record)
+             SC-5: caused_by field validation (RS-5: no cycle,
+                   RS-8: no forward reference)
+    OUTPUTS: UCC-TESTS.txt — new scope test phases SC-1 through SC-5
+    DEPENDS: TODO-A1, TODO-A2, TODO-A3 (vocabulary must exist first)
+
+[x] TODO-C2
+    GAP:     GAP-3.2
+    AREA:    UCC-TESTS.txt
+    TASK:    Add mandatory precondition test phases:
+             PRE-1: unsatisfied precondition → outcome=failed,
+                    failure_class=permanent, correct declaration_id in message
+             PRE-2: cyclic precondition graph → outcome=failed,
+                    failure_class=permanent
+             PRE-3: satisfied precondition → execution proceeds normally
+    OUTPUTS: UCC-TESTS.txt — PRE-1 and PRE-2 added; satisfied-precondition
+             behavior covered by normal happy-path tests
+
+[x] TODO-C3
+    GAP:     GAP-3.3
+    AREA:    UCC-TESTS.txt
+    TASK:    Elevate dry-run test scenarios from optional (§7.5) to mandatory.
+             Add mandatory assertions:
+             - mode=dry_run suppresses Step 5 (no state mutation)
+             - mode=dry_run with D=∅ produces outcome=converged (not unchanged)
+             - Step 0 and Step 1 execute normally in dry_run
+    OUTPUTS: UCC-TESTS.txt — DRY-1 and DRY-2 added as mandatory scenarios
+
+[ ] TODO-C4
+    GAP:     GAP-3.4
+    AREA:    MODEL-GOVERNANCE-FRAMEWORK.txt
+    TASK:    Clarify governance conformance verification approach:
+             - explicitly state which checklist items are human-assessed
+               (audit artifacts) vs. machine-testable
+             - for machine-testable items (e.g., version-binding field
+               presence): define the automated check
+    OUTPUTS: MODEL-GOVERNANCE-FRAMEWORK.txt §3 — verification approach note
+
+------------------------------------------------------------
+
+D. COMPLIANCE PROCESS
+----------------------
+
+[ ] TODO-D1
+    GAP:     GAP-2.4
+    AREA:    BISS-RIG-CS.txt or new UCC-COMPLIANCE-STATEMENT.txt
+    TASK:    Define a UCC compliance statement format that records:
+             - which spec versions were checked
+             - test runner pass/fail (mandatory phases)
+             - model versions bound
+             - schema validation result
+             Either extend BISS-RIG-CS.txt or create a dedicated document.
+             Add explicit statement: UCC-TESTS.txt mandatory phase pass
+             constitutes the UCC compliance claim.
+    OUTPUTS: BISS-RIG-CS.txt extended, OR
+             new UCC-COMPLIANCE-STATEMENT.txt
+
+------------------------------------------------------------
+
+E. TOOLING
+-----------
+
+[x] TODO-E1
+    GAP:     GAP-5.1
+    AREA:    UCC-IMPL-GUIDE.txt, UCC-SCHEMA.txt
+    TASK:    Publish the canonical UCC schema as a standalone JSON Schema file.
+             Align the documentation to point to that artifact.
+    OUTPUTS: formal/ucc-2.0.schema.json — standalone artifact
+             UCC-SCHEMA.txt — canonical artifact reference
+
+[ ] TODO-E2
+    GAP:     GAP-5.2
+    AREA:    New test runner
+    TASK:    Build a reference test runner that:
+             - executes mandatory phases in order
+             - restores environment between phases
+             - fails on missing phases
+             - reports which phase failed
+             Can be implemented as part of the MVP (see TODO-F1).
+    OUTPUTS: test-runner script or tool
+    DEPENDS: TODO-F1
+
+------------------------------------------------------------
+
+F. IMPLEMENTATION
+------------------
+
+[x] TODO-F1
+    GAP:     GAP-1.1, GAP-4.1
+    AREA:    UCC-MVP-1.txt + reference implementation
+    TASK:    Complete UCC-MVP-1.txt §4–§7 and implement the four MVP
+             artifacts:
+             §4: architecture (observe/evaluate/diff primitives + transition execution)
+             §5: CLI invocation contract
+             §6: schema (link to TODO-E1)
+             §7: mandatory test cases (link to TODO-E2)
+             Then implement in any language as the normative reference.
+    OUTPUTS: UCC-MVP-1.txt §4–§7 completed
+             Reference implementation (Python MVP)
+    BLOCKS:  TODO-E2, TODO-G1
+
+[ ] TODO-F2
+    GAP:     GAP-4.2
+    AREA:    UCC-EXAMPLE.txt or new UCC-EXAMPLE-SCOPE.txt
+    TASK:    Add at least one worked example per non-operation scope:
+             - decision scope: appending a decision record
+             - system scope: aggregating metrics and comparing to bounds
+             - policy scope: conflict detection and arbitration signal
+             - intent scope: divergence detection and acknowledgment
+    OUTPUTS: UCC-EXAMPLE.txt extended, OR
+             new UCC-EXAMPLE-SCOPE.txt
+    DEPENDS: TODO-C1, TODO-A1–A4
+
+[ ] TODO-F3
+    GAP:     GAP-4.4, GAP-5.4
+    AREA:    BFO-CLI-MVP.txt
+    TASK:    Build the BFO-CLI orchestrator per MVP spec:
+             - implement workflow definition format (YAML/JSON)
+             - define formal schema for workflow format
+             - implement state store per §9
+             - implement replay model per §12
+             - verify against UCC-ORCHESTRATOR-SEMANTICS.txt
+    OUTPUTS: BFO-CLI implementation
+             BFO workflow schema (JSON Schema)
+    DEPENDS: TODO-F1
+
+[ ] TODO-F4
+    GAP:     GAP-4.3, GAP-5.3
+    AREA:    UCC-PIPE-ICC-DESIGN.txt
+    TASK:    Implement pipe-ucc per design spec.
+             Define test contract for pipe-ucc behavior aligned with
+             UCC-TESTS.txt phases.
+    OUTPUTS: pipe-ucc implementation
+             pipe-ucc test contract document
+    DEPENDS: TODO-F1
+
+------------------------------------------------------------
+
+G. GOVERNANCE (product)
+------------------------
+
+[ ] TODO-G1
+    GAP:     GAP-6.2
+    AREA:    New UCC-PLUGIN-SPEC.txt
+    TASK:    Define the plugin ABI/API conformance specification:
+             - what interface a plugin must implement
+             - how it is verified against UCC semantics
+             - what compliance claims it must make
+             - how marketplace enforces conformance
+    OUTPUTS: new UCC-PLUGIN-SPEC.txt
+    DEPENDS: TODO-F1 (reference implementation defines the plugin interface)
+
+------------------------------------------------------------
+
+H. ADOPTION (entry cost and ceremony reduction)
+-------------------------------------------------
+Remaining cons not yet addressed: high step-3+ entry cost,
+governance ceremony overhead for small systems, no ecosystem.
+
+[ ] TODO-H1
+    CON:     Entry cost for step 3+ is still high — a developer new
+             to UCC needs a full week of reading before shipping.
+    AREA:    UCC-GUIDE-MINIMAL.txt + UCC-IMPL-GUIDE.txt
+    TASK:    Add a "Step 3 fast path" to UCC-GUIDE-MINIMAL.txt:
+             a minimal worked example (10–20 lines of pseudocode) showing
+             exactly what observe/diff/converge looks like in practice,
+             before any schema or test contract is required.
+             Also add a §0 QUICKSTART to UCC-IMPL-GUIDE.txt:
+             the absolute minimum to ship one compliant UCC component.
+    OUTPUTS: UCC-GUIDE-MINIMAL.txt — Step 3 worked pseudocode example
+             UCC-IMPL-GUIDE.txt — §0 QUICKSTART section
+
+[ ] TODO-H2
+    CON:     Governance ceremony (model_binding, version blocks,
+             record immutability) exceeds benefit for small systems.
+    AREA:    UCC-IMPL-GUIDE.txt, UCC-CHECKLIST.txt
+    TASK:    Clearly mark which compliance items are mandatory for
+             ALL components vs. which are mandatory only at RIG grade
+             or when using the full record model. A single-service
+             UCC+Basic component should have a minimal compliance surface.
+             Add a COMPLIANCE TIERS table to UCC-CHECKLIST.txt:
+               Tier 1 (mandatory always):   result model, schema validation
+               Tier 2 (mandatory at RIG):   state references, test contract
+               Tier 3 (mandatory at scale): record model, model_binding
+    OUTPUTS: UCC-CHECKLIST.txt — COMPLIANCE TIERS table
+             UCC-IMPL-GUIDE.txt — note on minimal vs. full compliance
+
+[ ] TODO-H3
+    CON:     No ecosystem — no libraries, no validators, no IDE support,
+             no community. Every team starts from scratch.
+    AREA:    Product / ecosystem
+    TASK:    Define the minimal ecosystem needed to make adoption
+             self-sustaining:
+             1. A published JSON Schema file (see TODO-E1)
+             2. A language-agnostic reference implementation (see TODO-F1)
+             3. At least one library wrapper in a common language
+                (Python or TypeScript) exposing observe/evaluate/diff and
+                a clear transition-execution boundary
+             4. A README or getting-started page that links
+                UCC-GUIDE-MINIMAL.txt as the entry point
+             The library wrapper is the highest-leverage item:
+             it removes the "implement observe/evaluate/diff from scratch"
+             barrier for most new adopters.
+    OUTPUTS: Library wrapper (Python or TypeScript)
+             Getting-started page / README
+    DEPENDS: TODO-F1 (reference implementation first)
+
+------------------------------------------------------------
+
+DEPENDENCY ORDER (suggested execution sequence)
+------------------------------------------------
+
+Phase 1 — Vocabulary (unblocks everything):
+  TODO-A1, TODO-A2, TODO-A3, TODO-A4
+
+Phase 2 — Spec completions (parallel):
+  TODO-B1, TODO-B2, TODO-B3, TODO-B4, TODO-B5
+
+Phase 3 — Test contracts (after B1, A1–A4):
+  TODO-C1, TODO-C2, TODO-C3, TODO-C4
+
+Phase 4 — Compliance process:
+  TODO-D1
+
+Phase 4b — Adoption friction (parallel with Phase 4):
+  TODO-H1, TODO-H2
+
+Phase 5 — Tooling + MVP:
+  TODO-E1, TODO-F1 (together — MVP includes schema artifact)
+
+Phase 6 — Reference implementations:
+  TODO-E2, TODO-F2, TODO-F3, TODO-F4
+
+Phase 7 — Product governance:
+  TODO-G1
+
+Phase 8 — Ecosystem:
+  TODO-H3
+
+------------------------------------------------------------
+
+END OF DOCUMENT

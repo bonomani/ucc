@@ -1,0 +1,117 @@
+BASIC.txt
+=========
+
+STATUS
+------
+Normative – Axis B quality grade definition
+
+AUDIENCE
+--------
+- All developers and architects using the BISS framework
+
+CLASSIFICATION
+--------------
+Normative – Basic Quality Grade Definition
+
+------------------------------------------------------------
+
+1. WHAT BASIC IS
+----------------
+
+Basic is the default internal quality grade (Axis B).
+It is the low-rigor counterpart to RIG.
+The axis model itself is defined in BISS.txt.
+This file defines Basic only.
+It does not restate the full axis model.
+
+A Basic-grade implementation:
+- has no formal invariants
+- has no structured observability requirement
+- has no mandatory test contract
+- has no compatibility guarantee
+
+Basic does NOT mean broken or careless.
+It means the overhead of RIG exceeds the current benefit.
+
+------------------------------------------------------------
+
+2. WHAT BASIC PERMITS
+----------------------
+
+A Basic-grade component MAY:
+- use any internal structure the implementer chooses
+- log in any format or not at all
+- test in any way or not at all
+- refactor freely without declaring a version change
+
+A Basic-grade component MUST still:
+- correctly implement its declared boundary contract (GIC, GCC, or UCC)
+- return the correct result shape for its interaction type
+- not claim RIG compliance
+
+------------------------------------------------------------
+
+3. WHAT BASIC DOES NOT GUARANTEE
+----------------------------------
+
+- Invariants are not declared and not enforced
+- Behavior under failure is not formally specified
+- Observability is ad-hoc — consumers cannot rely on log structure
+- Tests may be absent, partial, or informal
+- Refactoring may change behavior without notice
+
+------------------------------------------------------------
+
+4. WHEN TO USE BASIC
+---------------------
+
+Use Basic when:
+- the component is internal, low-risk, or short-lived
+- the team is small and overhead of RIG is not justified
+- you are prototyping or exploring
+- failure here is recoverable and non-critical
+
+Stay at Basic until you feel one of these:
+- "A bug slipped through that formal invariants would have caught."
+- "We cannot tell from logs what this component actually did."
+- "Tests pass but production behavior diverges from spec."
+- "We need to certify this component for compliance."
+
+When any of these apply, upgrade to RIG.
+
+------------------------------------------------------------
+
+5. RELATIONSHIP TO AXIS A
+--------------------------
+
+Basic is orthogonal to interaction type.
+Any boundary contract can be implemented at Basic grade:
+
+  GIC  + Basic  — observable fact, no rigor requirement
+  GCC  + Basic  — explicit contract, no rigor requirement
+  UCC  + Basic  — convergence contract, no rigor requirement
+
+Basic grade does not weaken the boundary contract.
+A UCC + Basic component still MUST converge correctly.
+Basic only governs the internal implementation quality.
+
+------------------------------------------------------------
+
+6. UPGRADING FROM BASIC TO RIG
+--------------------------------
+
+Upgrading is incremental and non-breaking:
+1. Declare state reads and writes explicitly
+2. Add assertions on invariants
+3. Add structured observability (logs, traces, metrics)
+4. Write tests covering all result field combinations
+5. Validate result messages against formal/ucc-2.0.schema.json
+
+The boundary contract (GIC / GCC / UCC) does not change.
+Consumers see no difference. The upgrade is internal only.
+
+See RIG.txt for the full RIG specification.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

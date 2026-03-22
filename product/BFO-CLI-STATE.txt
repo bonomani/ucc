@@ -1,0 +1,26 @@
+BFO-CLI – State Model
+=====================
+
+This document defines the internal state model of the MVP.
+
+------------------------------------------------------------
+
+1. STATE MODEL
+------------------------------------------------------------
+
+State stored locally (file or embedded DB):
+
+- workflow_id
+- step_id
+- status: pending | running | done | failed
+- last_result
+- replay_count
+
+State is:
+- internal (RIG)
+- restart-safe
+- never exposed as a contract
+
+------------------------------------------------------------
+
+END OF DOCUMENT

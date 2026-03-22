@@ -1,0 +1,284 @@
+GLOSSARY
+========
+
+Brief canonical definitions of all terms used across the UCC framework.
+This document is the lookup aid only.
+
+When a term appears in a document, its meaning is always this definition.
+Documents do not redefine terms; they apply them.
+If a conflict exists, CORE-CONCEPTS.txt is authoritative.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Supporting – Canonical Vocabulary
+
+------------------------------------------------------------
+
+TABLE OF CONTENTS
+-----------------
+1. CORE VOCABULARY         — The 9 canonical concepts (Event, Intent, Declaration, Target, etc.)
+2. INTERACTION TYPES       — Axis A: GIC, GCC, UCC, and GCC specializations
+3. QUALITY GRADE           — Axis B: Basic, RIG
+4. UCC RESULT FIELDS       — observation, outcome, completion, failure_class, inhibitor, partial
+5. STANDARD (META-VOCAB)   — BISS, Inhibitor, Precondition, Record, mode
+6. DEPRECATED TERMS        — Superseded terminology from UCC/1.x flat model
+
+------------------------------------------------------------
+
+CORE VOCABULARY
+------------------------------------------------------------
+
+Event
+  An immutable, append-only record that something happened.
+  The fundamental unit of observation.
+  Events are never modified or deleted.
+  Source: CORE-CONCEPTS.txt
+
+Intent (CORE-CONCEPTS meaning)
+  A logical grouping of events that belong to the same purpose or objective.
+  Expressed as a correlation_id that is created at origin and propagated unchanged.
+  Intent answers "what belongs together", NOT "what must be true".
+  WARNING: do not confuse with Declaration (the UCC desired-state concept).
+  Source: CORE-CONCEPTS.txt
+
+Declaration (UCC meaning)
+  A declarative specification of the desired target state.
+  Formally: D : State → State ∪ {⊥}
+  Called "declaration" to distinguish from Intent (correlation grouping).
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+Compensation Declaration
+  A separate UCC declaration identified by the presence of a `compensates`
+  field. Links to the primary declaration it reverses via `compensates: <meta.id>`.
+  A compensation declaration is NOT nested inside the primary declaration.
+  Source: UCC-EXT-COMPENSATION.txt
+
+Target
+  The unit of work or object an interaction applies to.
+  Targets are logical, not physical.
+  Examples: file, registry key, service, user, package, configuration rule.
+  Source: CORE-CONCEPTS.txt
+
+State
+  A finite, observable, serializable, comparable structure.
+  Describes the condition of a Target at a point in time.
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+State Reference
+  A declared read, write, or assume access to a system state.
+  Undeclared state usage is an observability defect.
+  Source: CORE-CONCEPTS.txt
+
+Observation
+  A projection of the real world into a State.
+  O : World → State ∪ {?} ∪ {⊗}
+  ? means the observation ran but the state is indeterminate (→ observation=indeterminate).
+  ⊗ means the observation infrastructure did not run (→ observation=failed).
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+Diff (Δ)
+  The computed difference between two States.
+  Δ(S0, S1) = ∅ if and only if S0 ≡ S1
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+Decision
+  A recorded choice among alternatives.
+  Decisions exist between observation and execution.
+  Decisions never execute actions.
+  Source: CORE-CONCEPTS.txt
+
+Reasoning Artifact
+  A versioned mechanism that produces advice or decisions.
+  Has no execution authority.
+  Examples: AI model, ruleset, heuristic, prompt.
+  Source: CORE-CONCEPTS.txt
+
+Policy
+  A declarative expression of preference, priority, or constraint.
+  Policies never execute actions.
+  Source: CORE-CONCEPTS.txt
+
+Metric
+  A named quantitative observation with a baseline.
+  Never redefines correctness. Never blocks execution.
+  Source: CORE-CONCEPTS.txt
+
+View
+  A derived, read-only synthesis of events.
+  Exists only to reduce human cognitive load.
+  Discardable without affecting the system.
+  Source: CORE-CONCEPTS.txt
+
+------------------------------------------------------------
+
+INTERACTION TYPES (AXIS A)
+------------------------------------------------------------
+
+GIC — Generic Interaction Core
+  An observable fact that crossed a system boundary.
+  No obligation, no correctness, no retry semantics.
+  Source: GIC.txt
+
+GCC — Generic Contract Core
+  A normative exchange with explicit input, closed result set,
+  and external responsibility.
+  Source: GCC.txt
+
+UCC — Universal Convergence Contract
+  A GCC specialization for deterministic state convergence.
+  Idempotent and retry-safe by construction.
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+Signal Contract
+  A GCC specialization for temporal event delivery.
+  No convergence semantics.
+  Source: GCC.txt
+
+Dialogue Contract
+  A GCC specialization for iterative human interaction.
+  Source: GCC.txt
+
+Execution Contract
+  A GCC specialization for one-shot tasks.
+  Source: GCC.txt
+
+------------------------------------------------------------
+
+QUALITY GRADE (AXIS B)
+------------------------------------------------------------
+
+Basic — The default internal quality grade (Axis B).
+  No formal invariants, no structured observability, no test contract.
+  The boundary contract (GIC/GCC/UCC) still applies in full.
+  Use when RIG overhead exceeds the benefit.
+  Source: BASIC.txt
+
+RIG — Rigorous Interaction Grade
+  An internal quality grade (NOT an interaction type).
+  Adds invariants, structured observability, and stable tests
+  to any interaction — without creating contractual obligations.
+  A RIG-grade component is freely refactorable.
+  Source: RIG.txt
+
+------------------------------------------------------------
+
+UCC RESULT FIELDS
+------------------------------------------------------------
+
+observation
+  Always present in every result.
+  ok            — the observation infrastructure ran and produced a determinate state
+  indeterminate — observation ran but could not produce a determinate state
+  failed        — observation infrastructure did not run
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-STATUS.txt
+
+outcome
+  Present only when observation = ok. Describes what happened in the cycle.
+  converged  — diff is empty; no transition was needed
+  changed    — a transition was executed or successfully initiated in
+               the cycle (see completion)
+  unchanged  — diff is non-empty but transition was deliberately not applied (see inhibitor)
+  failed     — transition failed (see failure_class)
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-STATUS.txt
+
+completion
+  Present only when outcome = changed. Describes async status.
+  complete   — the transition result is verifiable now
+  pending    — the transition has been initiated but cannot yet be verified;
+               a verification token is required; consumer must run a mode=verify cycle
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-EXT-ASYNC.txt
+
+failure_class
+  Present only when outcome = failed.
+  retryable  — failure is transient; retrying may succeed
+  permanent  — failure is structural; retrying will not help
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-STATUS.txt
+
+inhibitor
+  Present only when outcome = unchanged. Identifies why the transition was suppressed.
+  dry_run    — transition not applied due to mode=dry_run
+  whatif     — transition not applied due to whatif mode
+  policy     — transition not applied due to a policy constraint
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-STATUS.txt
+
+partial
+  Present only when outcome = changed. Qualifier for multi-target operations.
+  true       — at least one sub-target succeeded, at least one failed
+               partial_detail MUST also be present with exact counts
+  false      — all sub-targets reached the desired state (or absent, defaults to false)
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-STATUS.txt
+
+partial_detail
+  Present only when partial = true.
+  Reports exact counts: total, converged, changed, failed.
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
+------------------------------------------------------------
+
+STANDARD (META-VOCABULARY)
+------------------------------------------------------------
+
+BISS — Boundary Interaction Semantic Standard
+  The overarching standard that defines the two-axis model
+  (interaction type × quality grade).
+  Source: BISS.txt
+
+Inhibitor
+  A declared policy or condition that prevents a UCC transition from
+  being applied despite a non-empty diff. When an inhibitor is active,
+  the result MUST be outcome=unchanged and the `inhibitor` field MUST
+  identify the cause.
+  Valid inhibitors: dry_run, whatif, policy.
+  See R11 in ../execution-semantics/UCC-EXECUTION.txt.
+
+Precondition
+  A declared dependency on the converged state of another declaration.
+  Evaluated before any transition. Never triggers execution.
+  Source: UCC-PRECONDITIONS.txt
+
+Record
+  An immutable, append-only factual statement.
+  Records describe facts; they never control execution.
+  Source: RECORD-MODEL-SPEC.txt
+
+mode (declaration field)
+  Controls the execution model for a declaration.
+  apply    — normal 6-step cycle (default)
+  verify   — read-only cycle; Step 2 skipped; Step 5 MUST NOT execute;
+             Step 6 classifies from observation only
+  dry_run  — Steps 0–4 execute; Step 5 MUST NOT execute
+  Source: ../execution-semantics/UCC-EXECUTION.txt, UCC-EXT-ASYNC.txt
+
+------------------------------------------------------------
+
+DEPRECATED TERMS FROM UCC/1.2 FLAT MODEL
+-----------------------------------------
+NOTE: UCC/2.0 replaced the flat 10-status model with the three-field result
+model (observation / outcome / completion). The following terms from UCC/1.2
+are no longer valid field values and MUST NOT appear in result messages.
+If you encounter these terms, map them to their UCC/2.0 equivalents using
+the table in ../execution-semantics/UCC-EXECUTION.txt §2.
+
+"status"         — not a valid field; use the three-field model (observation/outcome/completion)
+"compensated"    — not a valid outcome; primary outcome is always preserved; use compensation block
+"partial" (status value) — not a valid status; partial is a modifier on outcome=changed
+"pending" (status value) — not a valid status; use outcome=changed, completion=pending
+"failed.retryable" — not a valid value; use outcome=failed, failure_class=retryable
+"failed.permanent" — not a valid value; use outcome=failed, failure_class=permanent
+"failed.observation" — not a valid value; use observation=failed
+"unknown"        — not a valid value; use observation=indeterminate
+"best effort"    — implies non-observable behavior (forbidden by R6)
+"implicit success" — all results must be explicit (GCC I4)
+"fire and forget" — GIC may be used but must still be observable
+"smart retry"    — retry semantics are always explicit (BISS Rule D)
+"soft fail"      — no such concept; all failures are classified
+"compensation_result" — not a valid field; use the compensation block in result
+"compensation_error"  — not a valid field; use compensation block with status=failed
+"primary_status" — not a valid field; use the primary outcome fields (observation/outcome/completion)
+"declaration_id" (compensation) — not a valid field; use meta.id of compensation declaration
+
+------------------------------------------------------------
+
+END OF GLOSSARY

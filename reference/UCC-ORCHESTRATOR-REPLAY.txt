@@ -1,0 +1,31 @@
+UCC-ORCHESTRATOR-REPLAY
+=======================
+
+This document defines replay and reconciliation behavior for UCC steps.
+It is supporting, not normative.
+
+------------------------------------------------------------
+
+1. REPLAY MODEL
+------------------------------------------------------------
+
+Replay is ALWAYS explicit.
+No implicit background retry is permitted.
+
+When replay/reconcile is invoked, the orchestrator MUST:
+- reload persisted state
+- re-execute only UCC steps that have not yet converged
+- NEVER replay a GIC step
+- NEVER replay a GCC step that has already succeeded
+
+------------------------------------------------------------
+
+2. REPLAY SEMANTICS
+------------------------------------------------------------
+
+A replay run is semantically identical to the original run with respect
+to contract enforcement.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

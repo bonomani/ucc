@@ -1,0 +1,30 @@
+UCC-OBSERVATION – Execution Semantics Companion
+===============================================
+
+This document is NORMATIVE.
+It describes how observation semantics are used during a UCC run.
+
+------------------------------------------------------------
+
+1. RUNTIME ROLE
+------------------------------------------------------------
+
+The runtime role of observation is defined in
+../execution-semantics/UCC-EXECUTION.txt.
+
+At execution time:
+
+- observation is always evaluated before declaration, diff, and any mutation attempt
+- observation=ok permits the execution lifecycle to continue
+- observation=indeterminate stops the lifecycle without a transition
+- observation=failed stops the lifecycle because observation did not run
+
+------------------------------------------------------------
+
+2. BOUNDARY RULE
+------------------------------------------------------------
+
+This companion does not redefine the observation primitive.
+It only states how the primitive participates in execution.
+
+END OF DOCUMENT

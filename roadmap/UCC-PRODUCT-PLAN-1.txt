@@ -1,0 +1,269 @@
+UCC-PRODUCT-PLAN-1
+Open-Core UCC Platform with Commercial UI and Time/Revenue-Based Plugin Marketplace
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Product/Planning – Product Roadmap
+
+------------------------------------------------------------
+
+============================================================
+1. PRODUCT GOAL (SINGLE SOURCE OF TRUTH)
+============================================================
+
+The product is a workflow automation platform (gumloop + n8n class)
+built on top of the Universal Convergence Contract (UCC).
+
+Its goals are to:
+- provide deterministic, retry-safe automation
+- be AI-compatible by construction
+- support complex and distributed systems
+- grow an ecosystem of third-party extensions
+- combine open-source trust with sustainable monetization
+
+The product is explicitly open-core, not fully open source.
+
+============================================================
+2. PRODUCT STRUCTURE (NON-NEGOTIABLE)
+============================================================
+
+The product is split into three hard layers.
+Boundaries MUST be enforced technically and legally.
+
+------------------------------------------------------------
+2.1 Tier 1 – Open-Source Core (UCC Engine + CLI)
+------------------------------------------------------------
+
+Contents:
+- UCC declaration schema
+- UCC result schema
+- Deterministic execution engine (observe/evaluate/diff + transition execution)
+- Workflow runtime (DAG execution)
+- Retry and resume logic
+- State persistence
+- Audit logging
+- Plugin ABI / API
+- CLI tooling (reference implementation)
+
+Properties:
+- Fully functional without UI
+- CLI is first-class
+- Canonical behavior lives here
+
+License:
+- Apache 2.0 or MPL 2.0 (recommended)
+- GPL explicitly excluded
+
+Status:
+- Always open source
+- Never monetized directly
+
+------------------------------------------------------------
+2.2 Tier 2 – Commercial UI (Closed Source)
+------------------------------------------------------------
+
+Contents:
+- Visual workflow editor
+- Node configuration UI
+- Execution monitoring
+- Logs and diff visualization
+- AI-assisted workflow generation
+- User / organization / access management
+- Hosted or SaaS features (optional)
+
+Properties:
+- Optional
+- Replaceable
+- Communicates with core only via public APIs
+- Contains no execution authority
+
+License:
+- Proprietary EULA
+- Subscription or per-seat pricing
+
+Status:
+- Closed source
+- Primary recurring revenue source
+
+------------------------------------------------------------
+2.3 Tier 3 – Plugin Marketplace
+------------------------------------------------------------
+
+Contents:
+- Third-party plugins implementing UCC targets
+- Marketplace for discovery, purchase, and updates
+- Licensing and revenue enforcement
+
+Properties:
+- Plugins execute inside the UCC engine
+- Plugins must obey UCC semantics
+- No plugin may bypass validation or execution rules
+
+============================================================
+3. PLUGIN LICENSING AND MONETIZATION MODEL (CRITICAL)
+============================================================
+
+Plugins follow a mandatory lifecycle.
+
+------------------------------------------------------------
+3.1 Plugin Lifecycle
+------------------------------------------------------------
+
+Phase 1 – Commercial
+- Closed source
+- Sold via marketplace
+- Revenue shared with platform
+
+Phase 2 – Transition
+- Dual-licensed (commercial + open source)
+- Announced end-of-exclusivity
+
+Phase 3 – Open Source
+- Released under an approved open-source license
+- Remains usable and maintained
+- Still distributed via marketplace
+
+------------------------------------------------------------
+3.2 Transition Trigger (FINANCIAL RULES)
+------------------------------------------------------------
+
+Recommended hybrid rule:
+
+A plugin becomes open source when either:
+- a revenue threshold is reached
+- or a time threshold is reached
+
+Example values (adjustable):
+- Revenue threshold: USD 50,000 gross
+- Time threshold: 18 months from first release
+- Whichever occurs first
+
+This rule is:
+- explicit
+- predictable
+- fair to developers
+- enforceable
+
+------------------------------------------------------------
+3.3 Revenue Split (Marketplace)
+------------------------------------------------------------
+
+Typical model:
+- 70% plugin developer
+- 30% platform
+
+Applies during commercial phase only.
+
+============================================================
+4. DEVELOPMENT EFFORT ESTIMATE (HUMAN-DAYS)
+============================================================
+
+Estimates assume senior engineers and disciplined scope.
+
+------------------------------------------------------------
+4.1 Scope A – UCC Core Platform (FOUNDATION)
+------------------------------------------------------------
+
+Includes:
+- declaration and result schemas
+- execution engine
+- validation
+- CLI
+- audit logging
+
+Effort:
+- 30 to 45 human-days
+
+------------------------------------------------------------
+4.2 Scope B – Workflow Engine (n8n-class core)
+------------------------------------------------------------
+
+Includes:
+- DAG model
+- deterministic scheduler
+- retry and resume logic
+- state persistence
+- basic connectors (file, http, shell, AI)
+
+Effort:
+- 55 to 90 human-days
+
+------------------------------------------------------------
+4.3 Scope C – UI and AI Layer (gumloop-like)
+------------------------------------------------------------
+
+Includes:
+- visual editor
+- monitoring UI
+- AI-assisted workflow generation
+
+Effort:
+- 50 to 80 human-days
+
+------------------------------------------------------------
+4.4 TOTAL ESTIMATES
+------------------------------------------------------------
+
+Minimum serious MVP (CLI-first):
+- Scope A plus partial Scope B
+- 80 to 120 human-days
+
+Competitive internal platform:
+- Scope A plus B plus minimal UI
+- 140 to 180 human-days
+
+Market-ready product:
+- Scope A plus B plus full UI
+- 180 to 220 human-days
+
+============================================================
+5. ORDER OF EXECUTION (DO NOT CHANGE)
+============================================================
+
+1. Build UCC core and CLI (open source)
+2. Validate deterministic retries and convergence
+3. Build workflow engine
+4. Expose plugin ABI
+5. Launch plugin marketplace
+6. Build commercial UI
+7. Add AI-assisted authoring
+8. Scale ecosystem
+
+============================================================
+6. WHY THIS MODEL WORKS
+============================================================
+
+- Open-source core builds trust and adoption
+- CLI ensures longevity and forkability
+- Closed UI funds development
+- Marketplace aligns incentives
+- Forced open-sourcing prevents capture
+- UCC enforces correctness across all layers
+- AI is constrained to intent, not execution
+
+============================================================
+7. NON-GOALS (EXPLICIT)
+============================================================
+
+The product does not attempt to:
+- be fully open source
+- hide core logic in the UI
+- allow plugins to bypass UCC
+- monetize the CLI
+- start with AI agents or SaaS operations
+
+============================================================
+8. FINAL PRODUCT DEFINITION
+============================================================
+
+An open-source, UCC-based workflow execution engine with a commercial
+visual interface and a governed plugin marketplace where paid plugins
+become open source after defined time or revenue thresholds.
+
+============================================================
+
+UCC-PRODUCT-PLAN-1
+
+END OF DOCUMENT

@@ -1,0 +1,197 @@
+UCC-STATUS – Result Field Taxonomy
+Universal Convergence Contract (UCC/2.0)
+
+This document is NORMATIVE.
+It defines the result taxonomy used by UCC/2.0.
+
+------------------------------------------------------------
+
+TIER
+-----
+Tier 1 – Core. Companion to UCC-EXECUTION.txt.
+
+------------------------------------------------------------
+
+NOTE: The core lifecycle and result message structure are defined in
+UCC-EXECUTION.txt. This document defines the result taxonomy and field
+presence rules.
+
+------------------------------------------------------------
+
+1. THE THREE-FIELD RESULT MODEL
+
+UCC/2.0 uses three orthogonal fields to express all possible results:
+
+  observation   — always present; describes whether observation succeeded
+  outcome       — present when observation = ok; describes what happened
+  completion    — present when outcome = changed; describes async status
+
+Additional qualifiers:
+
+  failure_class — present when outcome = failed; retryable or permanent
+  inhibitor     — present when outcome = unchanged; dry_run, whatif, or policy
+  partial       — present when outcome = changed; true when some sub-targets failed
+
+Field presence rules:
+  - observation   ALWAYS present
+  - outcome       REQUIRED when observation = ok; ABSENT otherwise
+  - completion    REQUIRED when outcome = changed; ABSENT otherwise
+  - failure_class REQUIRED when outcome = failed; ABSENT otherwise
+  - inhibitor     REQUIRED when outcome = unchanged; ABSENT otherwise
+  - partial       OPTIONAL when outcome = changed (defaults false); ABSENT otherwise
+  - partial_detail REQUIRED when partial = true; ABSENT otherwise
+  - observe.preconditions REQUIRED when Step 0 blocks execution or when a
+    Step 0 precondition observation failed or became indeterminate
+  - observed_before REQUIRED only when Step 1 completed successfully
+  - diff REQUIRED only when Step 3 completed successfully
+
+------------------------------------------------------------
+
+2. RESULT DECISION TREE
+
+The following decision tree MUST be followed in order (first match wins):
+
+Step 0 — Did any precondition observation fail?
+  Yes → observation = failed
+
+Step 0b — Did any precondition observation become indeterminate?
+  Yes → observation = indeterminate
+
+Step 0c — Was any declared precondition unsatisfied?
+  Yes → observation=ok, outcome=failed, failure_class=permanent
+
+Step 1 — Did the primary observation infrastructure execute?
+  No  → observation = failed
+
+Step 2 — Did primary observation produce a determinate state?
+  No  → observation = indeterminate
+
+  NOTE: When the classification between observation=failed and
+  observation=indeterminate is ambiguous, the implementation MUST
+  classify as observation=failed.
+
+Step 3 — Was the desired state reachable?
+  No, permanently  → observation=ok, outcome=failed, failure_class=permanent
+  No, transiently  → observation=ok, outcome=failed, failure_class=retryable
+
+Step 4 — Was the diff empty?
+  Yes → observation=ok, outcome=converged
+
+Step 5 — Should a transition be attempted?
+  No  → observation=ok, outcome=unchanged, inhibitor=<dry_run|whatif|policy>
+
+Step 6 — What happened after the transition attempt?
+  Could not be verified synchronously
+      → observation=ok, outcome=changed, completion=pending
+  Verified and all sub-targets succeeded
+      → observation=ok, outcome=changed, completion=complete
+  Verified and some sub-targets failed
+      → observation=ok, outcome=changed, completion=complete, partial=true
+  Failed before verified convergence
+      → observation=ok, outcome=failed, failure_class=retryable|permanent
+
+------------------------------------------------------------
+
+3. OBSERVATION=FAILED vs OBSERVATION=INDETERMINATE
+
+observation = failed
+  The observation mechanism could not execute.
+
+observation = indeterminate
+  The observation mechanism executed, but the state could not be classified
+  as determinate.
+
+When it is impossible to determine whether the observation ran, classify as
+observation=failed.
+
+Precondition observations in Step 0 use the same distinction.
+If the executor cannot determine whether a precondition check ran,
+classify the overall result as observation=failed.
+
+------------------------------------------------------------
+
+4. RESULT DEFINITIONS
+
+4.0 observation=ok, outcome=failed, failure_class=permanent (precondition)
+Condition:
+  Step 0 completed. At least one declared precondition was observed and
+  found unsatisfied. Step 1 did not run. observe.preconditions is present.
+
+4.1 observation=ok, outcome=converged
+Condition:
+  Observation infrastructure ran. Observation produced a determinate state.
+  Diff is empty.
+
+4.2 observation=ok, outcome=changed, completion=complete
+Condition:
+  Observation succeeded. Diff non-empty. A transition was attempted and
+  synchronously verified by post-mutation observation.
+  All sub-targets reached desired state (or partial=false).
+
+4.3 observation=ok, outcome=changed, completion=pending
+Condition:
+  A transition was initiated, but the result cannot yet be verified
+  (async operation).
+
+4.4 observation=ok, outcome=changed, partial=true
+Condition:
+  Observation succeeded. Transition attempted. Multiple sub-targets.
+  At least one succeeded. At least one failed.
+  completion = complete.
+
+4.5 observation=ok, outcome=unchanged
+Condition:
+  Observation succeeded. Diff non-empty. Transition deliberately NOT applied.
+
+4.6 observation=ok, outcome=failed, failure_class=retryable
+Condition:
+  A transient condition prevented verified convergence after the
+  transition attempt.
+
+4.7 observation=ok, outcome=failed, failure_class=permanent
+Condition:
+  Either declaration evaluation proved the target structurally impossible
+  before diff, or a permanent transition failure prevents convergence.
+
+4.8 observation=failed
+Condition:
+  Either a Step 0 precondition observation or the Step 1 primary
+  observation infrastructure itself could not execute.
+
+4.9 observation=indeterminate
+Condition:
+  Either a Step 0 precondition observation or the Step 1 primary
+  observation ran, but a determinate state could not be produced.
+
+------------------------------------------------------------
+
+5. FIELD TAXONOMY SUMMARY
+
+observation:
+  observed state classification: ok, indeterminate, failed
+
+outcome:
+  transition classification: converged, changed, unchanged, failed
+
+completion:
+  verification classification: complete, pending
+
+failure_class:
+  failure classification: retryable, permanent
+
+inhibitor:
+  non-application reason: dry_run, whatif, policy
+
+partial:
+  mixed sub-target classification: true, false
+
+observe.preconditions:
+  Step 0 evidence for declared precondition checks
+
+observed_before:
+  Step 1 primary-target observation
+
+diff:
+  Step 3 comparison output between observed_before and evaluated desired state
+
+END OF DOCUMENT

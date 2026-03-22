@@ -1,0 +1,25 @@
+UCC-CHECKLIST – Prohibited Patterns
+===================================
+
+This document is non-normative.
+It collects the prohibited pattern checks.
+
+------------------------------------------------------------
+
+[ ] No imperative calls in declaration
+[ ] No hidden side effects
+[ ] No implicit states
+[ ] No "best effort" behavior
+[ ] No unclassified failures
+[ ] No partial state changes left on failure
+[ ] No `status` field in result
+[ ] No observation, outcome, completion, failure_class, or inhibitor values outside the closed result model
+[ ] No observation skipped before transition
+[ ] No outcome field when observation = failed or indeterminate
+[ ] No completion field when outcome ≠ changed
+[ ] No failure_class field when outcome ≠ failed
+[ ] No inhibitor field when outcome ≠ unchanged
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,33 @@
+UCC-DECLARATION – Execution Semantics Companion
+===============================================
+
+This document is NORMATIVE.
+It describes how declaration semantics are used during a UCC run.
+
+------------------------------------------------------------
+
+1. RUNTIME ROLE
+------------------------------------------------------------
+
+The runtime evaluation of a declaration is defined in
+../execution-semantics/UCC-EXECUTION.txt.
+
+At execution time:
+
+- the declaration is evaluated against the observed state S0
+- this evaluation produces S1 only; it does not mutate the world
+- the result may classify the target state as reachable or impossible
+- if the declaration cannot produce a valid target state, execution
+  MUST report outcome=failed with the appropriate failure_class
+- if the declaration is used inside a precondition chain, dependency
+  handling is governed by ../execution-semantics/UCC-PRECONDITIONS.txt
+
+------------------------------------------------------------
+
+2. BOUNDARY RULE
+------------------------------------------------------------
+
+This companion does not redefine the declaration primitive.
+It only states how the primitive participates in execution.
+
+END OF DOCUMENT

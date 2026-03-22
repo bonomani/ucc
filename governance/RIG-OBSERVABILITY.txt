@@ -1,0 +1,43 @@
+RIG – Observability and Diagnostics
+===================================
+
+This document is SUPPORTING.
+It defines how observability, logs, debug output, and test diagnostics
+fit into the RIG model.
+
+------------------------------------------------------------
+
+1. OBSERVABILITY
+------------------------------------------------------------
+
+RIG treats logs, debug output, traces, and test diagnostics as observables
+that support reasoning about behavior.
+
+These signals are:
+- descriptive, not authoritative
+- structured when possible
+- attributable to the interaction, step, or object they explain
+
+------------------------------------------------------------
+
+2. SIGNAL TYPES
+------------------------------------------------------------
+
+- log: stable informational signal for operators and automation
+- debug: high-volume diagnostic signal for local investigation
+- trace: causal linkage across steps or components
+- test diagnostic: assertion-context output used by TIC or test runners
+
+None of these signals may replace the contract result.
+
+------------------------------------------------------------
+
+3. META-OBSERVATION
+------------------------------------------------------------
+
+When the logging or debug pipeline itself is the subject of inspection,
+that is meta-observation rather than ordinary observation.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

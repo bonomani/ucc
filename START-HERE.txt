@@ -1,0 +1,35 @@
+START HERE
+==========
+
+This repository is a layered corpus for UCC.
+Read the folder that matches your task, then follow the folder-local index or the first file in that layer.
+
+Quick routing:
+  - Core primitives: contract-semantics/
+  - Runtime behavior: execution-semantics/
+  - Extensions: extensions/
+  - Formal/spec material: formal/
+  - Corpus navigation: framework/
+  - Governance and core doctrine: governance/
+  - Enforcement and discipline: policy/
+  - Implementation guidance: companion/
+  - Bridge and orchestrator reference: reference/
+  - Examples and mappings: examples/
+  - Compliance checklists: checklists/
+  - Test contract and reporting: tests/
+  - Active gaps and TODOs: planning/
+  - Product plans and MVP direction: roadmap/
+  - Concrete product/tool docs: product/
+  - Executable MVP artifacts: mvp/
+
+Best entry points:
+  1. framework/FRAMEWORK-INDEX.txt
+  2. contract-semantics/UCC-DESIRED-STATE.txt
+  3. execution-semantics/UCC-EXECUTION.txt
+  4. governance/CORE-CONCEPTS.txt
+
+Rules:
+  - One folder, one role.
+  - One file, one main job.
+  - Use framework/FRAMEWORK-INDEX.txt for the canonical corpus map.
+  - Do not expect history/ or archive/ to exist in the active tree.

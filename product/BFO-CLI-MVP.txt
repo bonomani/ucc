@@ -1,0 +1,66 @@
+BISS-FIRST CLI ORCHESTRATOR — MVP SPECIFICATION
+==============================================
+
+NOTE: Normative semantic requirements for orchestrators have been extracted to
+UCC-ORCHESTRATOR-SEMANTICS.txt. This document covers the BFO CLI product design
+at a high level only.
+
+STATUS
+------
+Design specification for a Minimal Viable Product (MVP)
+
+AUDIENCE
+--------
+- Software architects
+- Platform / automation engineers
+- DevOps / SRE
+- AI-system designers
+
+This document defines the MINIMAL orchestration system
+that is natively BISS–RIG compliant.
+No UI. CLI only. No plugins marketplace. No SaaS.
+
+------------------------------------------------------------
+1. PURPOSE OF THE MVP
+------------------------------------------------------------
+
+The goal of this MVP is NOT to:
+- compete with general-purpose visual workflow platforms or commercial orchestration tools
+- provide visual workflows
+- cover all orchestration use cases
+
+The goal IS to:
+- prove that BISS–RIG makes orchestration trivial
+- provide a reference implementation
+- demonstrate deterministic, AI-operable orchestration
+- eliminate implicit semantics entirely
+
+This MVP is intentionally small.
+
+------------------------------------------------------------
+2. NON-GOALS (IMPORTANT)
+------------------------------------------------------------
+
+The MVP explicitly excludes:
+- graphical UI
+- workflow editor
+- dynamic plugins
+- long-running distributed scaling
+- business logic inside the orchestrator
+
+Anything not essential to BISS–RIG is out of scope.
+
+------------------------------------------------------------
+3. CORE PRINCIPLES
+------------------------------------------------------------
+
+1. All boundary interactions are BISS-classified
+2. All internal logic follows RIG
+3. No implicit retry, ever
+4. No heuristic decisions
+5. All behavior is auditable from the CLI
+6. Orchestration logic is generic and fixed
+
+------------------------------------------------------------
+
+END OF DOCUMENT

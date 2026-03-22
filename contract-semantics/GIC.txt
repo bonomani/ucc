@@ -1,0 +1,178 @@
+GIC/1.0 — Generic Interaction Core
+=================================
+
+STATUS
+------
+Normative (foundational)
+
+PURPOSE
+-------
+This document defines the Generic Interaction Core (GIC), the most primitive
+and universal semantic model for software interactions.
+
+GIC defines what it means for something to be an interaction that can be
+observed, reasoned about, and classified.
+
+GIC is NOT a contract.
+GIC defines no obligations, no correctness, no guarantees.
+
+GIC is the semantic layer below all contracts.
+
+Any higher-level contract (including GCC and UCC) is a strict specialization
+of GIC.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Normative – Generic Interaction Core Definition
+
+------------------------------------------------------------
+
+------------------------------------------------------------
+1. DEFINITIONS
+------------------------------------------------------------
+
+Interaction
+An interaction is the occurrence of something that crosses an observable
+boundary and can be distinguished, observed, and classified.
+
+Interaction Instance
+A single occurrence of an interaction, bounded in time and identifiable.
+
+------------------------------------------------------------
+2. CORE INVARIANTS (MANDATORY)
+------------------------------------------------------------
+
+Every valid interaction MUST satisfy all invariants below.
+No invariant may be removed.
+No invariant implies obligation or correctness.
+
+------------------------------------------------------------
+
+G1 — Existence
+An interaction MUST correspond to something that occurred.
+
+If nothing occurred, no interaction exists.
+
+------------------------------------------------------------
+
+G2 — Identity
+An interaction MUST be distinguishable from all other interactions.
+
+This requires:
+- a unique identifier OR
+- a unique combination of observable attributes
+
+Without identity, no history or reasoning is possible.
+
+------------------------------------------------------------
+
+G3 — Observation
+An interaction MUST be observable by at least one actor.
+
+Observation MAY be:
+- direct
+- indirect
+- delayed
+- partial
+
+If an interaction cannot be observed, it is indistinguishable from non-existence.
+
+------------------------------------------------------------
+
+G4 — Classification
+An interaction MUST be classifiable into a finite set of kinds.
+
+Classification MAY include:
+- type
+- category
+- label
+- event kind
+
+Unclassifiable interactions have no semantics.
+
+------------------------------------------------------------
+
+G5 — Temporal Bound
+An interaction MUST be temporally bounded.
+
+It MUST be possible to determine:
+- when the interaction started
+- when it ended
+OR
+- that it occurred instantaneously
+
+Unbounded interactions cannot be reasoned about.
+
+------------------------------------------------------------
+3. CANONICAL GIC STRUCTURE
+------------------------------------------------------------
+
+A Generic Interaction Core instance has the following canonical form:
+
+meta:
+- interaction : string
+- version     : string
+- id          : string
+- timestamp   : ISO-8601
+- scope       : string
+
+observe:
+- observable facts describing the interaction
+
+kind:
+- classification value (closed set per system)
+
+No input section is required.
+No result section is required.
+No correctness semantics exist.
+
+------------------------------------------------------------
+4. WHAT GIC EXPLICITLY DOES NOT DEFINE
+------------------------------------------------------------
+
+GIC does NOT define:
+- intent
+- input validation
+- correctness
+- success or failure
+- guarantees
+- retries
+- idempotence
+- closure semantics beyond time
+
+These concepts belong to higher layers.
+
+------------------------------------------------------------
+5. VALID AND INVALID USES OF GIC
+------------------------------------------------------------
+
+Valid uses:
+- telemetry
+- logging
+- tracing
+- metrics
+- raw events
+- notifications
+- signals
+- measurements
+
+Invalid uses:
+- enforcing correctness
+- declaring success/failure
+- retry decisions
+- orchestration logic
+
+------------------------------------------------------------
+6. CANONICAL STATEMENT
+------------------------------------------------------------
+
+GIC defines what it means for something to be an interaction.
+
+Correct systems do not force interactions into contracts.
+They escalate semantics deliberately and explicitly.
+
+See FRAMEWORK-INDEX.txt for the current corpus reading order.
+
+END OF DOCUMENT

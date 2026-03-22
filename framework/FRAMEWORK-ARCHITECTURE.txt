@@ -1,0 +1,59 @@
+FRAMEWORK ARCHITECTURE
+======================
+
+The corpus is organized around orthogonal layers.
+
+------------------------------------------------------------
+
+1. TWO ORTHOGONAL AXES
+------------------------------------------------------------
+
+AXIS A — Interaction Type
+- GIC  observable fact
+- GCC  normative contract
+- UCC  convergence contract
+
+AXIS B — Internal Quality Grade
+- Basic  minimal structure
+- RIG    rigorous interaction grade
+
+These axes are independent.
+
+------------------------------------------------------------
+
+2. UCC SPEC STRUCTURE
+------------------------------------------------------------
+
+The UCC specification is organized into tiers:
+
+- Tier 0: primitives
+- Tier 1: core execution
+- Tier 2: extensions
+- Tier 3: composition
+
+The tiers are documentation structure, not runtime hierarchy.
+
+------------------------------------------------------------
+
+3. DEFAULT EXECUTION MODEL
+------------------------------------------------------------
+
+Execution is contract-driven by default.
+A run applies the active contract layer for the current interaction type.
+
+GIC, GCC, and UCC are normal contract layers, not special run modes.
+UIC shapes whether and how a UCC run proceeds.
+
+------------------------------------------------------------
+
+4. CROSS-CUTTING MODELS
+------------------------------------------------------------
+
+Records are immutable and describe facts.
+They never control execution.
+
+Core concepts are shared across all documents.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

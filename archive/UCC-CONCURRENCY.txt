@@ -1,6 +1,0 @@
-UCC-CONCURRENCY.txt — SUPERSEDED
-==================================
-This file has been superseded by UCC-EXT-CONCURRENCY.txt (Tier 2 Extension).
-
-See UCC-EXT-CONCURRENCY.txt for the current concurrency extension specification.
-See FRAMEWORK-MAP.txt for the full document index and reading order.

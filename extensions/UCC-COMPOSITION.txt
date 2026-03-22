@@ -1,0 +1,312 @@
+UCC-COMPOSITION – Extension Composition Rules
+=============================================
+
+TIER
+-----
+Tier 3 – Composition. Depends on all Tier 2 extensions:
+  UCC-EXT-EQUALITY, UCC-EXT-CONCURRENCY, UCC-EXT-ASYNC, UCC-EXT-COMPENSATION.
+
+PREREQUISITE READING
+--------------------
+../execution-semantics/UCC-EXECUTION.txt        (core execution model)
+UCC-EXT-EQUALITY.txt     (Tier 2 extensions)
+UCC-EXT-CONCURRENCY.txt
+UCC-EXT-ASYNC.txt
+UCC-EXT-COMPENSATION.txt
+GLOSSARY.txt             (canonical vocabulary)
+
+STATUS
+------
+Normative. Governs all combinations of UCC/2.0 extension blocks.
+
+VERSION
+-------
+2.0
+
+SCOPE
+-----
+This document specifies the normative rules governing combinations
+of the four UCC/2.0 extension blocks:
+
+  equality      (UCC-EXT-EQUALITY)
+  concurrency   (UCC-EXT-CONCURRENCY)
+  async         (UCC-EXT-ASYNC)
+  compensation  (UCC-EXT-COMPENSATION)
+
+Any combination not explicitly addressed here is governed by
+the individual extension documents. Any combination explicitly
+prohibited here MUST produce outcome=failed, failure_class=permanent
+immediately.
+
+This is the only document in the UCC/2.0 framework that may reference
+multiple extensions in the same normative rule.
+
+------------------------------------------------------------
+
+1. PROHIBITED COMBINATIONS
+------------------------------------------------------------
+
+The following combinations are FORBIDDEN. Declaring them together
+is a contract violation and MUST produce outcome=failed,
+failure_class=permanent before any observation is attempted.
+
+COMP-1 — Pessimistic concurrency + async deferred completion
+  strategy=pessimistic and completion=pending are MUTUALLY EXCLUSIVE.
+
+  Rationale: A pessimistic lock MUST be acquired before Step 1 and
+  released after Step 6 (per R14-C in UCC-EXT-CONCURRENCY). This lock
+  is held for the entire execution cycle and MUST be released at cycle
+  end regardless of outcome. completion=pending means the transition
+  has been initiated but has not completed — the cycle has effectively
+  exited without a final converged or failed state. Holding a pessimistic
+  lock across an unbounded async window is not permitted: it would block
+  all other writers for an indeterminate duration and defeats the
+  purpose of bounded pessimistic locking.
+
+  The two strategies are therefore mutually exclusive at declaration
+  time. If a declaration specifies strategy=pessimistic AND the
+  implementation would produce completion=pending (i.e., the target
+  operation is async-capable and would not complete synchronously),
+  the result MUST be outcome=failed, failure_class=permanent before
+  any observation is attempted. The `message` field MUST state the
+  violation explicitly.
+
+  This rule subsumes R14-F from UCC-EXT-CONCURRENCY and R15-F from
+  UCC-EXT-ASYNC. Both of those rules have been removed from their
+  respective Tier 2 documents and are fully governed here.
+
+  Result: outcome=failed, failure_class=permanent; message MUST state
+  the violation.
+
+COMP-2 — Nested compensation
+  A compensation declaration (identified by `compensates`) MUST NOT
+  itself contain a `compensates` field.
+  Rationale: nested compensation creates unbounded rollback chains that
+  cannot be audited or bounded. Automatic chaining of compensation
+  within a single interaction is forbidden.
+  Result: outcome=failed, failure_class=permanent; message MUST state
+  the violation.
+
+COMP-3 — Synchronous compensation
+  A compensation declaration MUST NOT produce completion=pending.
+  Compensation MUST be synchronous and verifiable within its own
+  execution cycle.
+  Rationale: a doubly-deferred final state cannot be reliably reported
+  and violates the single-result guarantee. A compensation cycle that
+  returns completion=pending leaves the overall outcome in an
+  unresolvable state: there is no mechanism to defer the compensation
+  result independently of the primary result.
+  Result: If a compensation cycle returns completion=pending, the overall
+  result MUST be the original primary outcome with a compensation block
+  carrying status=failed and a message noting that compensation was
+  non-compliant.
+
+------------------------------------------------------------
+
+2. ASYNC + COMPENSATION
+------------------------------------------------------------
+
+When both async (completion=pending) and a compensation declaration
+are used together:
+
+COMP-4 — Compensation trigger deferred while pending
+  A compensation trigger MUST NOT be evaluated while the primary
+  operation result is completion=pending.
+  The trigger condition is evaluated ONLY at the verification cycle
+  (mode=verify) that resolves the pending state — that is, the cycle
+  that produces one of: outcome=converged, outcome=changed
+  completion=complete, outcome=failed, or partial=true.
+  A completion=pending primary result MUST NOT fire compensation.
+  Rationale: the trigger condition cannot be evaluated correctly until
+  the outcome is known. Firing compensation against an in-flight
+  operation is undefined behavior.
+
+COMP-5 — Compensation on verification resolution
+  When the verification cycle (mode=verify) resolves the pending state
+  and the resolved outcome satisfies a declared trigger condition, the
+  compensation lifecycle MUST execute at that point.
+  The verification cycle result then reflects the primary outcome plus
+  the compensation block.
+  If compensation itself fails, the result carries the original primary
+  outcome with a compensation block reflecting the failure (per the
+  compensation failure rules in UCC-EXT-COMPENSATION).
+
+------------------------------------------------------------
+
+3. OPTIMISTIC CONCURRENCY + COMPENSATION
+------------------------------------------------------------
+
+COMP-6 — Compensation cycle is an independent UCC cycle
+  A compensation cycle is a full UCC cycle in its own right.
+  If a `concurrency` block is required for the compensation target,
+  it MUST be declared in the compensation declaration's own `concurrency`
+  block. The primary declaration's concurrency block does NOT
+  automatically apply to the compensation cycle.
+  Rationale: the compensation cycle may execute at a different point in
+  time than the primary cycle, against a potentially different observed
+  version of the target. Inheriting the primary cycle's concurrency
+  context would produce incorrect version checks.
+
+COMP-7 — Compensation cycle version conflict
+  If a compensation cycle uses optimistic concurrency and encounters a
+  version conflict, the declared `conflict` strategy of the
+  compensation's own concurrency block applies.
+  If the compensation cycle returns outcome=failed, failure_class=retryable
+  due to a conflict, the overall result retains the original primary
+  outcome and the compensation block carries status=failed with a message
+  identifying the version conflict.
+  The consumer is responsible for re-declaring and re-submitting the
+  compensation cycle independently.
+
+------------------------------------------------------------
+
+4. PESSIMISTIC CONCURRENCY + COMPENSATION
+------------------------------------------------------------
+
+COMP-8 — Compensation acquires its own lock
+  A compensation cycle that targets the same resource as the primary
+  declaration MUST acquire a new, independent lock.
+  The primary lock is released after Step 6 of the primary cycle
+  (per R14-C in UCC-EXT-CONCURRENCY). The compensation cycle is a new,
+  independent cycle and MUST NOT assume the primary lock is still held
+  at the time the compensation cycle begins.
+  Lock acquisition for the compensation cycle follows the declared
+  `lock_timeout_ms` of the compensation's own concurrency block.
+  A compensation cycle that attempts to reuse or rely upon the primary
+  lock is non-compliant.
+
+------------------------------------------------------------
+
+5. ASYNC + EQUALITY
+------------------------------------------------------------
+
+COMP-9 — Equality semantics propagate to verification
+  The verification token carries the equality semantics from the Phase 1
+  declaration. The implementation MUST apply those same semantics in all
+  verification cycles (mode=verify) derived from that token.
+  A verification cycle MUST NOT apply different equality semantics than
+  those declared at Phase 1 initiation.
+  If no equality block was declared at Phase 1, default equality
+  semantics (UCC-EXT-EQUALITY Section 1) apply to all verification
+  cycles associated with that token.
+  Rationale: changing equality semantics between phases would cause the
+  diff computation in the verification cycle to produce different results
+  than the diff computation that initiated the async transition, leading
+  to incorrect convergence or divergence determinations.
+
+------------------------------------------------------------
+
+6. EQUALITY + CONCURRENCY
+------------------------------------------------------------
+
+COMP-10 — Version token field and volatile_fields
+  When strategy=optimistic, the field used to carry the version token
+  (`_version` by convention) MUST be declared in
+  `equality.volatile_fields` if it appears in the observed state.
+  Failure to declare it volatile causes the version token to appear in
+  the diff and triggers spurious transitions: the diff will show the
+  version field as changed even when no meaningful state change has
+  occurred.
+  This is a declaration error and the result MUST be outcome=failed,
+  failure_class=permanent with a message identifying the undeclared
+  version field by name.
+
+COMP-10-C — Consumer obligation for version token volatile field
+  When a consumer constructs a declaration with strategy=optimistic,
+  the consumer MUST inspect the observed state for version-carrying
+  fields (fields whose value changes on every write regardless of
+  semantic content changes, such as `_version`, `etag`, `_rev`, or
+  equivalent) and MUST include any such field in
+  `equality.volatile_fields` before submitting the declaration.
+  A consumer that submits an optimistic declaration without declaring
+  the version token field volatile is non-compliant.
+  If the implementation detects this condition (per COMP-10), it MUST
+  return outcome=failed, failure_class=permanent. The consumer MUST NOT
+  retry the same declaration — it MUST correct the `volatile_fields`
+  list to include the version field and resubmit.
+
+------------------------------------------------------------
+
+7. COMPENSATION + COMPENSATION (EXPLICIT PROHIBITION)
+------------------------------------------------------------
+
+COMP-11 — No recursive compensation chains
+  If compensation cycle C1 fails and a further compensating action C2
+  is needed, C2 MUST be a new, independently declared declaration
+  submitted by the consumer.
+  Automatic chaining of compensation cycles within a single interaction
+  is forbidden. An implementation MUST NOT automatically trigger a
+  second compensation cycle in response to a failed first compensation
+  cycle.
+  Rationale: automatic compensation chains create unbounded rollback
+  depth, violate the single-result guarantee for any given interaction,
+  and make audit trails unresolvable. Each compensation action must be
+  an explicit consumer decision.
+
+------------------------------------------------------------
+
+8. INTERACTION SUMMARY TABLE
+------------------------------------------------------------
+
+Primary \ Extension  | equality   | concurrency      | async          | compensation
+---------------------|------------|------------------|----------------|--------------------
+equality             | —          | COMP-10          | COMP-9         | (independent)
+concurrency (opt.)   | COMP-10    | —                | allowed        | COMP-6, COMP-7
+concurrency (pess.)  | COMP-10    | —                | FORBIDDEN      | COMP-8
+                     |            |                  | (COMP-1)       |
+async                | COMP-9     | see above        | —              | COMP-4, COMP-5
+compensation         | (indep.)   | COMP-6/7/8       | COMP-3         | FORBIDDEN
+                     |            |                  |                | (COMP-2, COMP-11)
+
+Notes:
+- "independent" means no interaction rule is needed; the combination is
+  permitted and each extension governs its own behavior independently.
+- "allowed" means the combination is permitted with no additional
+  composition rules beyond those of the individual Tier 2 documents.
+- "FORBIDDEN" means the combination MUST produce outcome=failed,
+  failure_class=permanent immediately (before any observation).
+
+------------------------------------------------------------
+
+9. COMPLIANCE
+------------------------------------------------------------
+
+An implementation is compliant with UCC-COMPOSITION if:
+
+- It rejects strategy=pessimistic combined with any declaration that
+  would produce completion=pending, with outcome=failed,
+  failure_class=permanent (COMP-1).
+- It rejects a compensation declaration that itself contains a
+  `compensates` field, with outcome=failed, failure_class=permanent
+  (COMP-2).
+- It treats a compensation cycle that returns completion=pending as
+  non-compliant and returns the original primary outcome with a
+  compensation block carrying status=failed (COMP-3).
+- It does not fire compensation while the primary result is
+  completion=pending (COMP-4).
+- It defers compensation evaluation to the resolving verification cycle
+  and includes the compensation result in that cycle's output (COMP-5).
+- It treats each compensation cycle as an independent UCC cycle for
+  concurrency purposes, with its own concurrency block (COMP-6).
+- It applies the compensation's own conflict strategy when a compensation
+  cycle encounters a version conflict (COMP-7).
+- It requires a compensation cycle to acquire its own independent lock
+  when targeting the same resource as the primary cycle (COMP-8).
+- It propagates equality semantics from Phase 1 to all derived
+  verification cycles (COMP-9).
+- It requires the version token field to be declared in
+  `equality.volatile_fields` when strategy=optimistic, and returns
+  outcome=failed, failure_class=permanent when it is absent (COMP-10).
+- It rejects an optimistic declaration from a consumer that omits the
+  version token from volatile_fields (COMP-10-C).
+- It does not automatically chain compensation cycles and requires
+  the consumer to submit C2 independently if C1 fails (COMP-11).
+
+An implementation that complies with COMP-1 through COMP-11 and
+COMP-10-C is compliant with UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+UCC-COMPOSITION – Tier 3. Part of UCC/2.0 framework.
+
+END OF DOCUMENT

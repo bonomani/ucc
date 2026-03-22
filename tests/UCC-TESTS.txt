@@ -1,0 +1,356 @@
+UCC-TESTS – Mandatory Compliance Phases
+Universal Convergence Contract (UCC)
+
+This document is NORMATIVE.
+It defines the mandatory test phases that any UCC-compliant component MUST satisfy.
+
+------------------------------------------------------------
+
+1. PURPOSE
+------------------------------------------------------------
+
+UCC guarantees convergence correctness, determinism, and idempotence.
+These properties are not verifiable by inspection alone.
+They MUST be verified by tests.
+
+This document defines which test phases are mandatory for UCC compliance
+and what each phase must verify.
+
+------------------------------------------------------------
+
+2. CORE PRINCIPLE
+------------------------------------------------------------
+
+A UCC component is not compliant unless its full result space
+is exercised by tests that fail when the behavior is broken.
+
+Documentation, code review, and manual verification are insufficient.
+
+------------------------------------------------------------
+
+3. MANDATORY TEST PHASES
+------------------------------------------------------------
+
+Every UCC-compliant component MUST implement the following test phases:
+
+Phase 1 — HappyClean
+Phase 2 — HappyIdempotent
+Phase 3 — FailRetryable
+Phase 4 — FailPermanent
+Phase 5 — Unchanged
+Phase 6 — Partial (multi-target components only; not-applicable with justification otherwise)
+Phase 7 — FailObservation
+Phase 8 — ObservationIndeterminate
+
+The following supplementary scenarios are also mandatory:
+
+PRE-1 — UnsatisfiedPrecondition
+PRE-2 — PreconditionCycle (or not-applicable with justification for single-message executors)
+DRY-1 — DryRunSuppression
+DRY-2 — DryRunConverged
+
+Each phase maps to one or more results in the UCC result model.
+Each phase MUST be independently executable.
+
+------------------------------------------------------------
+
+4. PHASE DEFINITIONS
+------------------------------------------------------------
+
+4.1 HappyClean
+
+Purpose:
+Verify that the component correctly transitions a target from
+an absent or non-compliant state to the desired state.
+
+Precondition:
+Target does NOT satisfy the desired state before execution.
+
+Expected result:
+observation=ok, outcome=changed, completion=complete (or partial=true if
+multi-target with at least one sub-target succeeding)
+
+Required assertions:
+- observation == ok
+- outcome == changed
+- completion == complete
+- observed_before reflects the non-compliant state
+- observed_after is a post-mutation observation and reflects the desired state
+- diff is non-empty before execution
+- diff is empty when re-observed after execution
+
+------------------------------------------------------------
+
+4.2 HappyIdempotent
+
+Purpose:
+Verify that applying the same declaration to an already-converged target
+produces no change.
+
+Precondition:
+Target ALREADY satisfies the desired state.
+Typically: run HappyClean first, then run HappyIdempotent on the same target.
+
+Expected result:
+observation=ok, outcome=converged
+
+Required assertions:
+- observation == ok
+- outcome == converged
+- observed_before satisfies the desired state
+- diff is empty
+- no mutation occurred (observed state is identical to input state)
+
+------------------------------------------------------------
+
+4.3 FailRetryable
+
+Purpose:
+Verify that the component correctly reports a transient failure
+and classifies it as retryable.
+
+Precondition:
+A transient condition is simulated or injected:
+- network unreachable
+- locked resource
+- timeout condition
+
+Expected result:
+observation=ok, outcome=failed, failure_class=retryable
+
+Required assertions:
+- observation == ok
+- outcome == failed
+- failure_class == retryable
+- message is non-empty and describes the condition
+- observed_before is present (if observation succeeded before the failure)
+- observed_after is absent
+- diff is present if the failure occurred after Step 3
+- no partial state change occurred unless the component explicitly models
+  partial failure and reports it under a different phase
+
+Note:
+If the component cannot produce a transient failure condition,
+this phase MUST be documented as not-applicable with justification.
+It may NOT be silently omitted.
+
+------------------------------------------------------------
+
+4.4 FailPermanent
+
+Purpose:
+Verify that the component correctly identifies a structurally
+impossible desired state and classifies it as permanent.
+
+Precondition:
+A permanent impossibility is established:
+- target type incompatible
+- invalid or self-contradictory desired_state
+- required capability not present in environment
+
+Expected result:
+observation=ok, outcome=failed, failure_class=permanent
+
+Required assertions:
+- observation == ok
+- outcome == failed
+- failure_class == permanent
+- message is non-empty and describes the permanent cause
+- observed_before is present if Step 1 completed successfully
+- diff is absent when the permanent failure occurred before Step 3
+- no retry is triggered by the component
+
+Note:
+Every UCC component MUST define at least one permanent failure case.
+If no permanent failure is possible by design, this MUST be documented explicitly.
+
+------------------------------------------------------------
+
+4.5 Unchanged
+
+Purpose:
+Verify that when a transition is inhibited (dry_run, whatif, or policy),
+the component returns outcome=unchanged with a non-empty diff and the
+correct inhibitor field.
+
+Precondition:
+Target does NOT satisfy desired state. A policy or dry-run mode is active.
+
+Expected result:
+observation=ok, outcome=unchanged
+
+Required assertions:
+- observation == ok
+- outcome == unchanged
+- inhibitor is one of: dry_run, whatif, policy
+- diff is non-empty
+- no state mutation occurred
+
+------------------------------------------------------------
+
+4.6 Partial
+
+Purpose:
+Verify that when some sub-targets succeed and others fail, the component
+returns outcome=changed, partial=true with accurate counts.
+NOTE: For single-target components, document this phase as not-applicable
+with justification. It may NOT be silently omitted.
+
+Precondition:
+Multiple sub-targets exist; conditions are arranged so some succeed and
+some fail.
+
+Expected result:
+observation=ok, outcome=changed, completion=complete, partial=true
+
+Required assertions:
+- observation == ok
+- outcome == changed
+- partial == true
+- partial_detail is present
+- partial_detail.total = partial_detail.converged + partial_detail.changed + partial_detail.failed
+- observed_after is present and is obtained by post-mutation observation
+
+------------------------------------------------------------
+
+4.7 FailObservation
+
+Purpose:
+Verify that when the observation infrastructure itself fails (⊗), the
+component returns observation=failed (not observation=indeterminate).
+
+Precondition:
+Observation mechanism is made unreachable or broken (not the target itself).
+
+Expected result:
+observation=failed
+
+Required assertions:
+- observation == failed
+- outcome is absent
+- observed_before is absent
+- diff is absent
+- observed_after is absent
+- message is non-empty
+
+------------------------------------------------------------
+
+4.8 ObservationIndeterminate
+
+Purpose:
+Verify that when observation runs but produces an indeterminate state (?),
+the component returns observation=indeterminate.
+
+Precondition:
+Observation returns an ambiguous or indeterminate state.
+
+Expected result:
+observation=indeterminate
+
+Required assertions:
+- observation == indeterminate
+- observed_before is absent
+- outcome is absent
+- diff is absent
+- observed_after is absent
+- message is non-empty
+
+------------------------------------------------------------
+
+5. SUPPLEMENTARY MANDATORY SCENARIOS
+------------------------------------------------------------
+
+5.1 PRE-1 UnsatisfiedPrecondition
+
+Purpose:
+Verify that a declared precondition blocks execution before Step 1 and is
+reported through the Step 0 evidence channel.
+
+Precondition:
+The declaration includes at least one `requires` entry that is observable
+and unsatisfied.
+
+Expected result:
+observation=ok, outcome=failed, failure_class=permanent
+
+Required assertions:
+- observation == ok
+- outcome == failed
+- failure_class == permanent
+- observe.preconditions is present
+- observe.preconditions.satisfied == false
+- at least one precondition check has observation == ok and satisfied == false
+- observed_before is absent
+- diff is absent
+- observed_after is absent
+- message is non-empty and identifies the failed precondition
+
+------------------------------------------------------------
+
+5.2 PRE-2 PreconditionCycle
+
+Purpose:
+Verify that components which build a dependency graph reject cyclic
+preconditions before execution.
+
+Applicability:
+Mandatory for batch executors and orchestrators.
+Single-message executors MUST document this phase as not-applicable with
+justification.
+
+Expected result:
+observation=ok, outcome=failed, failure_class=permanent
+
+Required assertions:
+- cycle detection occurs before any transition
+- message identifies the cyclic declarations
+- no mutation occurs
+
+------------------------------------------------------------
+
+5.3 DRY-1 DryRunSuppression
+
+Purpose:
+Verify that mode=dry_run executes Steps 0–4 normally, suppresses Step 5,
+and reports `inhibitor=dry_run` when the diff is non-empty.
+
+Precondition:
+Target does NOT satisfy desired state and mode=dry_run is active.
+
+Expected result:
+observation=ok, outcome=unchanged, inhibitor=dry_run
+
+Required assertions:
+- observation == ok
+- outcome == unchanged
+- inhibitor == dry_run
+- observed_before is present
+- diff is non-empty
+- observed_after is absent
+- no state mutation occurred
+
+------------------------------------------------------------
+
+5.4 DRY-2 DryRunConverged
+
+Purpose:
+Verify that mode=dry_run still reports `outcome=converged` when no
+transition is needed.
+
+Precondition:
+Target ALREADY satisfies desired state and mode=dry_run is active.
+
+Expected result:
+observation=ok, outcome=converged
+
+Required assertions:
+- observation == ok
+- outcome == converged
+- observed_before is present
+- diff is empty
+- observed_after is absent
+- no mutation occurred
+
+------------------------------------------------------------
+
+END OF DOCUMENT

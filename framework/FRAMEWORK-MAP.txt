@@ -1,0 +1,13 @@
+FRAMEWORK MAP
+=============
+
+Deprecated compatibility alias.
+
+Use these documents instead:
+- [FRAMEWORK-INDEX.txt](/home/bc/repos/github/bonomani/ucc/FRAMEWORK-INDEX.txt)
+- [FRAMEWORK-ARCHITECTURE.txt](/home/bc/repos/github/bonomani/ucc/FRAMEWORK-ARCHITECTURE.txt)
+- [FRAMEWORK-BUCKETS.txt](/home/bc/repos/github/bonomani/ucc/FRAMEWORK-BUCKETS.txt)
+
+------------------------------------------------------------
+
+END OF DOCUMENT

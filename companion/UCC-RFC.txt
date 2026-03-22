@@ -1,0 +1,55 @@
+UCC-RFC – Alternate Reading
+===========================
+
+This document is non-authoritative.
+It provides an alternate reading of UCC/2.0 in a more compact style.
+It is about reading the model, not implementing it.
+It does not discuss implementation obligations.
+It is aimed at readers who want a compact overview.
+
+------------------------------------------------------------
+
+1. OVERVIEW
+------------------------------------------------------------
+
+UCC describes how an observed state converges toward a desired state.
+The contract is explicit, closed, and deterministic.
+This alternate reading is intentionally compact and non-authoritative.
+
+------------------------------------------------------------
+
+2. CORE PRIMITIVES
+------------------------------------------------------------
+
+- observe
+- declaration
+- diff
+- result
+
+------------------------------------------------------------
+
+3. RESULT MODEL
+------------------------------------------------------------
+
+observation: ok | indeterminate | failed
+outcome (when observation=ok): converged | changed | unchanged | failed
+completion (when outcome=changed): complete | pending
+failure_class (when outcome=failed): retryable | permanent
+inhibitor (when outcome=unchanged): dry_run | whatif | policy
+
+------------------------------------------------------------
+
+4. EXECUTION
+------------------------------------------------------------
+
+The normal sequence is:
+- observe
+- evaluate declaration
+- compute diff
+- decide whether execution is needed
+- execute if needed
+- verify/report result
+
+------------------------------------------------------------
+
+END OF DOCUMENT

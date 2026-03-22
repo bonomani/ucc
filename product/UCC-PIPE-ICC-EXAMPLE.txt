@@ -1,0 +1,93 @@
+UCC-PIPE-ICC-EXAMPLE
+====================
+
+This document contains the example UCC pipeline declaration and result.
+
+------------------------------------------------------------
+
+1. GENERIC UCC PIPE DECLARATION FORMAT
+------------------------------------------------------------
+
+FILE: pipe-declaration.json
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "pipe-001"
+  },
+  "declaration": {
+    "target": "pipeline",
+    "desired_state": {
+      "steps": [
+        {
+          "id": "step1",
+          "type": "command",
+          "command": "grep",
+          "args": ["ERROR"],
+          "input": "/var/log/app.log",
+          "output": "/tmp/pipe-step1.txt"
+        },
+        {
+          "id": "step2",
+          "type": "command",
+          "command": "wc",
+          "args": ["-l"],
+          "input": "/tmp/pipe-step1.txt",
+          "output": "/tmp/pipe-step2.txt"
+        }
+      ]
+    }
+  }
+}
+
+This declaration:
+- fully replaces a pipe
+- makes intermediate state explicit
+- is retry-safe and auditable
+
+------------------------------------------------------------
+
+2. EXAMPLE RESULT
+------------------------------------------------------------
+
+Invocation:
+  pipe-ucc --ucc=full < pipe-declaration.json
+
+Output (UCC):
+
+{
+  "meta": {
+    "contract": "ucc",
+    "version": "2.0",
+    "id": "pipe-001"
+  },
+  "observe": {
+    "observed_before": {
+      "step1_output": {
+        "exists": true,
+        "hash": "aaa"
+      },
+      "step2_output": {
+        "exists": true,
+        "hash": "bbb",
+        "value": 42
+      }
+    },
+    "diff": {}
+  },
+  "result": {
+    "observation": "ok",
+    "outcome": "converged"
+  }
+}
+
+stdout:
+  (JSON only)
+
+exit code:
+  0 (non-semantic)
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,37 @@
+UCC-WRAPPER-PATTERN
+===================
+
+This document describes the wrapper pattern around UCC execution.
+It is non-authoritative.
+
+------------------------------------------------------------
+
+1. PURPOSE
+------------------------------------------------------------
+
+The wrapper pattern separates:
+- orchestration
+- observation
+- declaration
+- diff
+- transition execution
+- reporting
+
+------------------------------------------------------------
+
+2. RESPONSIBILITY BOUNDARY
+------------------------------------------------------------
+
+The wrapper may:
+- call UCC primitives
+- route inputs
+- collect diagnostics
+
+The wrapper must not:
+- redefine UCC semantics
+- alter the closed result model
+- hide failures
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,333 @@
+BISS–RIG ORCHESTRATOR SPECIFICATION
+==================================
+
+STATUS
+------
+Authoritative architectural specification
+
+AUDIENCE
+--------
+- Software architects
+- Platform and infrastructure engineers
+- Automation / DevOps engineers
+- Workflow and orchestration designers
+- AI / agent-system designers
+
+This document is NOT a framework description.
+It is NOT a product manual.
+It defines the semantic, architectural, and operational model
+of an orchestrator designed to be BISS–RIG compliant.
+
+CLASSIFICATION
+--------------
+Supporting – BISS–RIG Orchestrator Specification
+
+PREREQUISITE READING
+--------------------
+BISS.txt         (two-axis model — read this first)
+GLOSSARY.txt     (canonical vocabulary)
+RIG.txt          (quality grade definition)
+GIC.txt          (GIC interaction type)
+GCC.txt          (GCC interaction type and specializations)
+../execution-semantics/UCC-EXECUTION.txt (UCC interaction type — convergence model)
+
+------------------------------------------------------------
+1. PURPOSE
+------------------------------------------------------------
+
+This document defines what it means for an orchestrator to be:
+
+- BISS-aware (able to consume BISS-classified interactions)
+- BISS-compliant (exposing BISS-classified boundaries)
+- RIG-compliant internally (rigorous, observable, non-normative)
+
+The goal is to make orchestration:
+- deterministic
+- automatable
+- replay-safe
+- auditable
+- AI-operable
+
+without embedding business heuristics in the orchestrator itself.
+
+------------------------------------------------------------
+2. FUNDAMENTAL PRINCIPLE
+------------------------------------------------------------
+
+An orchestrator is a system like any other.
+
+Therefore:
+- it MUST apply RIG internally
+- it MUST expose its own boundaries under BISS
+- it MUST NOT bypass the semantic rules it enforces on others
+
+There is no “meta” exemption.
+
+------------------------------------------------------------
+3. ROLE OF THE ORCHESTRATOR
+------------------------------------------------------------
+
+The orchestrator has two strictly separated roles:
+
+1. Consumer of BISS interactions (aware)
+2. Producer of BISS interactions (compliant)
+
+Confusing these roles leads to implicit semantics
+and fragile orchestration logic.
+
+------------------------------------------------------------
+4. INTERNAL MODEL — RIG (MANDATORY)
+------------------------------------------------------------
+
+Internally, the orchestrator operates under RIG.
+
+This includes:
+- scheduling logic
+- dependency resolution
+- DAG execution
+- retry coordination
+- checkpointing
+- state persistence
+- crash recovery
+
+Internal properties (RIG invariants):
+
+- Structured observability (logs, traces, metrics)
+- Explicit internal invariants
+- Deterministic behavior where feasible
+- Failures treated as bugs, not contract breaches
+- Full refactorability
+- No externally visible guarantees
+
+Internal functions MUST NOT:
+- expose stable semantics
+- promise idempotence
+- imply compatibility guarantees
+- leak internal errors as authoritative outcomes
+
+------------------------------------------------------------
+5. ORCHESTRATOR BOUNDARIES — BISS (MANDATORY)
+------------------------------------------------------------
+
+Every interaction exposed by the orchestrator
+is a boundary and MUST be classified under BISS.
+
+Typical orchestrator boundaries include:
+
+------------------------------------------------------------
+5.1 Workflow Submission
+------------------------------------------------------------
+
+Example:
+- submit_workflow
+- start_execution
+
+Classification:
+→ GCC
+
+Properties:
+- explicit input
+- closed result set
+- authoritative acceptance or rejection
+- no retry implied
+
+------------------------------------------------------------
+5.2 Workflow Status Observation
+------------------------------------------------------------
+
+Example:
+- get_workflow_status
+- list_running_steps
+
+Classification:
+→ GIC
+
+Properties:
+- observational only
+- no guarantees
+- never retried
+- informational
+
+------------------------------------------------------------
+5.3 Workflow Reconciliation / Replay
+------------------------------------------------------------
+
+Example:
+- replay_workflow
+- reconcile_execution
+
+Classification:
+→ UCC
+
+Properties:
+- observes current workflow state
+- converges toward a declared terminal state
+- idempotent
+- safe to retry automatically
+
+------------------------------------------------------------
+5.4 Workflow Cancellation
+------------------------------------------------------------
+
+Example:
+- cancel_workflow
+
+Classification:
+→ GCC
+
+Properties:
+- normative command
+- explicit success/failure
+- retry semantics documented
+- not convergence-based
+
+------------------------------------------------------------
+5.5 Execution Events
+------------------------------------------------------------
+
+Example:
+- step_started
+- step_completed
+- step_failed
+
+Classification:
+→ GIC
+
+Properties:
+- pure signals
+- no obligations
+- no retry
+- used for monitoring and audit
+
+------------------------------------------------------------
+6. ORCHESTRATION LOGIC (TRIVIALIZED)
+------------------------------------------------------------
+
+Because steps are BISS-classified, the orchestrator logic
+contains NO business-specific heuristics.
+
+Canonical orchestration rules:
+
+- GIC:
+  observe only, never retry
+
+- GCC:
+  execute once
+  trust result
+  require human or external decision on failure
+
+- UCC:
+  execute until converged
+  retry safely
+  stop only on declared terminal state
+
+The orchestrator does NOT inspect:
+- internal code of steps
+- error messages
+- domain-specific meanings
+
+------------------------------------------------------------
+7. FAILURE MODEL
+------------------------------------------------------------
+
+Failures are interpreted strictly by classification:
+
+- GIC failure:
+  ignored or logged
+
+- GCC failure:
+  authoritative failure
+  escalation required
+
+- UCC failure:
+  non-convergence
+  retry permitted
+
+Internal orchestrator failures:
+- treated as RIG violations
+- surfaced as bugs
+- never disguised as workflow outcomes
+
+------------------------------------------------------------
+8. STATE MODEL
+------------------------------------------------------------
+
+The orchestrator maintains internal execution state under RIG.
+
+Externally exposed state is limited to:
+- workflow identity
+- execution phase
+- declared outcome
+- convergence status (for UCC)
+
+Internal state structures are NOT part of the contract.
+
+------------------------------------------------------------
+9. SELF-REPLAY AND RECOVERY
+------------------------------------------------------------
+
+The orchestrator MUST be replay-safe.
+
+This means:
+- restartable after crash
+- able to reconcile in-flight workflows
+- able to converge toward terminal states
+
+Replay is exposed as a UCC boundary.
+
+------------------------------------------------------------
+10. AI AND AUTOMATION COMPATIBILITY
+------------------------------------------------------------
+
+A BISS–RIG orchestrator is AI-operable by construction.
+
+An AI may:
+- observe via GIC
+- invoke UCC safely
+- request confirmation for GCC
+
+No AI heuristic is required.
+No code inspection is needed.
+
+------------------------------------------------------------
+11. GOVERNANCE AND COMPLIANCE
+------------------------------------------------------------
+
+An orchestrator is BISS–RIG compliant if:
+
+- All exposed interactions are BISS-classified
+- No implicit semantics exist at boundaries
+- Internal logic follows RIG
+- Retry behavior is classification-driven
+- No semantic wrapping exists
+
+------------------------------------------------------------
+12. CANONICAL COMPLIANCE STATEMENT
+------------------------------------------------------------
+
+“The orchestrator applies RIG internally for execution and scheduling
+logic, and exposes all control, observation, and reconciliation
+interfaces as BISS-classified boundary interactions (GIC, GCC, UCC).”
+
+------------------------------------------------------------
+13. KEY TAKEAWAYS
+------------------------------------------------------------
+
+- The orchestrator is not above the model
+- The orchestrator is governed by the same rules
+- Semantics are declared, not inferred
+- Orchestration becomes generic and deterministic
+- Automation and AI become safe and scalable
+
+------------------------------------------------------------
+14. FINAL SYNTHESIS
+------------------------------------------------------------
+
+RIG gives the orchestrator internal rigor.
+BISS gives the orchestrator external clarity.
+
+Together, they remove heuristics,
+eliminate implicit behavior,
+and make orchestration a solvable, mechanical problem.
+
+END OF DOCUMENT

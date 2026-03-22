@@ -1,0 +1,270 @@
+CORE-CONCEPTS.txt
+================
+
+PURPOSE
+-------
+This document is the authoritative source for the canonical core concepts
+shared across the corpus.
+
+GLOSSARY.txt is the brief quick-reference for these concepts.
+Use this document when you need the full Properties, Rules, and Notes.
+Other documents summarize or apply these concepts; they do not redefine them.
+This file is the source of truth for core concept meaning.
+GLOSSARY.txt is a lookup aid, not a source of meaning.
+
+These concepts are **technology-agnostic**, **minimal**, and **non-overlapping**.
+They exist to ensure consistency, auditability, and long-term coherence.
+
+All other specifications MUST reuse these concepts.
+No concept outside this list may be introduced without justification.
+
+
+DESIGN PRINCIPLES
+-----------------
+- Concepts are declarative, not behavioral
+- Concepts do not execute
+- Concepts do not infer
+- Concepts are stable over time
+- Concepts are composable
+- Concepts are orthogonal
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Supporting – Shared Concept Vocabulary
+
+------------------------------------------------------------
+
+
+1. EVENT
+--------
+Definition:
+An immutable record that something happened.
+
+An event is the fundamental unit of observation.
+Everything meaningful in the system is expressed as an event.
+
+Properties:
+- event_id (unique)
+- event_type (execution, decision, observation, etc.)
+- timestamp_utc
+- references to other concepts
+
+Rules:
+- Events are append-only
+- Events are never modified or deleted
+- Events do not imply causality unless explicitly linked
+
+Notes:
+Execution, decision, approval, observation, and evaluation are all events.
+
+
+2. INTENT (CORRELATION)
+----------------------
+Definition:
+A logical grouping of events that belong to the same purpose or objective.
+
+Intent expresses meaning across time, retries, fan-out, and partial failure.
+
+Properties:
+- correlation_id (unique)
+- lifecycle boundaries (start / end, implicit or explicit)
+
+Rules:
+- correlation_id is created at the origin of intent
+- correlation_id is propagated unchanged
+- correlation does not imply causality
+
+Notes:
+Intent answers “what belongs together”, not “what caused what”.
+
+
+3. TARGET
+---------
+Definition:
+The unit of work or object an action applies to.
+
+Targets provide scope and addressability to execution and observation.
+
+Properties:
+- target_id (stable)
+- target_type
+- scope
+
+Rules:
+- Every execution MUST reference a target
+- Targets are logical, not physical
+
+Notes:
+Examples: file, registry key, service, user, device, configuration rule.
+
+
+4. STATE REFERENCE
+------------------
+Definition:
+A logical identifier for any system state that can be read, written,
+or assumed invariant.
+
+State references make dependencies and side effects explicit.
+
+Properties:
+- state_id (stable, logical)
+- access_type (read | write | assume)
+
+Rules:
+- All state usage must be declared
+- Undeclared state usage is an observability defect
+
+Notes:
+State references describe interaction, not correctness.
+
+
+5. DECISION
+-----------
+Definition:
+A recorded choice among alternatives.
+
+Decisions exist between observation and execution.
+
+Properties:
+- decision_id
+- inputs (events, state, reasoning)
+- outcome (selected option)
+
+Rules:
+- Decisions must be explicit if they influence execution
+- Decisions do not execute actions
+
+Notes:
+Human decisions and automated decisions share the same concept.
+
+
+6. REASONING ARTIFACT
+--------------------
+Definition:
+A versioned mechanism that produces advice or decisions.
+
+Reasoning artifacts influence behavior but have no execution authority.
+
+Properties:
+- reasoning_id
+- reasoning_type (ai_model, ruleset, heuristic, policy)
+- version
+- deterministic (true | false)
+
+Rules:
+- Reasoning must be versioned
+- Any behavior change requires a new version
+- Reasoning never executes actions
+
+Notes:
+AI models, prompts, heuristics, and rulesets are all reasoning artifacts.
+
+
+7. POLICY
+---------
+Definition:
+A declarative expression of preference, priority, or constraint.
+
+Policies express “what is preferred”, not “what must execute”.
+
+Properties:
+- policy_id
+- version
+- scope
+- precedence rules
+
+Rules:
+- Policies must be explicit and versioned
+- Policies do not execute actions
+- Policies can be overridden by explicit human decisions
+
+Notes:
+Policies are strategic, not operational.
+
+
+8. METRIC
+---------
+Definition:
+A named quantitative observation with a baseline.
+
+Metrics describe quality, health, or performance over time.
+
+Properties:
+- metric_id
+- value
+- baseline
+- status (normal | degraded | critical)
+
+Rules:
+- Metrics never redefine correctness
+- Metrics never block execution
+- Metrics are comparative by nature
+
+Notes:
+Metrics observe behavior; they do not judge intent.
+
+
+9. VIEW
+-------
+Definition:
+A derived, read-only synthesis of events and associated metadata.
+
+Views exist solely to reduce human cognitive load.
+
+Properties:
+- view_id
+- derivation rules
+- time scope
+- traceability to raw data
+
+Rules:
+- Views are derived only
+- Views have no authority
+- Views are discardable
+
+Notes:
+Removing all views must not affect the system.
+
+
+CONCEPT RELATIONSHIP SUMMARY
+----------------------------
+- Events reference Targets
+- Events belong to an Intent
+- Events may declare State References
+- Decisions are Events
+- Decisions may reference Reasoning Artifacts
+- Decisions may reference Policies
+- Metrics are derived from Events
+- Views are derived from Events, Metrics, and Relations
+
+
+NON-GOALS
+---------
+These concepts do NOT:
+- execute actions
+- enforce correctness
+- infer missing information
+- optimize outcomes
+- replace human judgment
+
+
+FINAL RULE
+----------
+If a concept:
+- executes
+- decides autonomously
+- infers implicitly
+- blocks execution
+
+then it does NOT belong in this layer and must be rejected.
+
+
+CANONICAL STATUS
+----------------
+This document is canonical.
+All other specifications must conform to these definitions.
+
+
+END OF DOCUMENT

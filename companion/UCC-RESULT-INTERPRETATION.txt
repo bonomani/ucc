@@ -1,0 +1,21 @@
+UCC-STATUS – Consumer Interpretation
+====================================
+
+This document is NORMATIVE.
+It defines how consumers interpret UCC result states.
+
+------------------------------------------------------------
+
+1. CONSUMER RULES
+------------------------------------------------------------
+
+- treat observation=ok, outcome=converged as success
+- treat observation=ok, outcome=changed as success
+- treat observation=ok, outcome=unchanged as deferred or inhibited
+- treat observation=ok, outcome=failed as failure
+- treat observation=failed as observation infrastructure failure
+- treat observation=indeterminate as ambiguous target state
+
+------------------------------------------------------------
+
+END OF DOCUMENT

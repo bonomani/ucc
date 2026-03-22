@@ -1,0 +1,193 @@
+UCC-MVP-1: Minimum Viable Product Specification
+Universal Convergence Contract – Minimal Executable Proof
+
+This document defines the completed Minimum Viable Product (MVP) for UCC.
+Its purpose is to validate the UCC model with the smallest possible
+implementation that produces real, measurable value.
+
+This is a BUILD document.
+Not a vision, not a framework, not a platform.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Product/Planning – Minimum Viable Product Specification
+
+------------------------------------------------------------
+
+STATUS
+------
+ACTIVE — reference artifacts implemented
+
+============================================================
+1. PURPOSE
+============================================================
+
+The UCC MVP exists to answer one question only:
+
+"Can we declare intent once, execute it repeatedly,
+and always reach the correct state safely and deterministically?"
+
+The answer is established by a runnable reference engine, a canonical
+machine schema, and an executable compliance suite.
+
+============================================================
+2. MVP SCOPE (STRICT)
+============================================================
+
+------------------------------------------------------------
+2.1 In Scope
+------------------------------------------------------------
+
+The MVP MUST:
+
+- support exactly one type of operation
+- run locally (single process)
+- expose a CLI
+- support safe retries
+- emit schema-valid ResultMessage objects
+- execute the UCC Steps 0–6 lifecycle for the selected target
+
+------------------------------------------------------------
+2.2 Out of Scope
+------------------------------------------------------------
+
+The MVP MUST NOT include:
+
+- distributed execution
+- parallelism
+- workflows or composition
+- middleware or queues
+- UI or dashboards
+- AI agents
+- async verification (`mode=verify`)
+- scope-aware execution beyond schema-level support
+
+============================================================
+3. SELECTED MVP USE CASE
+============================================================
+
+The MVP implements exactly ONE target:
+
+Target: file
+
+Desired capability:
+- ensure a file exists at a given path
+- ensure the file content matches the declared content
+
+This use case is chosen because:
+- state is observable
+- convergence is clear
+- retries are meaningful
+- failure modes are simple
+
+============================================================
+4. MVP ARCHITECTURE
+============================================================
+
+The MVP consists of four concrete artifacts:
+
+1. Reference engine
+   `mvp/ucc_mvp/engine.py`
+   Implements Step 0 preconditions, Step 1 observation, Step 2 evaluation,
+   Step 3 diff, Step 4 decision, Step 5 mutation, and Step 6 verification.
+
+2. CLI wrapper
+   `mvp/ucc_mvp/cli.py`
+   Loads a DeclarationMessage from stdin or a file and emits one
+   ResultMessage to stdout.
+
+3. Canonical machine schema
+   `formal/ucc-2.0.schema.json`
+   Validates declaration and result message structure.
+
+4. Compliance suite
+   `mvp/tests/test_ucc_mvp.py`
+   Executes the mandatory MVP scenarios against the engine and validates
+   every result against the canonical schema.
+
+Operational model:
+- exactly one declaration is executed per invocation
+- exactly one file target is managed
+- transition execution is synchronous
+- partial convergence is not applicable to this engine
+
+============================================================
+5. CLI CONTRACT
+============================================================
+
+Invocation:
+
+  PYTHONPATH=./mvp python3 -m ucc_mvp.cli declaration.json --pretty
+
+or:
+
+  cat declaration.json | PYTHONPATH=./mvp python3 -m ucc_mvp.cli --pretty
+
+Input:
+- one DeclarationMessage JSON document
+
+Output:
+- one ResultMessage JSON document
+
+Exit codes:
+- `0` successful UCC execution with a ResultMessage emitted
+- `2` invalid input JSON
+
+============================================================
+6. SCHEMA CONTRACT
+============================================================
+
+Canonical schema file:
+  `formal/ucc-2.0.schema.json`
+
+The MVP emits results that validate against this schema.
+The schema includes:
+- declaration messages
+- compensation declaration messages
+- result messages
+- Step 0 precondition evidence in `observe.preconditions`
+- scope metadata fields (`scope`, `caused_by`)
+
+The MVP itself only implements operation-scope file execution, but it
+uses the full canonical result shape so the executable proof and the
+normative schema stay aligned.
+
+============================================================
+7. TEST CONTRACT
+============================================================
+
+Run the suite:
+
+  PYTHONPATH=./mvp python3 -m unittest discover -s ./mvp/tests -p 'test_*.py'
+
+Covered scenarios:
+- Phase 1 — HappyClean
+- Phase 2 — HappyIdempotent
+- Phase 3 — FailRetryable
+- Phase 4 — FailPermanent
+- Phase 5 — Unchanged
+- Phase 6 — Partial: not-applicable with executable justification
+- Phase 7 — FailObservation
+- Phase 8 — ObservationIndeterminate
+- PRE-1 — UnsatisfiedPrecondition
+- PRE-2 — not-applicable with executable justification
+- DRY-1 — DryRunSuppression
+- DRY-2 — DryRunConverged
+
+The suite validates every emitted result against `formal/ucc-2.0.schema.json`.
+
+============================================================
+8. SUCCESS CRITERION
+============================================================
+
+The MVP succeeds if:
+
+- the reference engine converges files deterministically
+- repeated execution is idempotent
+- failures are classified into retryable / permanent / observation paths
+- the emitted messages are schema-valid
+- the compliance suite passes end-to-end
+
+END OF DOCUMENT

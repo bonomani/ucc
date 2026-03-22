@@ -1,0 +1,140 @@
+FRAMEWORK INDEX
+===============
+
+This document is the entry point for the contract framework corpus.
+It is an index only. It does not define semantics.
+
+------------------------------------------------------------
+
+READING ORDER
+-------------
+
+To understand the framework:
+  1. CORE-CONCEPTS.txt
+  2. GLOSSARY.txt
+  3. BISS.txt
+  4. GIC.txt
+  5. GCC.txt
+  6. UCC-OBSERVATION.txt
+  7. UCC-DESIRED-STATE.txt
+  8. UCC-DIFF.txt
+  9. ../execution-semantics/UCC-EXECUTION.txt
+  10. UCC-STATUS.txt
+  11. UCC-TESTS.txt
+  12. UCC-TEST-REPORTING.txt
+  13. UIC.txt
+
+------------------------------------------------------------
+
+DOCUMENT CLASSES
+-----------------
+
+The corpus is organized into classes.
+See FRAMEWORK-BUCKETS.txt for the canonical class list.
+
+------------------------------------------------------------
+
+PRIMARY POINTERS
+----------------
+
+Core semantics:
+  GIC.txt
+  GCC.txt
+  UCC-OBSERVATION.txt
+  UCC-DESIRED-STATE.txt
+  UCC-DIFF.txt
+  ../execution-semantics/UCC-EXECUTION.txt
+  UCC-STATUS.txt
+  UCC-PRECONDITIONS.txt
+  UCC-SCOPE.txt
+
+Companion and guidance:
+  UCC-IMPL-GUIDE.txt
+  UCC-GUIDE-FIT-1.txt
+  UCC-GUIDE-AI-FIT-1.txt
+  UCC-GUIDE-DISTRIBUTED-FIT-1.txt
+  UCC-GUIDE-SYSTEM-FIT-1.txt
+  UCC-RFC.txt
+  UCC-DESIRED-STATE-EXECUTION.txt
+  UCC-DIFF-EXECUTION.txt
+  UCC-OBSERVATION-EXECUTION.txt
+  UCC-RESULT-INTERPRETATION.txt
+  UCC-WRAPPER-PATTERN.txt
+
+Reference:
+  GIC-CONTRACTS.txt
+  UCC-ORCHESTRATOR-SEMANTICS.txt
+  UCC-ORCHESTRATOR-BOUNDARIES.txt
+  UCC-ORCHESTRATOR-REPLAY.txt
+  UCC-ORCHESTRATOR-INTERNALS.txt
+
+Governance and policy:
+  BASIC.txt
+  RIG.txt
+  BISS.txt
+  BISS-AXIOMS.txt
+  BISS-IRS.txt
+  BISS-NCTIS.txt
+  BISS-RIG-AS.txt
+  BISS-RIG-CA.txt
+  BISS-RIG-CS.txt
+  BISS-RIG-GUIDE.txt
+  BISS-RIG-IO.txt
+  BISS-RIG-LS.txt
+  BISS-RIG-OPCM.txt
+  BISS-RIG-OS.txt
+  BISS-RIG-PSG.txt
+  BISS-RIG-RMS.txt
+  BISS-RIG-WHY.txt
+  CORE-CONCEPTS.txt
+  GLOSSARY.txt
+  MODEL-GOVERNANCE-FRAMEWORK.txt
+  RECORD-MODEL-SPEC.txt
+  SYSTEMIC-GOVERNANCE-PROBLEMS.txt
+  SYSTEMIC-GOVERNANCE-SOLUTIONS.txt
+  UCC-RATIONALE.txt
+  GOVERNED-WRAPPER-IMPLEMENTATIONS.txt
+  TEST-ENFORCED-DEVELOPMENT.txt
+
+Examples and product:
+  UCC-EXAMPLE.txt
+  UCC-MAPPINGS.txt
+  UCC-AI-MAPPINGS.txt
+  UCC-SPEC-MODE-1.txt
+  UCC-PIPE-ICC-DESIGN.txt
+  UCC-PIPE-ICC-EXAMPLE.txt
+  UCC-PIPE-ICC-EXECUTION.txt
+  BFO-CLI-MVP.txt
+  BFO-CLI-ARCHITECTURE.txt
+  BFO-CLI-SURFACE.txt
+  BFO-CLI-WORKFLOWS.txt
+  BFO-CLI-STATE.txt
+  BFO-CLI-OBSERVABILITY.txt
+  BFO-CLI-REPLAY.txt
+
+Lifecycle and tracking:
+  UCC-GAPS.txt
+  UCC-PRODUCT-PLAN-1.txt
+  UCC-MVP-1.txt
+
+Executable MVP artifacts:
+  ../formal/ucc-2.0.schema.json
+  ../mvp/ucc_mvp/engine.py
+  ../mvp/ucc_mvp/cli.py
+  ../mvp/tests/test_ucc_mvp.py
+
+Quality and validation:
+  UCC-CHECKLIST.txt
+  UCC-CHECKLIST-TESTS.txt
+  UCC-CHECKLIST-PROHIBITED.txt
+  UCC-CHECKLIST-AUDIT.txt
+  UCC-TESTS.txt
+  UCC-TEST-REPORTING.txt
+
+UIC:
+  UIC.txt
+  UIC-PREFLIGHT.txt
+
+------------------------------------------------------------
+
+END OF DOCUMENT

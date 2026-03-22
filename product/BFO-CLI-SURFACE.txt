@@ -1,0 +1,79 @@
+BFO-CLI – CLI Surface
+=====================
+
+This document defines the CLI boundaries of the MVP.
+
+------------------------------------------------------------
+
+1. CLI SURFACE (BOUNDARIES — BISS)
+------------------------------------------------------------
+
+All CLI commands are boundary interactions.
+
+------------------------------------------------------------
+1.1 Submit workflow
+------------------------------------------------------------
+
+Command:
+  orchestrator submit workflow.yaml
+
+BISS classification:
+  GCC
+
+Result:
+  ACCEPTED | REJECTED
+
+------------------------------------------------------------
+1.2 Run workflow
+------------------------------------------------------------
+
+Command:
+  orchestrator run example_1
+
+BISS classification:
+  GCC
+
+Effect:
+  Starts execution once.
+  No retry implied.
+
+------------------------------------------------------------
+1.3 Observe status
+------------------------------------------------------------
+
+Command:
+  orchestrator status example_1
+
+BISS classification:
+  GIC
+
+Effect:
+  Pure observation.
+  No guarantees.
+
+------------------------------------------------------------
+1.4 Replay / reconcile
+------------------------------------------------------------
+
+Command:
+  orchestrator reconcile example_1
+
+BISS classification:
+  UCC
+
+Effect:
+  Replays until workflow converges to a terminal state.
+
+------------------------------------------------------------
+1.5 Cancel execution
+------------------------------------------------------------
+
+Command:
+  orchestrator cancel example_1
+
+BISS classification:
+  GCC
+
+------------------------------------------------------------
+
+END OF DOCUMENT

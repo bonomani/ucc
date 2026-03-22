@@ -1,0 +1,83 @@
+GCC SPECIALIZATIONS
+===================
+
+This document catalogs contract specializations derived from GCC.
+It does not redefine GCC itself.
+
+------------------------------------------------------------
+
+5.1 UCC — State Convergence Contract
+------------------------------------------------------------
+
+Additional invariants:
+- an observable state exists
+- a desired target state exists
+- a diff between states is computable
+- execution is idempotent
+- retries are deterministic and safe
+
+Result model (closed three-field model — UCC/2.0):
+
+observation: ok | indeterminate | failed
+outcome (when observation=ok): converged | changed | unchanged | failed
+completion (when outcome=changed): complete | pending
+failure_class (when outcome=failed): retryable | permanent
+inhibitor (when outcome=unchanged): dry_run | whatif | policy
+partial (optional, when outcome=changed): true | false
+
+See ../execution-semantics/UCC-EXECUTION.txt and ../execution-semantics/UCC-STATUS.txt for normative definitions.
+
+Interpretation:
+UCC = GCC + state convergence invariants
+
+------------------------------------------------------------
+5.2 Signal Contract — Event Semantics
+------------------------------------------------------------
+
+Additional invariants:
+- input represents a temporal signal
+- no target state exists
+- no convergence is defined
+- semantic replay is forbidden
+
+Example result status set:
+- received
+- dropped
+- duplicated
+
+Interpretation:
+Signal Contract = GCC + temporal delivery invariants
+
+------------------------------------------------------------
+5.3 Dialogue Contract — Human Interaction
+------------------------------------------------------------
+
+Additional invariants:
+- input may be partial
+- interaction is iterative
+- intermediate states are valid
+- closure is conditional
+
+Example result status set:
+- validated
+- cancelled
+- expired
+
+Interpretation:
+Dialogue Contract = GCC + session invariants
+
+------------------------------------------------------------
+5.4 Execution Contract — One-Shot Task
+------------------------------------------------------------
+
+Additional invariants:
+- execution is linear
+- semantic replay is not expected
+- outcome is final and disposable
+
+Interpretation:
+Execution Contract = GCC + one-shot task invariants
+
+------------------------------------------------------------
+
+END OF DOCUMENT

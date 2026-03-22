@@ -1,0 +1,49 @@
+UCC-TESTS – Reporting and Meta-Boundaries
+=========================================
+
+This document is NORMATIVE.
+It defines how UCC tests report diagnostics and handle meta-test boundaries.
+It is about reporting evidence, not defining compliance phases.
+
+------------------------------------------------------------
+
+1. DIAGNOSTICS
+------------------------------------------------------------
+
+Tests MUST treat logs and debug output as secondary diagnostics:
+- they MAY be asserted when the contract requires them
+- they MAY be used to explain a failure
+- they MUST NOT be the sole evidence of correctness
+- the authoritative oracle is the structured UCC result
+Reporting must stay subordinate to the test oracle.
+
+------------------------------------------------------------
+
+2. META-TESTS
+------------------------------------------------------------
+
+If the test subject is the logging or debug pipeline itself, the test is a
+meta-test and its observations are meta-observations.
+
+The diagnostic layer is then the subject under test, and the usual
+target-behavior oracle is replaced by the appropriate meta-oracle for
+that layer.
+
+------------------------------------------------------------
+
+3. REPORTING
+------------------------------------------------------------
+
+A test result SHOULD express:
+- test name
+- status
+- execution time
+- diagnostic message
+- trace target(s) when applicable
+
+If a test is skipped, the reason SHOULD be explicit.
+If a test fails, the oracle mismatch or environmental blocker SHOULD be explicit.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

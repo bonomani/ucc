@@ -1,0 +1,49 @@
+UCC-PROOFS
+==========
+
+This document collects proof-oriented statements about UCC.
+It is supporting, not normative.
+These are scoped claims and design hypotheses, not machine-checked proofs.
+
+------------------------------------------------------------
+
+1. MINIMALITY
+------------------------------------------------------------
+
+The model is minimal with respect to the result semantics it needs.
+This is an architectural claim about the current result model, not a
+minimality proof over all possible models.
+
+------------------------------------------------------------
+
+2. DETERMINISM
+------------------------------------------------------------
+
+Given the same observation and declaration, the result classification
+is deterministic.
+This statement depends on the normative assumptions in UCC-EXECUTION,
+including deterministic observation, evaluation, diff, and classification.
+
+------------------------------------------------------------
+
+3. UNIVERSALITY
+------------------------------------------------------------
+
+The model is sufficient for the interaction classes explicitly covered by
+the current reduction arguments and executable artifacts.
+
+------------------------------------------------------------
+
+4. FORMAL RELATION
+------------------------------------------------------------
+
+The formal model represents:
+- observation
+- declaration evaluation
+- diff computation
+- transition attempt
+- result classification
+
+------------------------------------------------------------
+
+END OF DOCUMENT

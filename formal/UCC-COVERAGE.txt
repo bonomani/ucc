@@ -1,0 +1,180 @@
+UCC-COVERAGE – Coverage Argument
+Universal Convergence Contract (UCC)
+
+This document is SUPPORTING and EXPLANATORY.
+It presents a reduction argument for broad UCC applicability across common
+software interaction classes. It is not a formal proof of universality.
+
+This document does not introduce new rules.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Supporting – Coverage Argument
+
+------------------------------------------------------------
+
+1. PURPOSE OF THIS DOCUMENT
+
+This document provides:
+
+- a reduction argument that many software interaction styles can be mapped
+  onto observation, declaration evaluation, diff, transition, and result
+  classification
+- worked reductions of common paradigms to the UCC lifecycle
+- a record of what this argument does and does not establish
+
+Its goal is to answer the narrower question:
+"For the interaction classes discussed in the UCC corpus, is the model a
+plausible fit?"
+
+------------------------------------------------------------
+
+2. CLAIM BOUNDARY
+
+This document DOES claim:
+- the UCC primitives are broad enough to model many common software
+  transactions
+- the same lifecycle can often be recognized under different interfaces
+
+This document DOES NOT claim:
+- a mathematical proof that every possible software interaction reduces to UCC
+- that no counterexample can exist
+- that coverage alone establishes implementation completeness
+
+Formal certification depends on the normative execution docs, the canonical
+schema, and executable tests, not on this argument.
+
+------------------------------------------------------------
+
+3. REDUCTION PRINCIPLE
+
+Many software transactions can be usefully described as:
+
+1. Observation of an initial state S0
+2. Evaluation of a declaration relative to S0
+3. Comparison between S0 and a target state S1
+4. A transition attempt when needed
+5. Reporting of the final observable result
+
+Formally, for the covered classes:
+
+T ~= O -> E -> Delta -> X -> R
+
+This is a modeling reduction, not a proof of equivalence for all systems.
+
+------------------------------------------------------------
+
+4. REDUCTION OF COMMON PARADIGMS
+
+4.1 Function calls / RPC
+
+Possible reduction:
+- observe inputs and relevant environment
+- evaluate the intended postcondition
+- compare current and desired result state
+- execute the call if change is required
+- classify the observed outcome
+
+This is often representable as a UCC interaction, especially when the RPC
+has an idempotent or declarative boundary.
+
+------------------------------------------------------------
+
+4.2 REST / HTTP APIs
+
+Possible reduction:
+- GET -> observation only
+- PUT -> declaration to converge resource state
+- POST -> declaration to create missing state
+- DELETE -> declaration to converge toward absence
+
+REST APIs fit the model well when resource state is observable and the
+desired representation is explicit.
+
+------------------------------------------------------------
+
+4.3 Database transactions
+
+Possible reduction:
+- observe the current row or document state
+- evaluate the desired state
+- compute the row/document diff
+- attempt the write
+- verify the resulting state
+
+This is a strong fit for stateful, idempotent database operations.
+
+------------------------------------------------------------
+
+4.4 CLI tools and scripts
+
+Possible reduction:
+- observe the target environment
+- evaluate the desired end state
+- diff current vs desired
+- execute the mutation
+- report the verified result
+
+Many infrastructure scripts already follow this pattern implicitly.
+
+------------------------------------------------------------
+
+4.5 Event-driven systems
+
+Possible reduction:
+- the event contributes to observation context
+- handlers evaluate desired state
+- downstream effects are transition attempts
+- later observations classify success, failure, or pending completion
+
+Event systems do not escape the model; they mainly stress async and
+causality handling.
+
+------------------------------------------------------------
+
+4.6 Workflow engines
+
+Possible reduction:
+- each step is a UCC interaction
+- the workflow composes multiple interactions
+
+Composition is an extension problem, not evidence that the core model fails.
+
+------------------------------------------------------------
+
+4.7 Agents and AI systems
+
+Possible reduction:
+- observe environment
+- choose or synthesize a declaration
+- compare current vs preferred state
+- attempt state transition
+- re-observe and classify
+
+The non-deterministic part is declaration selection, not the execution
+shape after a declaration has been chosen.
+
+------------------------------------------------------------
+
+5. LIMITATIONS
+
+This document leaves open:
+
+- interactions whose observable state boundary is poorly defined
+- systems where declaration evaluation is not meaningfully separable from execution
+- domains where success criteria cannot be represented as converged state
+
+Those cases require further argument or a narrower claim.
+
+------------------------------------------------------------
+
+6. CONCLUSION
+
+UCC has a credible reduction story for many important interaction classes.
+That supports the framework's design direction.
+
+It does not, by itself, prove universality.
+
+END OF DOCUMENT

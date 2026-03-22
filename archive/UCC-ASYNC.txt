@@ -1,6 +1,0 @@
-UCC-ASYNC.txt — SUPERSEDED
-===========================
-This file has been superseded by UCC-EXT-ASYNC.txt (Tier 2 Extension).
-
-See UCC-EXT-ASYNC.txt for the current async extension specification.
-See FRAMEWORK-MAP.txt for the full document index and reading order.

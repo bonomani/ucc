@@ -1,0 +1,63 @@
+GIC-CONTRACTS
+=============
+
+This document preserves the relation between GIC and higher contract layers.
+It is supporting, not normative.
+
+------------------------------------------------------------
+
+1. RELATION TO CONTRACTS
+------------------------------------------------------------
+
+A contract exists only when additional normative invariants are explicitly
+introduced.
+
+Formally:
+
+GCC (Generic Contract Core) =
+GIC
++ explicit input
++ observable outcome
++ closed result set
++ explicit completion semantics
++ non-ambiguity requirements
+
+UCC (Universal Convergence Contract) =
+GCC
++ state convergence invariants
+
+------------------------------------------------------------
+
+2. LAYERED SEMANTIC MODEL
+------------------------------------------------------------
+
+Layer L0 — Computation
+- internal, invisible, non-observable
+
+Layer L1 — GIC (Interaction)
+- observable fact
+- no obligation
+
+Layer L2 — GCC (Contract)
+- normative exchange
+- explicit result
+
+Layer L3 — UCC (Convergence)
+- deterministic state convergence
+
+Each layer strictly adds constraints.
+No layer removes constraints from a lower layer.
+
+------------------------------------------------------------
+
+3. ESCALATION RULE
+------------------------------------------------------------
+
+An interaction MAY be escalated to a contract only by
+explicitly adding normative invariants.
+
+Implicit escalation is forbidden.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

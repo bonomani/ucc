@@ -1,0 +1,49 @@
+UCC-SPEC-MODE-1
+===============
+
+This document describes a simplified specification mode for UCC execution.
+It is non-authoritative.
+
+------------------------------------------------------------
+
+1. PURPOSE
+------------------------------------------------------------
+
+The simplified mode presents UCC as:
+- observe current state
+- compute desired state
+- compute diff
+- decide whether execution is needed
+- execute transition if needed
+- verify/report a closed result
+
+------------------------------------------------------------
+
+2. SCOPE
+------------------------------------------------------------
+
+This mode is useful for:
+- implementation sketches
+- onboarding
+- lightweight wrappers
+
+It does not replace the normative UCC documents.
+
+------------------------------------------------------------
+
+3. SUMMARY MODEL
+------------------------------------------------------------
+
+Result:
+- observation
+- outcome
+- completion
+
+Qualifiers:
+- failure_class
+- inhibitor
+- partial
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,271 @@
+UCC-GUIDE-MINIMAL.txt
+=====================
+
+PURPOSE
+-------
+The minimum viable adoption path for the BISS/UCC framework.
+
+This guide is for teams who want to start using the framework today
+without reading 60 documents first. Each step is self-contained.
+The next step never invalidates the previous one.
+It is a staged adoption path, not a semantic specification.
+
+STATUS
+------
+Normative guidance
+
+AUDIENCE
+--------
+- Small teams starting adoption
+- Developers prototyping a new component
+- Engineers evaluating fit before committing
+
+CLASSIFICATION
+--------------
+Supporting – Minimal Adoption Path
+
+PREREQUISITE READING
+--------------------
+None. This document is the entry point.
+Read FRAMEWORK-MAP.txt only after completing Step 3.
+
+------------------------------------------------------------
+
+THE ONE RULE BEFORE YOU START
+------------------------------
+You do not need the whole framework.
+You need exactly as much as your current problem requires.
+
+Stop at the step that solves your problem.
+Move to the next step only when you feel the pain that step addresses.
+
+------------------------------------------------------------
+
+STEP 1 — NAME YOUR INTERACTIONS (one afternoon)
+-------------------------------------------------
+Use: GIC + Basic grade
+
+What you get:
+  Every interaction in your system has a name and a declared type.
+  Nothing more is required.
+
+What you do:
+  For each function, endpoint, or command that crosses a boundary, ask:
+  "Is this an observable fact or a contract?"
+
+  If it produces a result that callers depend on → it is a contract (go to Step 2).
+  If it is fire-and-forget, logging, or notification → it is GIC.
+
+  Label it. Write it down. That is all.
+
+Example:
+  user_logged_in          → GIC  (fact, no obligation)
+  file_changed            → GIC  (fact, no obligation)
+  config_reloaded         → GIC  (fact, no obligation)
+
+What you do NOT need at this step:
+  - records or immutable logs
+  - test contracts
+  - schema validation
+  - any other document in this framework
+
+Pain that tells you to move to Step 2:
+  "Callers are making decisions based on whether this succeeded or failed,
+  but there is no explicit success/failure contract."
+
+------------------------------------------------------------
+
+STEP 2 — ADD EXPLICIT RESULTS WHERE THEY MATTER (one day)
+-----------------------------------------------------------
+Use: GCC + Basic grade
+
+What you get:
+  Interactions that callers depend on have an explicit result:
+  success or failure, with a reason. Nothing more is required.
+
+What you do:
+  For each interaction labeled GIC that callers actually act on,
+  upgrade it to GCC:
+  - define what "success" means
+  - define what "failure" means
+  - return one of them, always
+
+  Do not upgrade everything. Only upgrade what callers react to.
+
+Example:
+  send_notification       → GCC  (caller needs to know if it was delivered)
+  create_user             → GCC  (caller needs to know if it succeeded)
+  delete_file             → GCC  (caller needs to know if it was removed)
+  config_reloaded         → GIC  (still fine — nobody acts on this)
+
+Result shape (minimal — no schema required yet):
+  {
+    "ok": true | false,
+    "reason": "string if false"
+  }
+
+What you do NOT need at this step:
+  - idempotence or retry safety
+  - convergence guarantees
+  - the three-field result model
+  - any UCC document
+
+Pain that tells you to move to Step 3:
+  "This operation is retried on failure, but retrying it twice
+  sometimes causes duplicate side effects."
+  OR
+  "We cannot tell whether the system is in the desired state
+  without running the operation again."
+
+------------------------------------------------------------
+
+STEP 3 — ADD CONVERGENCE WHERE RETRIES HAPPEN (one week)
+----------------------------------------------------------
+Use: UCC + Basic grade
+
+What you get:
+  Operations that are retried are safe to retry any number of times.
+  Each execution observes current state, computes the diff,
+  and only acts if action is needed.
+  The result tells you exactly what happened and why.
+
+What you do:
+  For each GCC interaction that is retried (automatically or manually),
+  upgrade it to UCC:
+  1. Add an Observe step: read current state before acting
+  2. Add a Diff step: compare current state to desired state
+  3. Add a Converge step: act only if diff is non-empty
+  4. Return the three-field result
+
+Three-field result (the only result shape UCC uses):
+  observation   — did the observe step succeed?
+                  ok | indeterminate | failed
+  outcome       — what happened? (when observation = ok)
+                  converged | changed | unchanged | failed
+  completion    — is the change verified? (when outcome = changed)
+                  complete | pending
+
+Example:
+  ensure_file_exists      → UCC  (safe to retry: if file exists, outcome=converged)
+  apply_config            → UCC  (safe to retry: if already applied, outcome=converged)
+  provision_user          → UCC  (safe to retry: if already provisioned, outcome=converged)
+  send_notification       → GCC  (stay here — notifications are not idempotent by nature)
+
+Key test for UCC eligibility (ask yourself):
+  "If this runs twice with the same input, is the second run safe?"
+  YES → UCC is appropriate
+  NO  → stay at GCC
+
+What you do NOT need at this step:
+  - scope stack (operation/decision/system/policy/intent)
+  - extensions (async, concurrency, compensation, equality)
+  - formal record model
+  - RIG invariants or test contracts
+
+Useful reading at this step (in order):
+  ../execution-semantics/UCC-EXECUTION.txt     (the normative spec — read §1–§4 only)
+  UCC-STATUS.txt        (how to interpret the result)
+  UCC-CHECKLIST.txt     (self-check before shipping)
+  UCC-EXAMPLE.txt       (end-to-end worked example)
+
+Pain that tells you to move to Step 4:
+  "A bug slipped through because our tests passed but the
+  implementation had hidden invariant violations."
+  OR
+  "We need to audit exactly what happened, when, and why,
+  across multiple services."
+
+------------------------------------------------------------
+
+STEP 4 — ADD RIGOR WHERE CORRECTNESS IS CRITICAL (ongoing)
+------------------------------------------------------------
+Use: UCC + RIG grade
+
+What you get:
+  Formal invariants on your internal logic.
+  Observability built into the implementation itself.
+  A test contract that certifies your component is compliant.
+
+What you do:
+  For each UCC component where bugs are costly or audits are required,
+  apply RIG internally:
+  - declare state reads and writes explicitly
+  - write tests that cover every result field combination
+  - validate result messages against formal/ucc-2.0.schema.json
+
+  RIG is an internal quality grade — it does not change the external
+  boundary contract. A RIG component still exposes GIC, GCC, or UCC
+  at its boundary. RIG only governs how the internals are structured.
+
+Useful reading at this step (in order):
+  RIG.txt                   (what RIG is)
+  BISS.txt                  (the two-axis model — now is the time)
+  BISS-RIG-CA.txt           (compliance assessment — audit template)
+  UCC-TESTS.txt             (normative test contract)
+  GOVERNED-WRAPPER-IMPLEMENTATIONS.txt  (concrete code patterns)
+
+Pain that tells you to go further:
+  "We have multiple services, multiple teams, and we need to
+  govern interactions across all of them consistently."
+  → Read UCC-SCOPE.txt next.
+
+------------------------------------------------------------
+
+WHAT EACH STEP COSTS AND GIVES
+--------------------------------
+
+  Step 1 — GIC + Basic
+    Cost:    Name things. One afternoon.
+    Gives:   Shared vocabulary. Everyone knows what each interaction is.
+
+  Step 2 — GCC + Basic
+    Cost:    Define success/failure. Return it consistently. One day.
+    Gives:   Explicit contracts. Callers know what to expect.
+
+  Step 3 — UCC + Basic
+    Cost:    Add observe/diff/converge. Learn the result model. One week.
+    Gives:   Retry safety. No duplicate side effects. Convergence proof.
+
+  Step 4 — UCC + RIG
+    Cost:    Add invariants, tests, schema validation. Ongoing.
+    Gives:   Auditability. Certified compliance. No hidden behavior.
+
+------------------------------------------------------------
+
+WHAT YOU NEVER NEED (unless you choose it)
+-------------------------------------------
+
+These parts of the framework exist for specific problems.
+Do not use them unless you feel the exact pain they address.
+
+  UCC-SCOPE.txt              — only if you have multi-scope governance
+  UCC-EXT-ASYNC.txt          — only if transitions are genuinely deferred
+  UCC-EXT-CONCURRENCY.txt    — only if concurrent writes on the same target occur
+  UCC-EXT-COMPENSATION.txt   — only if you need rollback semantics
+  UCC-EXT-EQUALITY.txt       — only if structural equality is insufficient
+  RECORD-MODEL-SPEC.txt      — only if you need immutable audit records
+  MODEL-GOVERNANCE-FRAMEWORK.txt — only if you govern multiple model versions
+
+------------------------------------------------------------
+
+QUICK DECISION TREE
+--------------------
+
+Is this interaction fire-and-forget with no expected result?
+  YES → GIC. Stop here.
+
+Does the caller need to know if it succeeded or failed?
+  YES → GCC. Stop here (unless next question applies).
+
+Is this operation retried on failure, or must it be idempotent?
+  YES → UCC.
+
+Is correctness critical and must behavior be formally verifiable?
+  YES → UCC + RIG.
+
+Are you governing interactions across multiple services or scopes?
+  YES → UCC + RIG + UCC-SCOPE.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

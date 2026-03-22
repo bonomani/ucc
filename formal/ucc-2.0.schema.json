@@ -1,0 +1,726 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ucc.example/spec/ucc-2.0.schema.json",
+  "title": "UCC/2.0 - Universal Convergence Contract",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/DeclarationMessage" },
+    { "$ref": "#/$defs/CompensationDeclarationMessage" },
+    { "$ref": "#/$defs/ResultMessage" }
+  ],
+  "$defs": {
+    "Scope": {
+      "type": "string",
+      "enum": ["operation", "decision", "system", "policy", "intent"]
+    },
+
+    "MetaIn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "version", "id", "timestamp"],
+      "properties": {
+        "contract": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "const": "2.0" },
+        "id": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "scope": { "$ref": "#/$defs/Scope" },
+        "caused_by": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "MetaOut": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "version", "id", "timestamp", "duration_ms"],
+      "properties": {
+        "contract": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "const": "2.0" },
+        "id": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "scope": { "$ref": "#/$defs/Scope" },
+        "caused_by": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "AnyObject": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "Precondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration_id", "target", "desired_state"],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "desired_state": { "$ref": "#/$defs/AnyObject" }
+      }
+    },
+
+    "EqualityBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["structural", "semantic"],
+          "default": "structural"
+        },
+        "volatile_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "array_order": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["significant", "insignificant"]
+          }
+        }
+      }
+    },
+
+    "ConcurrencyBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["none", "optimistic", "pessimistic"]
+        },
+        "expected_version": { "type": "string" },
+        "lock_timeout_ms": { "type": "integer", "minimum": 1 },
+        "conflict": {
+          "type": "string",
+          "enum": ["fail", "retry", "skip"],
+          "default": "fail"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "strategy": { "const": "optimistic" } },
+            "required": ["strategy"]
+          },
+          "then": { "required": ["expected_version"] }
+        },
+        {
+          "if": {
+            "properties": { "strategy": { "const": "pessimistic" } },
+            "required": ["strategy"]
+          },
+          "then": { "required": ["lock_timeout_ms"] }
+        }
+      ]
+    },
+
+    "CompensationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original_interaction_id", "compensates_for"],
+      "properties": {
+        "original_interaction_id": { "type": "string", "minLength": 1 },
+        "compensates_for": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "Declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "desired_state"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["apply", "verify", "dry_run"],
+          "default": "apply"
+        },
+        "verification_token": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "desired_state": { "$ref": "#/$defs/AnyObject" },
+        "requires": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Precondition" }
+        },
+        "equality": { "$ref": "#/$defs/EqualityBlock" },
+        "concurrency": { "$ref": "#/$defs/ConcurrencyBlock" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "mode": { "const": "verify" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["verification_token"] }
+        }
+      ]
+    },
+
+    "CompensationDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compensates", "target", "desired_state", "trigger"],
+      "properties": {
+        "compensates": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "desired_state": { "$ref": "#/$defs/AnyObject" },
+        "trigger": {
+          "type": "string",
+          "enum": ["on_failure", "on_partial", "manual"]
+        },
+        "compensation_context": { "$ref": "#/$defs/CompensationContext" }
+      }
+    },
+
+    "PreconditionCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declaration_id",
+        "target",
+        "expected_state",
+        "observation",
+        "satisfied"
+      ],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "expected_state": { "$ref": "#/$defs/AnyObject" },
+        "observed_state": { "$ref": "#/$defs/AnyObject" },
+        "observation": {
+          "type": "string",
+          "enum": ["ok", "indeterminate", "failed"]
+        },
+        "satisfied": { "type": "boolean" },
+        "message": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "observation": { "const": "ok" } },
+            "required": ["observation"]
+          },
+          "then": { "required": ["observed_state"] },
+          "else": {
+            "properties": {
+              "observed_state": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "satisfied": { "const": false } },
+            "required": ["satisfied"]
+          },
+          "then": { "required": ["message"] }
+        }
+      ]
+    },
+
+    "PreconditionReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluated", "satisfied", "checks"],
+      "properties": {
+        "evaluated": { "const": true },
+        "satisfied": { "type": "boolean" },
+        "checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PreconditionCheck" },
+          "minItems": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "satisfied": { "const": true } },
+            "required": ["satisfied"]
+          },
+          "then": {
+            "properties": {
+              "checks": {
+                "not": {
+                  "contains": {
+                    "properties": { "satisfied": { "const": false } },
+                    "required": ["satisfied"]
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "checks": {
+                "contains": {
+                  "properties": { "satisfied": { "const": false } },
+                  "required": ["satisfied"]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "PartialDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "converged", "changed", "failed"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "converged": { "type": "integer", "minimum": 0 },
+        "changed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "Observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preconditions": { "$ref": "#/$defs/PreconditionReport" },
+        "observed_before": { "$ref": "#/$defs/AnyObject" },
+        "observed_after": { "$ref": "#/$defs/AnyObject" },
+        "diff": { "$ref": "#/$defs/DiffObject" }
+      }
+    },
+
+    "DiffObject": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "VerificationPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_verifications": { "type": "integer", "minimum": 1 },
+        "backoff": {
+          "type": "string",
+          "enum": ["linear", "exponential", "fixed"]
+        },
+        "backoff_base_ms": { "type": "integer", "minimum": 1 },
+        "max_lifetime_ms": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["backoff"] },
+          "then": { "required": ["backoff_base_ms"] }
+        }
+      ]
+    },
+
+    "VerificationWarning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "severity"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "lifetime_threshold_exceeded",
+            "resource_utilization_high",
+            "operation_duration_exceeded",
+            "external_dependency_degraded",
+            "retry_in_progress"
+          ]
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "degraded", "critical"]
+        }
+      }
+    },
+
+    "VerificationBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "expires_at"],
+      "properties": {
+        "token": { "type": "string", "minLength": 1 },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "check_after": { "type": "string", "format": "date-time" },
+        "warnings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/VerificationWarning" }
+        },
+        "policy": { "$ref": "#/$defs/VerificationPolicy" }
+      }
+    },
+
+    "CompensationBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["converged", "changed", "failed"]
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": ["retryable", "permanent"]
+        },
+        "observed_after_compensation": { "$ref": "#/$defs/AnyObject" },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "CompensationAvailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration_id", "desired_state", "expires_at"],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "desired_state": { "$ref": "#/$defs/AnyObject" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "Proof": {
+      "type": "object",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+
+    "Result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation"],
+      "properties": {
+        "observation": {
+          "type": "string",
+          "enum": ["ok", "indeterminate", "failed"]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["converged", "changed", "unchanged", "failed"]
+        },
+        "completion": {
+          "type": "string",
+          "enum": ["complete", "pending"]
+        },
+        "failure_class": {
+          "type": "string",
+          "enum": ["retryable", "permanent"]
+        },
+        "inhibitor": {
+          "type": "string",
+          "enum": ["dry_run", "whatif", "policy"]
+        },
+        "partial": { "type": "boolean" },
+        "partial_detail": { "$ref": "#/$defs/PartialDetail" },
+        "verification": { "$ref": "#/$defs/VerificationBlock" },
+        "compensation": { "$ref": "#/$defs/CompensationBlock" },
+        "compensation_available": { "$ref": "#/$defs/CompensationAvailable" },
+        "proof": { "$ref": "#/$defs/Proof" },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "DeclarationMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "declaration"],
+      "properties": {
+        "meta": { "$ref": "#/$defs/MetaIn" },
+        "declaration": { "$ref": "#/$defs/Declaration" }
+      }
+    },
+
+    "CompensationDeclarationMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "declaration"],
+      "properties": {
+        "meta": { "$ref": "#/$defs/MetaIn" },
+        "declaration": { "$ref": "#/$defs/CompensationDeclaration" }
+      }
+    },
+
+    "ResultMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meta", "observe", "result"],
+      "properties": {
+        "meta": { "$ref": "#/$defs/MetaOut" },
+        "observe": { "$ref": "#/$defs/Observation" },
+        "result": { "$ref": "#/$defs/Result" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": {
+                  "observation": { "enum": ["failed", "indeterminate"] }
+                },
+                "required": ["observation"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "properties": {
+                  "outcome": false,
+                  "completion": false,
+                  "failure_class": false,
+                  "inhibitor": false,
+                  "partial": false,
+                  "partial_detail": false,
+                  "verification": false,
+                  "proof": false
+                },
+                "required": ["message"]
+              },
+              "observe": {
+                "properties": {
+                  "observed_before": false,
+                  "observed_after": false,
+                  "diff": false
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": { "observation": { "const": "ok" } },
+                "required": ["observation"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "required": ["outcome"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": { "outcome": { "const": "converged" } },
+                "required": ["outcome"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "properties": {
+                  "completion": false,
+                  "failure_class": false,
+                  "inhibitor": false,
+                  "partial": false,
+                  "partial_detail": false,
+                  "verification": false
+                }
+              },
+              "observe": {
+                "required": ["observed_before", "diff"],
+                "properties": {
+                  "observed_after": false,
+                  "diff": { "type": "object", "maxProperties": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": { "outcome": { "const": "unchanged" } },
+                "required": ["outcome"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "required": ["inhibitor", "message"],
+                "properties": {
+                  "completion": false,
+                  "failure_class": false,
+                  "partial": false,
+                  "partial_detail": false,
+                  "verification": false,
+                  "proof": false
+                }
+              },
+              "observe": {
+                "required": ["observed_before", "diff"],
+                "properties": {
+                  "observed_after": false,
+                  "diff": { "type": "object", "minProperties": 1 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": { "outcome": { "const": "changed" } },
+                "required": ["outcome"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "required": ["completion", "proof"],
+                "properties": {
+                  "failure_class": false,
+                  "inhibitor": false
+                }
+              },
+              "observe": {
+                "required": ["observed_before", "diff"]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "partial": { "const": true }
+                      },
+                      "required": ["partial"]
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "result": { "required": ["partial_detail"] }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "partial_detail": false
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "result": {
+                      "properties": {
+                        "completion": { "const": "complete" }
+                      },
+                      "required": ["completion"]
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "result": {
+                      "properties": { "verification": false }
+                    },
+                    "observe": { "required": ["observed_after"] }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "result": { "required": ["verification"] },
+                    "observe": {
+                      "properties": { "observed_after": false }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "properties": { "outcome": { "const": "failed" } },
+                "required": ["outcome"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "required": ["failure_class", "message"],
+                "properties": {
+                  "completion": false,
+                  "inhibitor": false,
+                  "partial": false,
+                  "partial_detail": false,
+                  "verification": false,
+                  "proof": false
+                }
+              },
+              "observe": {
+                "properties": {
+                  "observed_after": false
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "properties": {
+                  "result": {
+                    "properties": {
+                      "failure_class": { "const": "permanent" }
+                    },
+                    "required": ["failure_class"]
+                  },
+                  "observe": {
+                    "required": ["preconditions"],
+                    "properties": {
+                      "preconditions": {
+                        "properties": {
+                          "satisfied": { "const": false }
+                        },
+                        "required": ["satisfied"]
+                      },
+                      "observed_before": false,
+                      "diff": false
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "observe": {
+                    "required": ["observed_before"],
+                    "properties": {
+                      "diff": false
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "observe": {
+                    "required": ["observed_before", "diff"]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

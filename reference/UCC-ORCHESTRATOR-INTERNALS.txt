@@ -1,0 +1,30 @@
+UCC-ORCHESTRATOR-INTERNALS
+==========================
+
+This document defines internal orchestrator requirements.
+It is supporting, not normative.
+
+------------------------------------------------------------
+
+1. INTERNAL REQUIREMENTS
+------------------------------------------------------------
+
+The orchestrator MUST:
+- log every state transition
+- assert valid workflow structure before execution begins
+- detect and reject invalid dependency graphs
+- crash fast on internal inconsistency
+- be fully testable in isolation
+
+Internal bugs are categorically not workflow failures.
+
+------------------------------------------------------------
+
+2. INTERNAL LOGIC
+------------------------------------------------------------
+
+The orchestrator MUST NOT contain business logic.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

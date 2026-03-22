@@ -1,0 +1,181 @@
+UCC-SCHEMA – JSON Schema Specification
+Universal Convergence Contract (UCC/2.0)
+
+This document defines the canonical machine-readable schema artifact for UCC/2.0.
+The machine-authoritative file is:
+
+  ./ucc-2.0.schema.json
+
+Any message that fails validation against that file is NON-COMPLIANT.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Machine-Normative – JSON Schema (Draft 2020-12)
+
+------------------------------------------------------------
+
+VERSION
+-------
+2.0 (versioned with UCC/2.0)
+
+------------------------------------------------------------
+
+1. PURPOSE
+
+This document provides:
+- the location of the canonical JSON Schema artifact
+- the structural coverage of that artifact
+- the semantic cross-references that the schema enforces
+
+This document does not duplicate the full schema inline. The JSON file is
+the executable contract. This text records what it covers and why.
+
+------------------------------------------------------------
+
+2. CANONICAL ARTIFACT
+
+Canonical schema file:
+  ./ucc-2.0.schema.json
+
+Schema dialect:
+  JSON Schema Draft 2020-12
+
+Covered top-level message types:
+- DeclarationMessage
+- CompensationDeclarationMessage
+- ResultMessage
+
+The schema is derived from:
+- ../execution-semantics/UCC-EXECUTION.txt
+- ../execution-semantics/UCC-PRECONDITIONS.txt
+- ../execution-semantics/UCC-SCOPE.txt
+- ../extensions/UCC-EXT-EQUALITY.txt
+- ../extensions/UCC-EXT-CONCURRENCY.txt
+- ../extensions/UCC-EXT-ASYNC.txt
+- ../extensions/UCC-EXT-COMPENSATION.txt
+
+------------------------------------------------------------
+
+3. GENERAL CONSTRAINTS
+
+- All schema-defined objects are closed unless explicitly modeled as open
+  state payloads (`desired_state`, `observed_before`, `observed_after`, `diff`,
+  `proof`, and related free-form state objects).
+- `meta.version` MUST equal `"2.0"`.
+- Timestamps MUST validate as `date-time`.
+- `meta.scope` and `meta.caused_by` are permitted on both declaration and
+  result messages. This aligns the machine schema with UCC-SCOPE.
+
+------------------------------------------------------------
+
+4. RESULT STRUCTURE COVERED BY THE SCHEMA
+
+The schema enforces the core result fields:
+- `observation`
+- `outcome`
+- `completion`
+- `failure_class`
+- `inhibitor`
+- `partial`
+- `partial_detail`
+- `proof`
+- `message`
+
+The schema also enforces the canonical `observe` block:
+- `preconditions`
+- `observed_before`
+- `observed_after`
+- `diff`
+
+`observe.preconditions` is the Step 0 evidence channel. It exists to make
+precondition-blocked results machine-representable without falsely requiring
+`observed_before` or `diff`.
+
+------------------------------------------------------------
+
+5. MACHINE-ENFORCED RESULT PATHS
+
+The schema encodes the closed result-path matrix from UCC-EXECUTION:
+
+- PF-1 Precondition unsatisfied
+  `observation=ok`, `outcome=failed`, `failure_class=permanent`,
+  `observe.preconditions` required, `observed_before` absent, `diff` absent
+
+- PF-2 / PF-3 Precondition observation failed or indeterminate
+  `observation=failed|indeterminate`, `message` required,
+  `observed_before` absent, `diff` absent
+
+- O-1 / O-2 Primary observation failed or indeterminate
+  `observation=failed|indeterminate`, `message` required,
+  `observed_before` absent, `diff` absent
+
+- E-1 Declaration evaluation failure before diff
+  `observation=ok`, `outcome=failed`, `observed_before` required,
+  `diff` absent
+
+- D-1 Converged
+  `observation=ok`, `outcome=converged`, `observed_before` required,
+  `diff={}`
+
+- D-2 Inhibited / unchanged
+  `observation=ok`, `outcome=unchanged`, `inhibitor` required,
+  `observed_before` required, `diff` non-empty
+
+- T-1 / T-3 Changed complete (including partial)
+  `observation=ok`, `outcome=changed`, `completion=complete`,
+  `observed_before`, `diff`, `observed_after`, and `proof` required
+
+- T-2 Changed pending
+  `observation=ok`, `outcome=changed`, `completion=pending`,
+  `observed_before`, `diff`, `proof`, and `verification` required,
+  `observed_after` absent
+
+- T-4 Failed after transition attempt
+  `observation=ok`, `outcome=failed`, `observed_before` and `diff` required,
+  `observed_after` absent
+
+------------------------------------------------------------
+
+6. PRECONDITION REPORT SHAPE
+
+When present, `observe.preconditions` contains:
+- `evaluated=true`
+- `satisfied=true|false`
+- `checks[]`
+
+Each `checks[]` entry includes:
+- `declaration_id`
+- `target`
+- `expected_state`
+- `observation`
+- `satisfied`
+
+When the check observation succeeded, `observed_state` is required.
+When a check is unsatisfied, `message` is required.
+
+------------------------------------------------------------
+
+7. EXTENSION BLOCKS
+
+The schema includes structural definitions for:
+- `equality`
+- `concurrency`
+- `verification`
+- `compensation`
+- `compensation_available`
+
+The schema validates their shape and the core field-presence rules that
+depend on them. Detailed behavioral semantics remain in the corresponding
+UCC-EXT-* documents.
+
+------------------------------------------------------------
+
+8. IMPLEMENTATION NOTE
+
+Validators and test runners MUST consume `./ucc-2.0.schema.json` directly.
+Human readers should use this document and UCC-EXECUTION.txt to understand
+why the schema is shaped the way it is.
+
+END OF DOCUMENT

@@ -1,0 +1,21 @@
+UCC-CHECKLIST – Test Compliance Checklist
+==========================================
+
+This document is non-normative.
+It collects the UCC compliance test checklist items.
+
+------------------------------------------------------------
+
+[ ] Phase 1 HappyClean
+[ ] Phase 2 HappyIdempotent
+[ ] Phase 3 FailRetryable
+[ ] Phase 4 FailPermanent
+[ ] Phase 5 Unchanged
+[ ] Phase 6 Partial
+[ ] Phase 7 FailObservation
+[ ] Phase 8 ObservationIndeterminate
+[ ] All required assertions are present in each test phase
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,46 @@
+UCC-ORCHESTRATOR-BOUNDARIES
+===========================
+
+This document defines the boundaries an orchestrator exposes.
+It is supporting, not normative.
+
+------------------------------------------------------------
+
+1. BOUNDARY CLASSIFICATION
+------------------------------------------------------------
+
+Any boundary interaction exposed by the orchestrator MUST be classified
+under BISS.
+
+Typical orchestrator boundaries include:
+
+- workflow submission → GCC
+- workflow status observation → GIC
+- workflow reconciliation / replay → UCC
+- workflow cancellation → GCC
+- execution events → GIC
+
+------------------------------------------------------------
+
+2. BOUNDARY PROPERTIES
+------------------------------------------------------------
+
+GIC boundaries:
+- observational only
+- no guarantees
+- never retried
+
+GCC boundaries:
+- explicit input
+- closed result set
+- authoritative acceptance or rejection
+
+UCC boundaries:
+- observe current workflow state
+- converge toward a declared terminal state
+- idempotent
+- safe to retry automatically
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,474 @@
+UCC-EXT-ASYNC – Async/Deferred Convergence Extension
+=====================================================
+
+TIER
+-----
+Tier 2 – Extension. Depends on: UCC-EXECUTION.
+Independent of: UCC-EXT-EQUALITY, UCC-EXT-CONCURRENCY, UCC-EXT-COMPENSATION.
+
+PREREQUISITE READING
+--------------------
+../execution-semantics/UCC-EXECUTION.txt   (core execution model — mandatory)
+UCC-STATUS.txt      (result field semantics)
+GLOSSARY.txt        (canonical vocabulary)
+
+STATUS
+------
+Normative extension to UCC/2.0 (R15-A through R15-E, R15-G, R15-H).
+
+VERSION
+-------
+2.0
+
+SCOPE
+-----
+This document specifies:
+- the outcome=changed, completion=pending result and its semantics
+- the two-phase async lifecycle (initiation + verification via mode=verify)
+- verification token and expiry model
+- the VerificationPolicy block for controlling retry behavior
+- pending re-issue semantics for in-flight verification
+- structured warning vocabulary for degraded in-flight states
+- consumer obligations for deferred convergence
+
+The interaction between async deferred completion and pessimistic
+concurrency is governed by UCC-COMPOSITION.
+
+NOTE: R15-F is not part of this Tier 2 extension. The rule governing
+mutual exclusion of async deferred completion with pessimistic concurrency
+belongs in UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+1. PROBLEM STATEMENT
+------------------------------------------------------------
+
+UCC/2.0 assumes synchronous execution: by the time Step 6 reports the
+result, the transition is complete and the observed_after state is known.
+
+Some targets cannot be observed immediately after a transition is applied:
+- provisioning requests submitted to an external system
+- long-running jobs (build, deploy, migration)
+- eventual-consistency stores
+- human-approval gates
+
+In these cases, the synchronous model forces one of two bad choices:
+- Block until the operation completes (may take minutes or hours)
+- Return outcome=changed, completion=complete with an observed_after that is speculative
+
+This document introduces outcome=changed, completion=pending as a first-class
+result for transitions that have been initiated but cannot yet be verified.
+
+------------------------------------------------------------
+
+2. ASYNC LIFECYCLE
+------------------------------------------------------------
+
+An async interaction consists of exactly two phases:
+
+Phase 1 — Initiation
+  The normal UCC cycle (Steps 0–6) is executed.
+  If the transition has been submitted but cannot yet be verified,
+  the result MUST be outcome=changed, completion=pending.
+  A verification token MUST be included in the result.
+  observed_after MUST be omitted.
+
+Phase 2 — Verification
+  A new UCC cycle is initiated using mode=verify and the verification token.
+  This cycle is read-only.
+  Step 2 (declaration evaluation) is skipped — the desired state is recovered
+  from the verification token.
+  Step 4 records that no mutation attempt is authorized in verify mode.
+  Step 5 (transition attempt) MUST NOT occur.
+  Step 6 classifies from the current observation and recovered desired state.
+  The verification cycle produces one of:
+    outcome=converged, outcome=changed completion=pending (in-flight re-issue),
+    outcome=failed, or observation=indeterminate or observation=failed.
+
+The two phases are linked by the verification token.
+Each phase produces exactly one result message.
+
+------------------------------------------------------------
+
+3. PENDING SEMANTICS
+------------------------------------------------------------
+
+outcome=changed, completion=pending
+  A transition has been initiated against the target.
+  The result of the transition cannot yet be observed.
+  The consumer MUST NOT assume the desired state has been reached.
+  The consumer MUST initiate a verification cycle (mode=verify) before acting on
+  the assumption that the transition succeeded.
+
+completion=pending is valid in both Phase 1 and Phase 2 (in-flight re-issue).
+When pending appears in a Phase 2 result, it means the operation is
+still in progress — not yet complete, not yet failed.
+
+------------------------------------------------------------
+
+4. VERIFICATION TOKEN
+------------------------------------------------------------
+
+The verification token is an opaque string issued in the Phase 1 result.
+It links the verification cycle to the original initiation cycle.
+
+Structure in the Phase 1 result message:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "changed",
+    "completion": "pending",
+    "verification": {
+      "token": "string",
+      "expires_at": "ISO-8601",
+      "check_after": "ISO-8601"
+    },
+    "message": "string"
+  }
+}
+
+`token`
+  REQUIRED. Opaque identifier for this pending operation.
+  MUST be globally unique. MUST be passed back to the implementation
+  in the Phase 2 initiation.
+
+`expires_at`
+  REQUIRED. The timestamp after which the token is no longer valid.
+  If the token has expired when verification is attempted, the result
+  MUST be outcome=failed, failure_class=permanent. The consumer MUST NOT
+  retry after expiry without re-initiating Phase 1.
+
+`check_after`
+  OPTIONAL. The earliest timestamp at which verification is likely to
+  succeed. The consumer SHOULD NOT initiate verification before this time,
+  though doing so is not forbidden.
+
+------------------------------------------------------------
+
+5. VERIFICATION POLICY BLOCK
+------------------------------------------------------------
+
+The policy is nested inside the `verification` block as a `policy`
+sub-object (not a top-level `verification_policy` field).
+
+The producer MAY include a `policy` block in the Phase 1
+result to declare the expected verification behavior:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "changed",
+    "completion": "pending",
+    "verification": {
+      "token": "string",
+      "expires_at": "ISO-8601",
+      "check_after": "ISO-8601",
+      "policy": {
+        "max_verifications": "integer",
+        "backoff": "linear | exponential | fixed",
+        "backoff_base_ms": "integer"
+      }
+    }
+  }
+}
+
+`max_verifications`
+  OPTIONAL. The maximum number of verification cycles the consumer
+  SHOULD attempt before treating the operation as outcome=failed,
+  failure_class=retryable. If absent, the consumer MUST NOT exceed
+  a locally configured maximum.
+
+`backoff`
+  OPTIONAL. The recommended backoff strategy between verification attempts.
+  linear:      wait increases by backoff_base_ms per attempt
+  exponential: wait doubles per attempt, starting at backoff_base_ms
+  fixed:       wait is always backoff_base_ms
+
+`backoff_base_ms`
+  REQUIRED when backoff is declared.
+  The base duration in milliseconds for the backoff calculation.
+
+`max_lifetime_ms`
+  OPTIONAL. The maximum duration (in milliseconds from Phase 1 timestamp)
+  after which the operation is considered permanently unresolvable.
+  The `expires_at` field in the verification block MUST NOT be set
+  beyond `now + max_lifetime_ms`. If declared, this creates a hard
+  upper bound on the async window that consumers can rely upon.
+  If absent, the implementation MUST treat `expires_at` as the sole
+  deadline and MUST set it to no more than 86400000 ms (24 hours)
+  from the Phase 1 timestamp. An expires_at beyond 24 hours with no
+  max_lifetime_ms declared is non-compliant.
+
+These fields are recommendations, not enforcement. The consumer is
+responsible for respecting them. A consumer that ignores the policy
+and polls aggressively is non-compliant in spirit but not contractually
+invalid (the server will enforce expiry regardless).
+
+------------------------------------------------------------
+
+6. VERIFICATION CYCLE EXECUTION MODEL
+------------------------------------------------------------
+
+Phase 2 is a standard UCC declaration with mode = verify:
+
+{
+  "meta": { "contract": "string", "version": "2.0", "id": "string", "timestamp": "ISO-8601" },
+  "declaration": {
+    "mode": "verify",
+    "verification_token": "abc123"
+  }
+}
+
+A verification cycle executes as follows:
+
+Step 1 – Observation
+  S0 = observe(W)
+  If O(W) = ⊗ → observation=failed, STOP
+  If O(W) = ?  → observation=indeterminate, STOP
+
+Step 3 – Diff computation
+  D = diff(S0, S1)
+  S1 is the desired state recovered from the verification token.
+
+Step 4 – Execution decision
+  No mutation attempt is authorized in verify mode.
+
+Step 6 – Classification and result reporting
+  If D = ∅
+    → observation=ok, outcome=converged (the transition completed successfully)
+
+  If D ≠ ∅
+    If expires_at has passed
+      → observation=ok, outcome=failed, failure_class=permanent (token expired)
+    If transition visibly failed (observable error state)
+      → observation=ok, outcome=failed, failure_class=retryable or permanent per R9 classification
+    If operation is still in progress (no observable completion or failure)
+      → observation=ok, outcome=changed, completion=pending (in-flight re-issue; see Section 7)
+
+  Emit exactly one result object.
+  observed_after is the observation from Step 1 of this cycle
+  when outcome=converged.
+  (Phase 2 cannot produce outcome=changed, completion=complete — it is read-only.)
+
+R15-C – Verification is read-only
+  A declaration with mode=verify MUST NOT apply any transition.
+  Step 5 MUST NOT execute.
+
+COMP-9 – Equality semantics propagate to verification
+  See UCC-COMPOSITION.txt COMP-9 for equality semantics propagation to verification. This rule is stated normatively in UCC-COMPOSITION and is referenced here for completeness.
+
+------------------------------------------------------------
+
+7. PENDING RE-ISSUE (IN-FLIGHT VERIFICATION)
+------------------------------------------------------------
+
+If a verification cycle produces completion=pending (operation still in progress),
+the implementation MUST re-issue the verification token:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "changed",
+    "completion": "pending",
+    "verification": {
+      "token": "string",
+      "expires_at": "ISO-8601",
+      "check_after": "ISO-8601"
+    }
+  }
+}
+
+The re-issued token MAY be the same as the original token or a new token.
+The `expires_at` MUST NOT be extended beyond the original expiry.
+The `check_after` SHOULD be updated to reflect the next expected check time.
+
+A re-issued pending response MAY include a `warnings` array to signal
+that the operation is in progress but showing concerning indicators:
+
+{
+  "result": {
+    "observation": "ok",
+    "outcome": "changed",
+    "completion": "pending",
+    "verification": {
+      "token": "string",
+      "expires_at": "ISO-8601",
+      "check_after": "ISO-8601",
+      "warnings": [
+        {
+          "code": "string",
+          "message": "string",
+          "severity": "info | degraded | critical"
+        }
+      ]
+    }
+  }
+}
+
+`warnings`
+  OPTIONAL. A list of structured warning objects describing observable
+  conditions that do NOT change the result but signal that the
+  in-flight operation may require attention.
+  Warnings do NOT change the result.
+  A consumer MUST surface warnings with severity = critical to operators.
+  A consumer SHOULD surface warnings with severity = degraded to operators.
+  A consumer MAY suppress warnings with severity = info.
+
+`warnings[].code`
+  REQUIRED. A machine-readable code identifying the warning type.
+  MUST be one of the following closed vocabulary values:
+
+  lifetime_threshold_exceeded
+    The elapsed time since Phase 1 has exceeded 80% of the declared
+    max_lifetime_ms. Expiry is approaching.
+    MUST be emitted when R15-H applies (see Section 10).
+
+  resource_utilization_high
+    A resource (CPU, memory, storage, connections) used by the
+    operation is above a normal operating threshold.
+
+  operation_duration_exceeded
+    The operation has been running longer than the expected duration
+    for this operation type.
+
+  external_dependency_degraded
+    A downstream system required by the operation is responding
+    slowly or returning errors, but the operation has not failed.
+
+  retry_in_progress
+    The implementation is internally retrying the operation.
+    The consumer may wish to monitor for a potential failure.
+
+`warnings[].message`
+  REQUIRED. A human-readable description of the specific condition.
+
+`warnings[].severity`
+  REQUIRED. One of: info | degraded | critical
+  info:     informational; no immediate action required
+  degraded: the operation may be slower or less reliable than normal
+  critical: the operation is at high risk of failing; operator review recommended
+
+This is the only case where a verification cycle may return completion=pending.
+The consumer uses the re-issued token to initiate the next verification cycle.
+
+------------------------------------------------------------
+
+8. EXPIRY HANDLING
+------------------------------------------------------------
+
+If verification is attempted and `now > expires_at`:
+- The result MUST be outcome=failed, failure_class=permanent.
+- The `message` field MUST indicate token expiry.
+- The implementation MUST check expiry BEFORE executing the observation.
+- An expired token MUST NOT trigger a new observation.
+
+A new Phase 1 cycle is required to attempt the operation again.
+
+Edge case — expired token with converged target:
+  If the token has expired AND observation shows the target is already
+  in the desired state (D = ∅), the result is still outcome=failed,
+  failure_class=permanent due to token expiry. The convergence is not credited.
+  Rationale: an expired token means the verification window has closed.
+  The consumer MUST re-initiate Phase 1 to obtain a new token and
+  a fresh compliance proof. Crediting convergence on an expired token
+  would allow unbounded verification windows.
+  See R15-E — expiry is permanent regardless of observed state.
+
+------------------------------------------------------------
+
+9. INTERACTION WITH IDEMPOTENCE
+------------------------------------------------------------
+
+The idempotence guarantee applies to the combined Phase 1 + Phase 2 pair:
+
+  evaluate(D, evaluate(D, S)) = evaluate(D, S)
+
+Phase 1 applied to an already-pending target MUST return
+outcome=changed, completion=pending with the existing token (or a new
+equivalent token), not initiate a duplicate transition.
+
+Phase 1 applied to a fully-converged target MUST return outcome=converged.
+
+------------------------------------------------------------
+
+10. NORMATIVE RULES
+------------------------------------------------------------
+
+R15-A – Pending requires token
+  A result with outcome=changed, completion=pending MUST include a
+  `verification` block with a valid `token` and `expires_at`.
+  completion=pending without a token is non-compliant.
+
+R15-B – No observed_after when pending
+  A result with completion=pending MUST NOT include `observed_after`.
+  Reporting a speculative after-state is forbidden.
+
+R15-C – Verification is read-only
+  A declaration with mode=verify MUST NOT apply any new transition.
+  Step 5 MUST NOT execute.
+  Any mutation in a verification cycle is a contract violation.
+
+R15-D – In-flight verification returns pending
+  If the verification cycle observes that the operation is still
+  in progress (not complete, not failed, not expired), the result
+  MUST be outcome=changed, completion=pending with a re-issued token.
+  A verification cycle MUST NOT return without a result — it MUST
+  classify the observed state.
+
+R15-E – Expiry is permanent
+  An expired token MUST produce outcome=failed, failure_class=permanent
+  immediately, without executing the observation. No retry or extension
+  is permitted.
+
+NOTE: R15-F (async deferred completion and pessimistic concurrency) has
+been moved to UCC-COMPOSITION. It is not part of this Tier 2 extension.
+
+R15-G – Expiry must reflect actual operation window
+  The `expires_at` value in the verification block MUST reflect the
+  real maximum expected completion time of the async operation.
+  If a `policy.max_lifetime_ms` is declared, `expires_at` MUST NOT
+  exceed `Phase-1 timestamp + max_lifetime_ms`.
+  If `policy.max_lifetime_ms` is absent, `expires_at` MUST NOT exceed
+  `Phase-1 timestamp + 86400000 ms (24 hours)`.
+  Setting `expires_at` to an arbitrarily far future date to avoid
+  expiry handling is non-compliant.
+
+R15-H – Lifetime threshold warning
+  If `policy.max_lifetime_ms` is declared and the elapsed time since
+  Phase 1 exceeds 80% of `max_lifetime_ms`, the implementation MUST
+  include a warning in the re-issued pending response with:
+    code     = "lifetime_threshold_exceeded"
+    severity = "critical"
+    message  = a human-readable description including the elapsed time
+               and the max_lifetime_ms value.
+  This warning MUST be present on every subsequent re-issued pending
+  response until the operation resolves or expires.
+
+------------------------------------------------------------
+
+11. COMPLIANCE
+------------------------------------------------------------
+
+An implementation is compliant with UCC-EXT-ASYNC if:
+- It issues a valid verification token on every pending result.
+- It omits observed_after from all pending results.
+- It executes verification cycles as mode=verify (read-only observations).
+- It re-issues the token with completion=pending when the operation is in-flight.
+- It enforces token expiry as outcome=failed, failure_class=permanent before
+  any observation.
+- It sets expires_at within 24 hours when max_lifetime_ms is absent.
+- It emits lifetime_threshold_exceeded warnings per R15-H when applicable.
+- It uses only the closed warning code vocabulary defined in Section 7.
+- It complies with R15-A through R15-E, R15-G, and R15-H.
+
+------------------------------------------------------------
+
+The interaction between async deferred completion and pessimistic
+concurrency is governed by UCC-COMPOSITION.
+
+------------------------------------------------------------
+
+UCC-EXT-ASYNC – Tier 2 Extension. Part of UCC/2.0 framework.
+
+END OF DOCUMENT

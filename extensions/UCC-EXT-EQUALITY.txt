@@ -1,0 +1,324 @@
+UCC-EXT-EQUALITY – Equality Extension
+======================================
+
+TIER
+-----
+Tier 2 – Extension. Depends on: UCC-EXECUTION, UCC-DIFF.
+Independent of: UCC-EXT-CONCURRENCY, UCC-EXT-ASYNC, UCC-EXT-COMPENSATION.
+
+PREREQUISITE READING
+--------------------
+../execution-semantics/UCC-EXECUTION.txt   (core execution model — mandatory)
+UCC-DIFF.txt        (diff contract — mandatory for this extension)
+GLOSSARY.txt        (canonical vocabulary)
+
+STATUS
+------
+Normative extension to UCC/2.0. R13-C through R13-E.
+
+VERSION
+-------
+2.0
+
+SCOPE
+-----
+This document specifies custom equality semantics for UCC declarations:
+- volatile fields: fields excluded from diff computation
+- semantic mode: rule-based equivalence in place of structural comparison
+- array order override: treating array fields as unordered sets
+
+These capabilities extend the default structural equality defined in
+UCC-DIFF.txt (Tier 0) and are activated by declaring an `equality` block
+in a Form A declaration.
+
+------------------------------------------------------------
+
+1. EQUALITY DECLARATION BLOCK
+------------------------------------------------------------
+
+A declaration MAY include an `equality` block to override the default
+structural equality semantics defined in UCC-DIFF.txt Section 2.
+
+{
+  "declaration": {
+    "target": "string",
+    "desired_state": {},
+    "equality": {
+      "mode": "structural | semantic",
+      "volatile_fields": ["string", ...],
+      "array_order": {
+        "<field_name>": "significant | insignificant",
+        ...
+      }
+    }
+  }
+}
+
+`mode`
+  OPTIONAL. Defaults to "structural" when the `equality` block is absent
+  or when `mode` is not specified.
+
+  structural (default)
+    The equality semantics defined in UCC-DIFF.txt Section 2 apply.
+    All fields are compared positionally and type-strictly, with the
+    exception of any declared volatile_fields and any array_order overrides.
+
+  semantic
+    Equivalence is determined by a declared semantic rule rather than
+    structural comparison. See Section 3.
+
+`volatile_fields`
+  OPTIONAL. A list of field names (or dot-notation paths) that MUST be
+  excluded from diff computation regardless of mode. See Section 4.
+
+`array_order`
+  OPTIONAL. A map from field name (or dot-notation path) to order policy.
+  Overrides the default array comparison behavior for the named fields.
+  See Section 5.
+
+------------------------------------------------------------
+
+2. STRUCTURAL MODE
+------------------------------------------------------------
+
+Structural mode is the default. When no `equality` block is declared, or
+when `equality.mode = "structural"`, the following semantics apply:
+
+- All fields are included in the comparison unless listed in volatile_fields.
+- null ≠ absent (a null value and a missing key are not equal).
+- Key order is irrelevant (objects are compared as unordered sets).
+- Array order is significant by default (arrays compared positionally)
+  unless overridden by the `array_order` map.
+- Type-strict: integer 1 ≠ string "1".
+
+These rules are defined normatively in UCC-DIFF.txt Section 2.
+This section restates them for reference and to establish the baseline
+from which volatile_fields and array_order overrides are applied.
+
+When `volatile_fields` or `array_order` are declared alongside
+`mode = "structural"`, the structural defaults apply to all fields not
+named in those override maps.
+
+------------------------------------------------------------
+
+3. SEMANTIC MODE
+------------------------------------------------------------
+
+Semantic mode replaces structural field-by-field comparison with an
+equivalence rule declared by the producer. It is used when two states
+that are structurally different should nonetheless be considered equal
+for the purposes of this interaction.
+
+To declare semantic mode, the `equality` block MUST include:
+
+{
+  "equality": {
+    "mode": "semantic",
+    "semantic_rule": {
+      "rule_id": "com.example.rules.user-profile-equivalence",
+      "rule_version": "1",
+      "description": "Two user profiles are equivalent when email and role match,
+                       regardless of display_name or last_login.",
+      "fields_considered_equivalent": ["email", "role"]
+    }
+  }
+}
+
+`rule_id`
+  REQUIRED when mode = semantic. A globally unique, reverse-DNS-namespaced
+  identifier for the semantic equivalence rule. See R13-E.
+  Example: "com.example.domain.rule-name"
+
+`rule_version`
+  REQUIRED when mode = semantic. An opaque string identifying the version
+  of the rule. Enables audit trails to identify which version of a rule
+  was applied at the time of the interaction.
+
+`description`
+  REQUIRED when mode = semantic. A human-readable statement of what the
+  rule considers equivalent. MUST be sufficient for an operator or auditor
+  to independently evaluate whether the rule was applied correctly.
+
+`fields_considered_equivalent`
+  OPTIONAL. A list of field names (or dot-notation paths) that the rule
+  considers sufficient to establish equivalence. This is informational —
+  it does not replace the rule_id as the authoritative definition.
+  When present, MUST not contradict the description.
+
+Semantic basis in proof:
+  When mode = semantic, the result's `proof` block MUST include a
+  `semantic_basis` entry identifying the rule that was applied.
+  See Section 6.
+
+------------------------------------------------------------
+
+4. VOLATILE FIELDS
+------------------------------------------------------------
+
+A volatile field is a field whose value is expected to change continuously
+and independently of any declared transition. It is excluded from diff
+computation entirely — its before/after values are not reported in `diff`
+and its divergence from the desired state does NOT cause the diff to be
+non-empty.
+
+Examples of volatile fields:
+- last_heartbeat_at
+- updated_at
+- request_count
+- etag (when used purely as a cache key)
+
+Volatile fields are declared as a list of field names or dot-notation paths:
+
+  "volatile_fields": ["last_heartbeat_at", "metadata.internal_counter"]
+
+Rules for volatile fields:
+- A volatile field MUST NOT appear in the `diff` object, even when its
+  before and after values differ.
+- A volatile field MUST NOT cause outcome=changed when it is the sole
+  source of divergence.
+- Volatile field exclusion applies regardless of `mode` (structural or
+  semantic).
+- A field listed in `volatile_fields` that does not exist in either
+  observed_before or desired_state is silently ignored. This is not
+  a validation error.
+
+R13-C (volatile fields excluded from diff) governs this behavior.
+See Section 7.
+
+------------------------------------------------------------
+
+5. ARRAY ORDER
+------------------------------------------------------------
+
+By default, arrays are compared positionally (array order is significant).
+This means ["a", "b"] ≠ ["b", "a"] under structural mode.
+
+The `array_order` map overrides this default on a per-field basis:
+
+  "array_order": {
+    "tags":       "insignificant",
+    "ordered_ids": "significant"
+  }
+
+`significant` (default)
+  Arrays are compared positionally. ["a", "b"] ≠ ["b", "a"].
+  This is the default and need not be stated explicitly, but MAY be
+  declared for documentation clarity.
+
+`insignificant`
+  Arrays are compared as unordered multisets. ["a", "b"] = ["b", "a"].
+  Duplicate elements are significant: ["a", "a", "b"] ≠ ["a", "b"].
+  Null elements are included: [null, "a"] ≠ ["a"].
+
+When a field is declared `insignificant`:
+- The diff for that field is computed over element presence, not position.
+- An empty diff for that field requires the same multiset of elements
+  in both observed_before and desired_state.
+
+The `array_order` map applies regardless of `mode` (structural or semantic).
+
+R13-D is reserved (see below). R13-E governs rule_id scoping. The array
+order contract is part of the general equality semantics under R13-C and
+the existing structural equality baseline.
+
+NOTE: For clarity in cross-referencing, the three normative rules for this
+extension are designated R13-C (volatile fields), R13-D (semantic mode
+proof obligation), and R13-E (reverse-DNS rule_id requirement), continuing
+from R13-A and R13-B in UCC-DIFF.txt.
+
+------------------------------------------------------------
+
+6. PROOF OBLIGATION
+------------------------------------------------------------
+
+When `mode = semantic`, the `proof` block in the result MUST include a
+`semantic_basis` entry:
+
+{
+  "proof": {
+    "semantic_basis": {
+      "rule_id": "com.example.rules.user-profile-equivalence",
+      "rule_version": "1",
+      "description": "string",
+      "applied_at": "ISO-8601"
+    }
+  }
+}
+
+`rule_id`
+  REQUIRED. The rule_id from the declaration's semantic_rule block.
+  MUST exactly match the declared rule_id.
+
+`rule_version`
+  REQUIRED. The rule_version from the declaration's semantic_rule block.
+  MUST exactly match the declared rule_version.
+
+`description`
+  REQUIRED. A human-readable statement of what the rule considers
+  equivalent, copied from the declaration's semantic_rule block.
+  MUST be present so that an auditor reading the proof alone can
+  understand the basis on which equivalence was declared.
+
+`applied_at`
+  REQUIRED. The ISO-8601 timestamp at which the semantic evaluation was
+  performed. Enables post-hoc audit of which rule version was in effect.
+
+Purpose:
+  The semantic_basis entry creates an auditable record that:
+  - a non-structural equivalence rule was applied
+  - which rule was used
+  - which version of the rule was applied
+  - at what point in time
+
+  Without this record, a proof that two states are "equal" is not
+  verifiable by an independent auditor who cannot reproduce structural
+  equality from the raw field values.
+
+See R13-D in Section 7.
+
+------------------------------------------------------------
+
+7. NORMATIVE RULES
+------------------------------------------------------------
+
+R13-C – Volatile fields excluded from diff
+  A field listed in `volatile_fields` MUST be excluded from the `diff`
+  object entirely. Its divergence between observed_before and desired_state
+  MUST NOT be reflected in the diff, MUST NOT contribute to outcome=changed,
+  and MUST NOT appear as a diff entry. This rule supersedes R13-A
+  (diff completeness in UCC-DIFF.txt) for volatile fields specifically.
+
+R13-D – Semantic mode requires semantic_basis in proof
+  When `equality.mode = "semantic"`, the result's `proof` block MUST
+  include a `semantic_basis` entry conforming to Section 6. A semantic
+  mode evaluation without a `semantic_basis` in the proof is non-compliant.
+
+R13-E – Semantic rule_id must be reverse-DNS namespaced
+  The `rule_id` in a semantic_rule declaration MUST follow reverse-DNS
+  namespacing: at minimum two dot-separated components, beginning with a
+  domain name or organizational identifier controlled by the declaring party.
+  A rule_id without a namespace prefix (e.g., "user-equivalence" with no
+  domain component) is a validation error; the result MUST be outcome=failed,
+  failure_class=permanent.
+
+------------------------------------------------------------
+
+8. COMPLIANCE
+------------------------------------------------------------
+
+An implementation is compliant with UCC-EXT-EQUALITY if:
+- It applies default structural equality when no `equality` block is declared.
+- It excludes volatile_fields from the diff object and outcome determination.
+- It evaluates arrays declared as insignificant as unordered multisets.
+- It applies semantic equivalence using the declared rule_id when
+  mode = semantic.
+- It includes a `semantic_basis` entry in `proof` for every semantic
+  mode evaluation.
+- It rejects rule_id values that are not reverse-DNS namespaced.
+- It complies with R13-C, R13-D, and R13-E.
+
+------------------------------------------------------------
+
+UCC-EXT-EQUALITY – Tier 2 Extension. Part of UCC/2.0 framework.
+
+END OF DOCUMENT

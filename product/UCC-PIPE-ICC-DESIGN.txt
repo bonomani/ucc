@@ -1,0 +1,87 @@
+UCC-PIPE-ICC-DESIGN
+===================
+
+This document describes the pipe-ucc tool design.
+It is non-normative and prescriptive.
+
+------------------------------------------------------------
+
+1. WHAT pipe-ucc IS
+------------------------------------------------------------
+
+pipe-ucc is a generic orchestration tool whose role is:
+
+- to replace Unix pipe composition (cmd1 | cmd2 | cmd3)
+- with explicit UCC steps
+- while still being able to call underlying commands internally
+
+pipe-ucc is NOT:
+- a shell
+- a stream processor
+- a DSL
+
+pipe-ucc IS:
+- a UCC orchestrator for pipelines
+- declaration-driven
+- result-driven
+
+------------------------------------------------------------
+
+2. CORE CONCEPT
+------------------------------------------------------------
+
+Unix pipe:
+  cmd1 | cmd2 | cmd3
+
+pipe-ucc equivalent:
+  Step 1 → Step 2 → Step 3
+
+Where each step:
+- has explicit declaration
+- produces explicit state
+- has an observable result
+
+The pipe becomes:
+- orchestration logic
+- NOT a contract
+
+------------------------------------------------------------
+
+3. GENERIC pipe-ucc INTERFACE
+------------------------------------------------------------
+
+Executable:
+  pipe-ucc
+
+UCC mode selector:
+  --ucc=full
+
+pipe-ucc modes:
+- ucc=full
+- accepts UCC declaration
+- outputs UCC ResultMessage
+
+------------------------------------------------------------
+
+4. WHY THIS DESIGN WORKS
+------------------------------------------------------------
+
+- Pipes become explicit orchestration
+- Underlying tools remain untouched
+- Streaming is optional, internal
+- Each step is independently observable
+
+------------------------------------------------------------
+
+5. FINAL INSIGHT
+------------------------------------------------------------
+
+pipe-ucc does not replace Unix pipes.
+It lifts them into a formal semantic layer.
+
+Pipes were about composition.
+UCC is about correctness.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

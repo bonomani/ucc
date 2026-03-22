@@ -1,0 +1,150 @@
+UCC-CHECKLIST – Structural Compliance Checklist
+Universal Convergence Contract (UCC)
+
+This document is NON-NORMATIVE and OPERATIONAL.
+It provides the high-level structural checklist for verifying UCC/2.0 compliance.
+
+------------------------------------------------------------
+
+CLASSIFICATION
+--------------
+Guidance – Compliance Checklist
+
+------------------------------------------------------------
+
+1. PURPOSE OF THIS DOCUMENT
+
+This document provides:
+
+- a yes/no checklist for implementation compliance
+- a quick reference for reviewers and auditors
+- a self-assessment tool for implementers
+
+All requirements in this checklist derive from ../execution-semantics/UCC-EXECUTION.txt.
+In case of conflict, ../execution-semantics/UCC-EXECUTION.txt is authoritative.
+
+------------------------------------------------------------
+
+2. CONTRACT STRUCTURE CHECKLIST
+
+[ ] DeclarationMessage contains: meta, declaration
+[ ] declaration contains: target, desired_state
+[ ] ResultMessage contains: meta, observe, result
+[ ] meta.version is "2.0"
+[ ] meta.id is a non-empty unique string
+[ ] meta.timestamp is ISO-8601
+[ ] meta.duration_ms is present in ResultMessage
+
+------------------------------------------------------------
+
+3. OBSERVATION CHECKLIST
+
+[ ] observe() is called before any state change
+[ ] observe() is read-only (no side effects)
+[ ] observe() is deterministic
+[ ] observed_before is recorded when Step 1 completed successfully
+[ ] If observation infrastructure fails, observation = failed is returned
+[ ] If observation runs but state is indeterminate, observation = indeterminate is returned
+[ ] No transition is attempted when observation = indeterminate or observation = failed
+[ ] When observation failure is ambiguous, observation=failed is used (not indeterminate)
+[ ] observed_before and diff are absent when observation = failed or indeterminate
+[ ] observe.preconditions is present when Step 0 blocks execution
+
+------------------------------------------------------------
+
+4. DECLARATION CHECKLIST
+
+[ ] declaration describes a desired state, not an action
+[ ] declaration does not encode procedures or imperative steps
+[ ] evaluate(declaration, S) returns S1 or ⊥
+[ ] evaluate(declaration, S) has no side effects
+[ ] If evaluate returns ⊥, outcome is failed with failure_class = permanent or retryable
+
+------------------------------------------------------------
+
+5. DIFF CHECKLIST
+
+[ ] diff(S0, S1) is a pure function
+[ ] diff(S0, S1) = ∅ if and only if S0 ≡ S1
+[ ] diff does not modify any state
+[ ] diff is computed before any transition
+
+------------------------------------------------------------
+
+6. RESULT CHECKLIST
+
+[ ] Exactly one result object is returned per interaction
+[ ] observation is always present
+[ ] outcome is present when and only when observation = ok
+[ ] completion is present when and only when outcome = changed
+[ ] failure_class is present when and only when outcome = failed
+[ ] inhibitor is present when and only when outcome = unchanged
+
+[ ] observation=ok, outcome=converged:
+    diff is empty ({}), no transition applied, observed_before present
+[ ] observation=ok, outcome=changed, completion=complete:
+    transition executed, observed_after is a post-mutation observation,
+    non-empty proof present (R10),
+    observed_before and diff present
+[ ] observation=ok, outcome=changed, completion=pending:
+    verification block present with token and expires_at, no observed_after
+[ ] observation=ok, outcome=changed, partial=true:
+    partial_detail present with total/converged/changed/failed counts,
+    observed_after present
+[ ] observation=ok, outcome=unchanged:
+    diff non-empty, inhibitor field present (dry_run | whatif | policy),
+    no mutation occurred
+[ ] observation=ok, outcome=failed, failure_class=retryable:
+    transient condition, message describes cause, observed_before present
+    if failure occurred after Step 3 then diff present
+[ ] observation=ok, outcome=failed, failure_class=permanent:
+    structural impossibility, unsatisfied precondition, or permanent
+    transition failure; message describes cause
+[ ] precondition-blocked failure path:
+    observe.preconditions present, observed_before absent, diff absent
+[ ] declaration-evaluation failure path:
+    observed_before present, diff absent
+[ ] post-transition failure path:
+    observed_before present, diff present, observed_after absent
+[ ] observation=failed:
+    infrastructure failure, observed_before/observed_after/diff all absent,
+    message present
+[ ] observation=indeterminate:
+    observation ran but state unclear, observed_before/observed_after/diff
+    all absent, message present
+
+------------------------------------------------------------
+
+7. FAILURE CLASSIFICATION CHECKLIST
+
+[ ] All failures are classified (no unclassified failures)
+[ ] failure_class = retryable is used only for transient conditions
+[ ] failure_class = permanent is used only for structural impossibilities
+[ ] message is non-empty for all failure outcomes
+[ ] message is non-empty when observation = failed or indeterminate
+[ ] No exceptions are thrown without being caught and translated to a result
+
+------------------------------------------------------------
+
+8. IDEMPOTENCE CHECKLIST
+
+[ ] Executing the same declaration twice converges to the same final state
+[ ] Second application returns outcome=converged if first returned outcome=changed
+[ ] No cumulative side effects from repeated execution
+
+------------------------------------------------------------
+
+9. PRECONDITION CHECKLIST (if applicable)
+
+[ ] All dependencies on other declarations are explicitly declared in requires
+[ ] Preconditions are evaluated before Step 1 (observation of primary target)
+[ ] Unsatisfied preconditions produce outcome=failed, failure_class=permanent
+[ ] Failed precondition observations produce observation=failed
+[ ] Indeterminate precondition observations produce observation=indeterminate
+[ ] Precondition-blocked results carry observe.preconditions evidence
+[ ] Failure message identifies which declaration_id was not satisfied
+[ ] Dependency graph is acyclic (no circular dependencies)
+
+------------------------------------------------------------
+
+END OF DOCUMENT

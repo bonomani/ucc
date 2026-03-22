@@ -1,6 +1,0 @@
-UCC-INTERACTIONS.txt — SUPERSEDED
-===================================
-This file has been superseded by UCC-COMPOSITION.txt (Tier 3 Composition).
-
-See UCC-COMPOSITION.txt for the current extension interaction rules.
-See FRAMEWORK-MAP.txt for the full document index and reading order.

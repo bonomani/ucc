@@ -1,0 +1,79 @@
+UCC-FORMAL
+===========
+
+This document provides the formal mathematical model of UCC.
+It is supporting, not normative.
+
+------------------------------------------------------------
+
+1. PURPOSE
+------------------------------------------------------------
+
+The formal model captures the core UCC relation between observed state,
+declaration, diff, and result classification.
+
+------------------------------------------------------------
+
+2. SETS AND FUNCTIONS
+------------------------------------------------------------
+
+Let S be the set of observable states.
+Let D be the set of declarations.
+Let R be the set of possible results.
+
+Let O : W → S ∪ {?} ∪ {⊗}
+  where W is the world or observation substrate.
+
+Let E : S × D → S ∪ {⊥}
+  where E evaluates a declaration against an observed state.
+
+Let Δ : S × S → Diff
+  where Diff is the set of diffs between observed and desired states.
+
+Let T : W × S × S × D → W ∪ {pending} ∪ {failed}
+  where T attempts the world mutation required to move the observed state
+  toward the desired state.
+
+Let C : (O_before, E, Δ, T, O_after) → R
+  where C classifies the result from the pre-mutation observation,
+  declaration evaluation, diff, transition attempt, and post-mutation
+  verification when available.
+
+------------------------------------------------------------
+
+3. RESULT STRUCTURE
+------------------------------------------------------------
+
+The result is expressed through the three-field model:
+- observation
+- outcome
+- completion
+
+Qualifiers include:
+- failure_class
+- inhibitor
+- partial
+
+------------------------------------------------------------
+
+4. RELATIONS
+------------------------------------------------------------
+
+The model requires:
+- observation before action
+- declaration evaluation distinct from mutation
+- closed result space
+- deterministic classification
+- explicit result qualification
+
+------------------------------------------------------------
+
+5. INTERPRETATION
+------------------------------------------------------------
+
+The formal model is sufficient to represent the UCC execution family
+without assuming any particular transport, runtime, or implementation.
+
+------------------------------------------------------------
+
+END OF DOCUMENT
