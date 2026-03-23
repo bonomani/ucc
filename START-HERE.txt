@@ -2,8 +2,9 @@ START HERE
 ==========
 
 This repository is a layered corpus for UCC.
-It also hosts the suite-level frameworks documented in `../bgs/`:
-`BISS`, `GIC`, `GCC`, `Basic`, `RIG`, and `UCC`.
+UCC is a member framework in the Boundary Governance Suite.
+The suite-level adoption, composition, and compliance layer lives in
+`../bgs/`. The canonical UCC semantics remain in this repository.
 
 If you need suite-level navigation, start with:
   1. `../bgs/README.md`
