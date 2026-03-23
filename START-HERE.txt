@@ -2,6 +2,14 @@ START HERE
 ==========
 
 This repository is a layered corpus for UCC.
+It also hosts the suite-level frameworks documented in `../bgs/`:
+`BISS`, `GIC`, `GCC`, `Basic`, `RIG`, and `UCC`.
+
+If you need suite-level navigation, start with:
+  1. `../bgs/README.md`
+  2. `../bgs/SUITE.md`
+  3. `../bgs/SUITE-MAP.md`
+
 Read the folder that matches your task, then follow the folder-local index or the first file in that layer.
 
 Quick routing:
