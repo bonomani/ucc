@@ -140,6 +140,20 @@ Escalation from L1 to L2 or L3 MUST be explicit.
 L0 — Computation (out of scope)
 - internal execution, non-observable, no classification required
 
+Axis A sub-model decomposition
+------------------------------
+Every Axis A interaction type has exactly three temporal phases. Each phase
+has a distinct sub-model; fewer or more would mis-model the boundary crossing.
+
+| Sub-model   | Phase           | What it governs                                           |
+|-------------|-----------------|-----------------------------------------------------------|
+| Observation | before crossing | how state is read; probe semantics; observation contract  |
+| Obligation  | at crossing     | what the engine is obligated to do given the observed state |
+| Result      | after crossing  | what evidence is produced; artifact shape and fields      |
+
+This decomposition is structural, not a design choice. It applies at all
+levels (GIC, GCC, UCC) with increasing normative obligations at each level.
+
 ------------------------------------------------------------
 
 AXIS B — Internal Quality Grade (applies to any code, not just boundaries)
@@ -159,6 +173,22 @@ RIG (Rigorous Interaction Grade)
 - deterministic behavior (best effort)
 - stable test coverage
 - NOT a contract — freely refactorable, no compatibility guarantees
+
+Axis B sub-model decomposition
+------------------------------
+Each Axis B rigor grade decomposes into sub-models that together define what
+the grade guarantees. The number of sub-models is not fixed — it depends on
+the rigor criteria the grade claims. Sub-models for each grade are defined in
+the grade's own document (BASIC.txt, RIG.txt).
+
+| Sub-model     | What it governs                                                    |
+|---------------|--------------------------------------------------------------------|
+| Invariants    | correctness rules that must hold at every point in the lifecycle   |
+| Observability | what the system makes visible about its own state                  |
+| Tests         | what verification is required to substantiate the rigor claim      |
+
+Additional sub-models (e.g. auditability, reproducibility) may be added as
+rigor claims are elevated without invalidating existing ones.
 
 ------------------------------------------------------------
 
