@@ -75,7 +75,7 @@ A declaration MAY include preconditions in its declaration message.
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "string",
     "timestamp": "ISO-8601"
   },
@@ -248,7 +248,7 @@ Preconditions are ONLY:
 
 11. RELATION TO COMPOSABILITY
 
-UCC/2.0 Section 8 guarantees composability.
+UCC/1.0 Section 8 guarantees composability.
 This document makes composability explicit and verifiable.
 
 Without precondition declarations:

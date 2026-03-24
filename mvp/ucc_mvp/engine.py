@@ -443,7 +443,7 @@ class UccMvpEngine:
     ) -> dict[str, Any]:
         meta_out = {
             "contract": meta_in["contract"],
-            "version": "2.0",
+            "version": "1.0",
             "id": meta_in["id"],
             "timestamp": self._now_fn(),
             "duration_ms": int((time.monotonic() - start) * 1000),

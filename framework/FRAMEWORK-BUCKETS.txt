@@ -98,7 +98,7 @@ ROADMAP
 - UCC-MVP-1.txt
 
 EXECUTABLE MVP
-- ../formal/ucc-2.0.schema.json
+- ../formal/ucc-1.0.schema.json
 - ../mvp/ucc_mvp/engine.py
 - ../mvp/ucc_mvp/cli.py
 - ../mvp/tests/test_ucc_mvp.py

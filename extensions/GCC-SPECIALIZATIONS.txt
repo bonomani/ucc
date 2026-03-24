@@ -16,7 +16,7 @@ Additional invariants:
 - execution is idempotent
 - retries are deterministic and safe
 
-Result model (closed three-field model — UCC/2.0):
+Result model (closed three-field model — UCC/1.0):
 
 observation: ok | indeterminate | failed
 outcome (when observation=ok): converged | changed | unchanged | failed

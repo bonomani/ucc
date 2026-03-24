@@ -14,11 +14,11 @@ GLOSSARY.txt        (canonical vocabulary)
 
 STATUS
 ------
-Normative extension to UCC/2.0 (R16-A through R16-G).
+Normative extension to UCC/1.0 (R16-A through R16-G).
 
 VERSION
 -------
-2.0
+1.0
 
 SCOPE
 -----
@@ -59,7 +59,7 @@ trigger, and audit a reversal action as part of the UCC lifecycle.
 2. COMPENSATION DECLARATION STRUCTURE (FORM B)
 ------------------------------------------------------------
 
-In UCC/2.0, compensation is a SEPARATE top-level declaration, linked to
+In UCC/1.0, compensation is a SEPARATE top-level declaration, linked to
 the primary declaration via a `compensates` field. Compensation is not
 a nested block inside the primary declaration.
 
@@ -69,7 +69,7 @@ field. The `meta.id` of the compensation declaration serves as its identifier.
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "comp-001",
     "timestamp": "ISO-8601"
   },
@@ -90,7 +90,7 @@ The primary declaration has NO compensation block:
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "tx-001",
     "timestamp": "ISO-8601"
   },
@@ -153,7 +153,7 @@ The primary declaration has NO compensation block:
 3. COMPENSATION SEMANTICS
 ------------------------------------------------------------
 
-In UCC/2.0, the primary outcome is ALWAYS preserved. Compensation does NOT
+In UCC/1.0, the primary outcome is ALWAYS preserved. Compensation does NOT
 replace the primary outcome. Instead, compensation is reported in a separate
 `compensation` block alongside the primary outcome.
 
@@ -378,6 +378,6 @@ completion is governed by UCC-COMPOSITION.
 
 ------------------------------------------------------------
 
-UCC-EXT-COMPENSATION – Tier 2 Extension. Part of UCC/2.0 framework.
+UCC-EXT-COMPENSATION – Tier 2 Extension. Part of UCC/1.0 framework.
 
 END OF DOCUMENT

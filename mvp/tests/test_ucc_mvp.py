@@ -16,7 +16,7 @@ from ucc_mvp.engine import (
 )
 
 
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "formal" / "ucc-2.0.schema.json"
+SCHEMA_PATH = Path(__file__).resolve().parents[2] / "formal" / "ucc-1.0.schema.json"
 SCHEMA = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 VALIDATOR = Draft202012Validator(SCHEMA)
 
@@ -62,7 +62,7 @@ class UccMvpTests(unittest.TestCase):
         return {
             "meta": {
                 "contract": "ucc-mvp",
-                "version": "2.0",
+                "version": "1.0",
                 "id": f"case-{Path(target).name}",
                 "timestamp": "2026-03-22T11:59:00Z",
             },

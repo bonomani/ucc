@@ -1,4 +1,4 @@
-Boundary Interaction Semantic Standard (BISS/1.1)
+Boundary Interaction Semantic Standard (BISS/1.0)
 ================================================
 
 STATUS

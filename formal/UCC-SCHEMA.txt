@@ -1,10 +1,10 @@
 UCC-SCHEMA – JSON Schema Specification
-Universal Convergence Contract (UCC/2.0)
+Universal Convergence Contract (UCC/1.0)
 
-This document defines the canonical machine-readable schema artifact for UCC/2.0.
+This document defines the canonical machine-readable schema artifact for UCC/1.0.
 The machine-authoritative file is:
 
-  ./ucc-2.0.schema.json
+  ./ucc-1.0.schema.json
 
 Any message that fails validation against that file is NON-COMPLIANT.
 
@@ -18,7 +18,7 @@ Machine-Normative – JSON Schema (Draft 2020-12)
 
 VERSION
 -------
-2.0 (versioned with UCC/2.0)
+1.0 (versioned with UCC/1.0)
 
 ------------------------------------------------------------
 
@@ -37,7 +37,7 @@ the executable contract. This text records what it covers and why.
 2. CANONICAL ARTIFACT
 
 Canonical schema file:
-  ./ucc-2.0.schema.json
+  ./ucc-1.0.schema.json
 
 Schema dialect:
   JSON Schema Draft 2020-12
@@ -63,7 +63,7 @@ The schema is derived from:
 - All schema-defined objects are closed unless explicitly modeled as open
   state payloads (`desired_state`, `observed_before`, `observed_after`, `diff`,
   `proof`, and related free-form state objects).
-- `meta.version` MUST equal `"2.0"`.
+- `meta.version` MUST equal `"1.0"`.
 - Timestamps MUST validate as `date-time`.
 - `meta.scope` and `meta.caused_by` are permitted on both declaration and
   result messages. This aligns the machine schema with UCC-SCOPE.
@@ -174,7 +174,7 @@ UCC-EXT-* documents.
 
 8. IMPLEMENTATION NOTE
 
-Validators and test runners MUST consume `./ucc-2.0.schema.json` directly.
+Validators and test runners MUST consume `./ucc-1.0.schema.json` directly.
 Human readers should use this document and UCC-EXECUTION.txt to understand
 why the schema is shaped the way it is.
 

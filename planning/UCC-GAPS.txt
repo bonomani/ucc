@@ -240,7 +240,7 @@ GAP-4.1
           an end-to-end example.
   GAP:    CLOSED for the MVP scope. The reference engine now exists at
           `mvp/ucc_mvp/engine.py`, the CLI at `mvp/ucc_mvp/cli.py`, the
-          canonical schema at `formal/ucc-2.0.schema.json`, and the
+          canonical schema at `formal/ucc-1.0.schema.json`, and the
           compliance suite at `mvp/tests/test_ucc_mvp.py`.
   IMPACT: The framework now has an executable operation-scope baseline.
           Non-operation scopes and product-grade orchestrators remain separate gaps.
@@ -313,9 +313,9 @@ GAP-5.1
           result assertions in this document MUST produce result messages that
           validate against the canonical schema. Schema validation is a prerequisite
           for compliance certification." UCC-EXAMPLE.txt references using a
-          JSON Schema Draft 2020-12 validator with `formal/ucc-2.0.schema.json`.
+          JSON Schema Draft 2020-12 validator with `formal/ucc-1.0.schema.json`.
   GAP:    CLOSED. The canonical schema artifact now exists at
-          `formal/ucc-2.0.schema.json`, and the MVP test suite validates emitted
+          `formal/ucc-1.0.schema.json`, and the MVP test suite validates emitted
           results against it with `jsonschema`.
   IMPACT: A concrete schema-validation path now exists for the reference engine.
   RESOLUTION PATH: Keep the schema artifact versioned alongside the normative docs.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ucc.example/spec/ucc-2.0.schema.json",
-  "title": "UCC/2.0 - Universal Convergence Contract",
+  "$id": "https://ucc.example/spec/ucc-1.0.schema.json",
+  "title": "UCC/1.0 - Universal Convergence Contract",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/DeclarationMessage" },
@@ -20,7 +20,7 @@
       "required": ["contract", "version", "id", "timestamp"],
       "properties": {
         "contract": { "type": "string", "minLength": 1 },
-        "version": { "type": "string", "const": "2.0" },
+        "version": { "type": "string", "const": "1.0" },
         "id": { "type": "string", "minLength": 1 },
         "timestamp": { "type": "string", "format": "date-time" },
         "scope": { "$ref": "#/$defs/Scope" },
@@ -34,7 +34,7 @@
       "required": ["contract", "version", "id", "timestamp", "duration_ms"],
       "properties": {
         "contract": { "type": "string", "minLength": 1 },
-        "version": { "type": "string", "const": "2.0" },
+        "version": { "type": "string", "const": "1.0" },
         "id": { "type": "string", "minLength": 1 },
         "timestamp": { "type": "string", "format": "date-time" },
         "duration_ms": { "type": "integer", "minimum": 0 },

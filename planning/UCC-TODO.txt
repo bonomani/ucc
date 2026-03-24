@@ -240,7 +240,7 @@ E. TOOLING
     AREA:    UCC-IMPL-GUIDE.txt, UCC-SCHEMA.txt
     TASK:    Publish the canonical UCC schema as a standalone JSON Schema file.
              Align the documentation to point to that artifact.
-    OUTPUTS: formal/ucc-2.0.schema.json — standalone artifact
+    OUTPUTS: formal/ucc-1.0.schema.json — standalone artifact
              UCC-SCHEMA.txt — canonical artifact reference
 
 [ ] TODO-E2

@@ -2,7 +2,7 @@ UCC-CHECKLIST – Structural Compliance Checklist
 Universal Convergence Contract (UCC)
 
 This document is NON-NORMATIVE and OPERATIONAL.
-It provides the high-level structural checklist for verifying UCC/2.0 compliance.
+It provides the high-level structural checklist for verifying UCC/1.0 compliance.
 
 ------------------------------------------------------------
 

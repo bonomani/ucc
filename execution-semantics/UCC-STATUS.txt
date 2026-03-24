@@ -1,8 +1,8 @@
 UCC-STATUS – Result Field Taxonomy
-Universal Convergence Contract (UCC/2.0)
+Universal Convergence Contract (UCC/1.0)
 
 This document is NORMATIVE.
-It defines the result taxonomy used by UCC/2.0.
+It defines the result taxonomy used by UCC/1.0.
 
 ------------------------------------------------------------
 
@@ -20,7 +20,7 @@ presence rules.
 
 1. THE THREE-FIELD RESULT MODEL
 
-UCC/2.0 uses three orthogonal fields to express all possible results:
+UCC/1.0 uses three orthogonal fields to express all possible results:
 
   observation   — always present; describes whether observation succeeded
   outcome       — present when observation = ok; describes what happened

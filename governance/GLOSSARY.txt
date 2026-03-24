@@ -126,6 +126,15 @@ GCC — Generic Contract Core
   and external responsibility.
   Source: GCC.txt
 
+Convergence
+  The process of driving a target from its observed state to its declared
+  desired state. A convergence cycle observes the current state, computes
+  a diff, and applies a transition only when the diff is non-empty.
+  A cycle that finds the desired state already present emits outcome=converged
+  with no transition applied. Convergence is idempotent: repeated cycles on
+  an already-converged target produce the same result.
+  Source: ../execution-semantics/UCC-EXECUTION.txt
+
 UCC — Universal Convergence Contract
   A GCC specialization for deterministic state convergence.
   Idempotent and retry-safe by construction.
@@ -253,12 +262,12 @@ mode (declaration field)
 
 ------------------------------------------------------------
 
-DEPRECATED TERMS FROM UCC/1.2 FLAT MODEL
+DEPRECATED TERMS FROM UCC/pre-1.0 FLAT MODEL
 -----------------------------------------
-NOTE: UCC/2.0 replaced the flat 10-status model with the three-field result
-model (observation / outcome / completion). The following terms from UCC/1.2
+NOTE: UCC/1.0 replaced the flat 10-status model with the three-field result
+model (observation / outcome / completion). The following terms from UCC/pre-1.0
 are no longer valid field values and MUST NOT appear in result messages.
-If you encounter these terms, map them to their UCC/2.0 equivalents using
+If you encounter these terms, map them to their UCC/1.0 equivalents using
 the table in ../execution-semantics/UCC-EXECUTION.txt §2.
 
 "status"         — not a valid field; use the three-field model (observation/outcome/completion)

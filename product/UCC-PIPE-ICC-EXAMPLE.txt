@@ -13,7 +13,7 @@ FILE: pipe-declaration.json
 {
   "meta": {
     "contract": "ucc",
-    "version": "2.0",
+    "version": "1.0",
     "id": "pipe-001"
   },
   "declaration": {
@@ -59,7 +59,7 @@ Output (UCC):
 {
   "meta": {
     "contract": "ucc",
-    "version": "2.0",
+    "version": "1.0",
     "id": "pipe-001"
   },
   "observe": {

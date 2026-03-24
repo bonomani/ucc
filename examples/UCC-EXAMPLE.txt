@@ -1,5 +1,5 @@
 UCC-EXAMPLE – Consolidated End-to-End Example
-Universal Convergence Contract (UCC/2.0)
+Universal Convergence Contract (UCC/1.0)
 
 This document is NON-NORMATIVE and PRACTICAL.
 It provides a complete, linear, concrete illustration of UCC:
@@ -66,7 +66,7 @@ FILE: declaration.json
 {
   "meta": {
     "contract": "ucc",
-    "version": "2.0",
+    "version": "1.0",
     "id": "copy-001",
     "timestamp": "2026-01-06T14:00:00Z"
   },
@@ -177,7 +177,7 @@ def main():
         result = {
             "meta": {
                 "contract": meta["contract"],
-                "version": "2.0",
+                "version": "1.0",
                 "id": meta["id"],
                 "timestamp": now,
                 "duration_ms": 0  # should be measured in production
@@ -258,7 +258,7 @@ def main():
     result = {
         "meta": {
             "contract": meta["contract"],
-            "version": "2.0",
+            "version": "1.0",
             "id": meta["id"],
             "timestamp": now,
             "duration_ms": 0  # should be measured in production
@@ -282,7 +282,7 @@ Example case: destination did not exist before
 {
   "meta": {
     "contract": "ucc",
-    "version": "2.0",
+    "version": "1.0",
     "id": "copy-001",
     "timestamp": "2026-01-06T14:00:01Z",
     "duration_ms": 42
@@ -319,7 +319,7 @@ Example case: destination did not exist before
 }
 
 NOTE: All result messages in this document validate against
-formal/ucc-2.0.schema.json.
+formal/ucc-1.0.schema.json.
 Use a JSON Schema (Draft 2020-12) validator with that file to verify
 compliance of result messages programmatically.
 
@@ -370,6 +370,6 @@ It is a convergence engine.
 ------------------------------------------------------------
 
 UCC-EXAMPLE – Consolidated End-to-End Copy File Example
-Non-normative — UCC/2.0
+Non-normative — UCC/1.0
 
 END OF DOCUMENT

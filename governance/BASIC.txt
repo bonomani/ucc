@@ -105,7 +105,7 @@ Upgrading is incremental and non-breaking:
 2. Add assertions on invariants
 3. Add structured observability (logs, traces, metrics)
 4. Write tests covering all result field combinations
-5. Validate result messages against formal/ucc-2.0.schema.json
+5. Validate result messages against formal/ucc-1.0.schema.json
 
 The boundary contract (GIC / GCC / UCC) does not change.
 Consumers see no difference. The upgrade is internal only.

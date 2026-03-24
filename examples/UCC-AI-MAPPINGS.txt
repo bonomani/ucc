@@ -3,7 +3,7 @@ Universal Convergence Contract (UCC)
 
 This document is NON-NORMATIVE and EXPLANATORY.
 It provides concrete mappings from agent and AI system patterns
-to the UCC/2.0 model, without adding new semantics.
+to the UCC/1.0 model, without adding new semantics.
 
 This document complements UCC-MAPPINGS (REST, CLI, Database mappings).
 
@@ -208,6 +208,6 @@ Agent and AI system mappings demonstrate that:
 ------------------------------------------------------------
 
 UCC-AI-MAPPINGS – Agent and AI System Mappings
-Non-normative explanatory document — UCC/2.0
+Non-normative explanatory document — UCC/1.0
 
 END OF DOCUMENT

@@ -2,7 +2,7 @@ UCC-IMPL-GUIDE – Minimal Implementation Guide
 Universal Convergence Contract (UCC)
 
 This document is NON-NORMATIVE but AUTHORITATIVE.
-It explains the minimal requirements to implement UCC/2.0 correctly,
+It explains the minimal requirements to implement UCC/1.0 correctly,
 without prescribing any language, framework, or runtime.
 It is about implementation obligations, not product positioning.
 It does not discuss general fit or adoption strategy.
@@ -26,7 +26,7 @@ This document explains:
 - how to avoid common implementation mistakes
 
 This guide is intentionally minimal.
-Anything not required by UCC/2.0 is excluded.
+Anything not required by UCC/1.0 is excluded.
 
 ------------------------------------------------------------
 
@@ -291,8 +291,8 @@ An implementation is minimally compliant if:
 
 - it implements observe(), evaluate(declaration, state), diff()
 - it keeps transition execution distinct from declaration evaluation
-- it emits valid UCC/2.0 messages (three-field result model)
-- it validates emitted messages against formal/ucc-2.0.schema.json
+- it emits valid UCC/1.0 messages (three-field result model)
+- it validates emitted messages against formal/ucc-1.0.schema.json
 - it passes the mandatory UCC-TESTS phases that apply to the component,
   including PRE-* and DRY-* scenarios when relevant
 - it produces deterministic results

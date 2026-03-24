@@ -8,7 +8,7 @@ Depends on: UCC-OBSERVATION, UCC-DESIRED-STATE, UCC-DIFF.
 
 VERSION
 -------
-2.0
+1.0
 
 NORMATIVE DOCUMENT
 Any compliant implementation MUST respect all rules defined below.
@@ -24,17 +24,17 @@ for canonical definitions.
 
 VERSION HISTORY
 ---------------
-UCC/2.0 (current) — Three-field result model (observation / outcome / completion).
-                     Supersedes UCC/1.2 flat ten-status model.
+UCC/1.0 (current) — Three-field result model (observation / outcome / completion).
+                     Supersedes UCC/pre-1.0 flat ten-status model.
                      See GLOSSARY.txt §DEPRECATED TERMS for the old→new mapping.
-UCC/1.2           — Flat model with ten status values. Archived. No longer normative.
+UCC/pre-1.0           — Flat model with ten status values. Archived. No longer normative.
 
 ------------------------------------------------------------
 
 1. SCOPE
 ------------------------------------------------------------
 
-UCC/2.0 applies to any software interaction involving:
+UCC/1.0 applies to any software interaction involving:
 
 - files
 - registry
@@ -245,7 +245,7 @@ A declaration message — Form A (standard declaration):
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "string",
     "timestamp": "ISO-8601"
   },
@@ -279,7 +279,7 @@ Notes:
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "string",
     "timestamp": "ISO-8601",
     "duration_ms": "integer"
@@ -647,7 +647,7 @@ obligations on the implementation.
 
 ------------------------------------------------------------
 
-UCC-EXECUTION – Tier 1 Core. Part of UCC/2.0 framework.
+UCC-EXECUTION – Tier 1 Core. Part of UCC/1.0 framework.
 Footer: See FRAMEWORK-MAP.txt for the complete four-tier reading order.
 
 END OF DOCUMENT

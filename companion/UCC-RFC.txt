@@ -2,7 +2,7 @@ UCC-RFC – Alternate Reading
 ===========================
 
 This document is non-authoritative.
-It provides an alternate reading of UCC/2.0 in a more compact style.
+It provides an alternate reading of UCC/1.0 in a more compact style.
 It is about reading the model, not implementing it.
 It does not discuss implementation obligations.
 It is aimed at readers who want a compact overview.

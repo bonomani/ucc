@@ -14,11 +14,11 @@ GLOSSARY.txt        (canonical vocabulary)
 
 STATUS
 ------
-Normative extension to UCC/2.0 (R14-A through R14-E).
+Normative extension to UCC/1.0 (R14-A through R14-E).
 
 VERSION
 -------
-2.0
+1.0
 
 SCOPE
 -----
@@ -252,6 +252,6 @@ completion is governed by UCC-COMPOSITION.
 
 ------------------------------------------------------------
 
-UCC-EXT-CONCURRENCY – Tier 2 Extension. Part of UCC/2.0 framework.
+UCC-EXT-CONCURRENCY – Tier 2 Extension. Part of UCC/1.0 framework.
 
 END OF DOCUMENT

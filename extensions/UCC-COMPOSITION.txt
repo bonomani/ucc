@@ -17,16 +17,16 @@ GLOSSARY.txt             (canonical vocabulary)
 
 STATUS
 ------
-Normative. Governs all combinations of UCC/2.0 extension blocks.
+Normative. Governs all combinations of UCC/1.0 extension blocks.
 
 VERSION
 -------
-2.0
+1.0
 
 SCOPE
 -----
 This document specifies the normative rules governing combinations
-of the four UCC/2.0 extension blocks:
+of the four UCC/1.0 extension blocks:
 
   equality      (UCC-EXT-EQUALITY)
   concurrency   (UCC-EXT-CONCURRENCY)
@@ -38,7 +38,7 @@ the individual extension documents. Any combination explicitly
 prohibited here MUST produce outcome=failed, failure_class=permanent
 immediately.
 
-This is the only document in the UCC/2.0 framework that may reference
+This is the only document in the UCC/1.0 framework that may reference
 multiple extensions in the same normative rule.
 
 ------------------------------------------------------------
@@ -307,6 +307,6 @@ COMP-10-C is compliant with UCC-COMPOSITION.
 
 ------------------------------------------------------------
 
-UCC-COMPOSITION – Tier 3. Part of UCC/2.0 framework.
+UCC-COMPOSITION – Tier 3. Part of UCC/1.0 framework.
 
 END OF DOCUMENT

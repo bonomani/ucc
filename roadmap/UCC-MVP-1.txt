@@ -99,7 +99,7 @@ The MVP consists of four concrete artifacts:
    ResultMessage to stdout.
 
 3. Canonical machine schema
-   `formal/ucc-2.0.schema.json`
+   `formal/ucc-1.0.schema.json`
    Validates declaration and result message structure.
 
 4. Compliance suite
@@ -140,7 +140,7 @@ Exit codes:
 ============================================================
 
 Canonical schema file:
-  `formal/ucc-2.0.schema.json`
+  `formal/ucc-1.0.schema.json`
 
 The MVP emits results that validate against this schema.
 The schema includes:
@@ -176,7 +176,7 @@ Covered scenarios:
 - DRY-1 — DryRunSuppression
 - DRY-2 — DryRunConverged
 
-The suite validates every emitted result against `formal/ucc-2.0.schema.json`.
+The suite validates every emitted result against `formal/ucc-1.0.schema.json`.
 
 ============================================================
 8. SUCCESS CRITERION

@@ -3,7 +3,7 @@ Universal Convergence Contract (UCC)
 
 This document is NON-NORMATIVE and EXPLANATORY.
 It provides concrete mappings from common paradigms (REST, CLI, DB)
-to the UCC/2.0 model, without adding new semantics.
+to the UCC/1.0 model, without adding new semantics.
 
 ------------------------------------------------------------
 
@@ -252,6 +252,6 @@ UCC is a unifying model, not a replacement.
 ------------------------------------------------------------
 
 UCC-MAPPINGS – Mapping Examples (REST, CLI, Database)
-Non-normative explanatory document — UCC/2.0
+Non-normative explanatory document — UCC/1.0
 
 END OF DOCUMENT

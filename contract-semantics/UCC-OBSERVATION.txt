@@ -85,6 +85,6 @@ See FRAMEWORK-INDEX.txt for the current corpus reading order.
 ------------------------------------------------------------
 
 UCC-OBSERVATION – Tier 0 Primitive
-Part of the UCC/2.0 framework.
+Part of the UCC/1.0 framework.
 
 END OF DOCUMENT

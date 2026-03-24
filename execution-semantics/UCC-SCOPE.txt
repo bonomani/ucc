@@ -88,7 +88,7 @@ Scope is declared in the `meta` block of the execution message:
 {
   "meta": {
     "contract": "string",
-    "version": "2.0",
+    "version": "1.0",
     "id": "string",
     "timestamp": "ISO-8601",
     "scope": "operation | decision | system | policy | intent",
@@ -452,7 +452,7 @@ Human decisions are not exempt from governance.
 ------------------------------------------------------------
 
 The canonical machine-readable schema file
-../formal/ucc-2.0.schema.json includes the following optional `meta`
+../formal/ucc-1.0.schema.json includes the following optional `meta`
 fields for both declaration and result messages:
 
 MetaIn extension (scope-aware):
@@ -566,7 +566,7 @@ The stack is not five frameworks. It is one pattern applied five times.
 
 ------------------------------------------------------------
 
-UCC-SCOPE – Tier 1 Extension. Part of UCC/2.0 framework.
+UCC-SCOPE – Tier 1 Extension. Part of UCC/1.0 framework.
 Footer: See FRAMEWORK-MAP.txt for the complete document index.
 
 END OF DOCUMENT

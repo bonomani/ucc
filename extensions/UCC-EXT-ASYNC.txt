@@ -14,11 +14,11 @@ GLOSSARY.txt        (canonical vocabulary)
 
 STATUS
 ------
-Normative extension to UCC/2.0 (R15-A through R15-E, R15-G, R15-H).
+Normative extension to UCC/1.0 (R15-A through R15-E, R15-G, R15-H).
 
 VERSION
 -------
-2.0
+1.0
 
 SCOPE
 -----
@@ -43,7 +43,7 @@ belongs in UCC-COMPOSITION.
 1. PROBLEM STATEMENT
 ------------------------------------------------------------
 
-UCC/2.0 assumes synchronous execution: by the time Step 6 reports the
+UCC/1.0 assumes synchronous execution: by the time Step 6 reports the
 result, the transition is complete and the observed_after state is known.
 
 Some targets cannot be observed immediately after a transition is applied:
@@ -213,7 +213,7 @@ invalid (the server will enforce expiry regardless).
 Phase 2 is a standard UCC declaration with mode = verify:
 
 {
-  "meta": { "contract": "string", "version": "2.0", "id": "string", "timestamp": "ISO-8601" },
+  "meta": { "contract": "string", "version": "1.0", "id": "string", "timestamp": "ISO-8601" },
   "declaration": {
     "mode": "verify",
     "verification_token": "abc123"
@@ -469,6 +469,6 @@ concurrency is governed by UCC-COMPOSITION.
 
 ------------------------------------------------------------
 
-UCC-EXT-ASYNC – Tier 2 Extension. Part of UCC/2.0 framework.
+UCC-EXT-ASYNC – Tier 2 Extension. Part of UCC/1.0 framework.
 
 END OF DOCUMENT

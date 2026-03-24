@@ -2,8 +2,8 @@ UCC-RATIONALE – Conceptual Model and Rationale
 Universal Convergence Contract (UCC)
 
 This document is NON-NORMATIVE.
-It explains the conceptual foundations and design rationale of UCC/2.0.
-No requirement in this document overrides the UCC/2.0 normative specification.
+It explains the conceptual foundations and design rationale of UCC/1.0.
+No requirement in this document overrides the UCC/1.0 normative specification.
 
 ------------------------------------------------------------
 
@@ -262,12 +262,12 @@ UCC is not a tool.
 UCC is a minimal universal contract describing how software expresses
 a desired state, observes current state, and reports convergence.
 
-This document explains why UCC/2.0 is structured the way it is.
+This document explains why UCC/1.0 is structured the way it is.
 All normative rules are defined exclusively in ../execution-semantics/UCC-EXECUTION.txt.
 
 ------------------------------------------------------------
 
 UCC-RATIONALE – Conceptual Model and Rationale
-Non-normative explanatory document — UCC/2.0
+Non-normative explanatory document — UCC/1.0
 
 END OF DOCUMENT
